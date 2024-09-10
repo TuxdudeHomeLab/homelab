@@ -52,7 +52,39 @@ func (c *container) isAllowedOnCurrentHost() bool {
 }
 
 func (c *container) start() error {
-	return fmt.Errorf("container start is not yet supported")
+	log.Debugf("Starting container %s ...", c.name())
+
+	// 1. Validate the container is allowed to run on the current host.
+	if !c.isAllowedOnCurrentHost() {
+		return logToWarnAndReturn("Container %s not allowed to run on host '%s'", c.name(), c.group.deployment.host.humanFriendlyHostName)
+	}
+
+	// 2. Create the network for the container if it doesn't exist already.
+	// TODO: Implement this.
+
+	// 3. Execute any pre-start commands.
+	// TODO: Implement this.
+
+	// 4. Pull the container image.
+	// TODO: Implement this.
+	var err error
+	if err != nil {
+		return logToErrorAndReturn("Failed to start container '%s', reason:\n%v", c.name(), err)
+	}
+
+	// 5. Purge (i.e. stop and remove) any previously existing containers
+	// under the same name.
+	// TODO: Implement this.
+
+	// 6. Create the container.
+	// TODO: Implement this.
+
+	// 7. Start the created container.
+	// TODO: Implement this.
+
+	log.Infof("Started container %s", c.name())
+	log.InfoEmpty()
+	return nil
 }
 
 func (c *container) name() string {

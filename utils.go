@@ -33,3 +33,15 @@ func stringifyMap[V any](m map[string]V) string {
 	sb.WriteString("]")
 	return sb.String()
 }
+
+func logToErrorAndReturn(format string, args ...interface{}) error {
+	log.Errorf(format, args...)
+	log.ErrorEmpty()
+	return fmt.Errorf(format, args...)
+}
+
+func logToWarnAndReturn(format string, args ...interface{}) error {
+	log.Warnf(format, args...)
+	log.WarnEmpty()
+	return fmt.Errorf(format, args...)
+}

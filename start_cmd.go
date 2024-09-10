@@ -23,35 +23,12 @@ func (s *startCmdHandler) run(options *cmdOptions) error {
 		return err
 	}
 
-	// Identify the containers that are in scope for this command invocation.
-	// Run start() against each of those containers.
-
-	// start() for a single container involves these steps:
-	// 1. Validate the container is allowed to run on the current host.
-	// 2. Create the network for the container if it doesn't exist already.
-	// 3. Execute any pre-start commands.
-	// 4. Pull the container image.
-	// 5. Purge (i.e. stop and remove) any previously existing containers
-	// under the same name.
-	// 6. Create the container.
-	// 7. Start the container.
-
 	res := queryContainers(s.dep, options)
-
-	log.Debugf("Result containers =\n%s", res)
+	log.Debugf("start command - result containers =\n%s", res)
 	for _, c := range res {
-		if c.isAllowedOnCurrentHost() {
-			err := c.start()
-			if err != nil {
-				log.Errorf("Failed to start container '%s', reason:\n%v", c.name(), err)
-				log.ErrorEmpty()
-			} else {
-				log.Infof("Started container %s", c.name())
-				log.InfoEmpty()
-			}
-		} else {
-			log.Warnf("Container %s not allowed to run on host '%s'", c.name(), s.dep.host.humanFriendlyHostName)
-		}
+		// We ignore the errors to keep moving forward even if one or more
+		// of the containers fail to start.
+		_ = c.start()
 	}
 
 	return nil
