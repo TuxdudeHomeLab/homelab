@@ -3,7 +3,14 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
+)
+
+const (
+	logLevelEnvVar   = "HOMELAB_LOG_LEVEL"
+	logLevelEnvDebug = "debug"
+	logLevelEnvTrace = "trace"
 )
 
 // Returns the JSON formatted string representation of the specified object.
@@ -44,4 +51,17 @@ func logToWarnAndReturn(format string, args ...interface{}) error {
 	log.Warnf(format, args...)
 	log.WarnEmpty()
 	return fmt.Errorf(format, args...)
+}
+
+func isLogLevelDebug() bool {
+	return isEnvValue(logLevelEnvVar, logLevelEnvDebug)
+}
+
+func isLogLevelTrace() bool {
+	return isEnvValue(logLevelEnvVar, logLevelEnvTrace)
+}
+
+func isEnvValue(envVar string, envValue string) bool {
+	val, isVarSet := os.LookupEnv(envVar)
+	return isVarSet && val == envValue
 }

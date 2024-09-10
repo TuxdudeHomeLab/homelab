@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"sort"
 )
@@ -51,7 +52,7 @@ func (c *container) isAllowedOnCurrentHost() bool {
 	return c.group.deployment.host.allowedContainers[c.name()]
 }
 
-func (c *container) start() error {
+func (c *container) start(ctx context.Context, docker *dockerClient) error {
 	log.Debugf("Starting container %s ...", c.name())
 
 	// 1. Validate the container is allowed to run on the current host.
@@ -59,31 +60,39 @@ func (c *container) start() error {
 		return logToWarnAndReturn("Container %s not allowed to run on host '%s'", c.name(), c.group.deployment.host.humanFriendlyHostName)
 	}
 
-	// 2. Create the network for the container if it doesn't exist already.
-	// TODO: Implement this.
-
-	// 3. Execute any pre-start commands.
-	// TODO: Implement this.
-
-	// 4. Pull the container image.
-	// TODO: Implement this.
-	var err error
+	err := c.startInternal(ctx, docker)
 	if err != nil {
-		return logToErrorAndReturn("Failed to start container '%s', reason:\n%v", c.name(), err)
+		return logToErrorAndReturn("Failed to start container '%s', reason:%v", c.name(), err)
 	}
-
-	// 5. Purge (i.e. stop and remove) any previously existing containers
-	// under the same name.
-	// TODO: Implement this.
-
-	// 6. Create the container.
-	// TODO: Implement this.
-
-	// 7. Start the created container.
-	// TODO: Implement this.
 
 	log.Infof("Started container %s", c.name())
 	log.InfoEmpty()
+	return nil
+}
+
+func (c *container) startInternal(ctx context.Context, docker *dockerClient) error {
+	// 1. Create the network for the container if it doesn't exist already.
+	// TODO: Implement this.
+
+	// 2. Execute any pre-start commands.
+	// TODO: Implement this.
+
+	// 3. Pull the container image.
+	err := docker.pullImage(ctx, c.config.Image)
+	if err != nil {
+		return err
+	}
+
+	// 4. Purge (i.e. stop and remove) any previously existing containers
+	// under the same name.
+	// TODO: Implement this.
+
+	// 5. Create the container.
+	// TODO: Implement this.
+
+	// 6. Start the created container.
+	// TODO: Implement this.
+
 	return nil
 }
 

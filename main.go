@@ -12,7 +12,6 @@ import (
 
 const (
 	defaultCLIConfigPathFormat = "%s/.homelab/config.yaml"
-	logLevelEnvVar             = "HOMELAB_LOG_LEVEL"
 )
 
 var (
@@ -21,11 +20,10 @@ var (
 
 func buildLogger() zzzlogi.Logger {
 	config := zzzlog.NewConsoleLoggerConfig()
-	envLogLevel, isEnvVarSet := os.LookupEnv(logLevelEnvVar)
-	if isEnvVarSet && envLogLevel == "trace" {
+	if isLogLevelTrace() {
 		config.MaxLevel = zzzlog.LvlTrace
 		config.SkipCallerInfo = false
-	} else if isEnvVarSet && envLogLevel == "debug" {
+	} else if isLogLevelDebug() {
 		config.MaxLevel = zzzlog.LvlDebug
 		config.SkipCallerInfo = false
 	} else {

@@ -1,5 +1,7 @@
 package main
 
+import "context"
+
 type startCmdHandler struct {
 	dep *deployment
 }
@@ -23,12 +25,20 @@ func (s *startCmdHandler) run(options *cmdOptions) error {
 		return err
 	}
 
+	dockerClient, err := newDockerClient(s.dep.host.dockerPlatform)
+	if err != nil {
+		return err
+	}
+	defer dockerClient.close()
+
 	res := queryContainers(s.dep, options)
 	log.Debugf("start command - result containers =\n%s", res)
+
+	ctx := context.Background()
 	for _, c := range res {
 		// We ignore the errors to keep moving forward even if one or more
 		// of the containers fail to start.
-		_ = c.start()
+		_ = c.start(ctx, dockerClient)
 	}
 
 	return nil
