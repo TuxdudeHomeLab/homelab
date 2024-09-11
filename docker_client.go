@@ -21,6 +21,20 @@ type dockerClient struct {
 	debug    bool
 }
 
+const (
+	containerStateUnknown containerState = iota
+	containerStateNotFound
+	containerStateCreated
+	containerStateRunning
+	containerStatePaused
+	containerStateRestarting
+	containerStateRemoving
+	containerStateExited
+	containerStateDead
+)
+
+type containerState uint8
+
 func newDockerClient(platform string) (*dockerClient, error) {
 	client, err := dc.NewClientWithOpts(dc.FromEnv, dc.WithAPIVersionNegotiation())
 	if err != nil {
@@ -41,10 +55,10 @@ func (d *dockerClient) pullImage(ctx context.Context, imageName string) error {
 	defer progress.Close()
 
 	// Store info about existing locally available image.
-	availLocal, id := d.isImageAvailableLocally(ctx, imageName)
+	avail, id := d.queryLocalImage(ctx, imageName)
 	// Show verbose pull progress only if either in debug mode or
 	// there is no existing locally available image.
-	showPullProgress := d.debug || !availLocal
+	showPullProgress := d.debug || !avail
 
 	// Perform the actual image pull.
 	if showPullProgress {
@@ -68,7 +82,7 @@ func (d *dockerClient) pullImage(ctx context.Context, imageName string) error {
 
 	// Otherwise, determine if the image was updated and show the updated ID
 	// of the image.
-	avail, newId := d.isImageAvailableLocally(ctx, imageName)
+	avail, newId := d.queryLocalImage(ctx, imageName)
 	if !avail {
 		log.Fatalf("Image is expected to be available after pull, but is unavailable possibly indicating a bug or system failure!")
 	}
@@ -78,7 +92,7 @@ func (d *dockerClient) pullImage(ctx context.Context, imageName string) error {
 	return nil
 }
 
-func (d *dockerClient) isImageAvailableLocally(ctx context.Context, imageName string) (bool, string) {
+func (d *dockerClient) queryLocalImage(ctx context.Context, imageName string) (bool, string) {
 	filter := filters.NewArgs()
 	filter.Add("reference", imageName)
 	images, err := d.client.ImageList(ctx, image.ListOptions{
@@ -96,6 +110,56 @@ func (d *dockerClient) isImageAvailableLocally(ctx context.Context, imageName st
 	}
 
 	return true, images[0].ID
+}
+
+func (d *dockerClient) createContainer(ctx context.Context, c *container) error {
+	// TODO: Implement this.
+	return nil
+}
+
+func (d *dockerClient) startContainer(ctx context.Context, containerName string) error {
+	// TODO: Implement this.
+	return nil
+}
+
+func (d *dockerClient) stopContainer(ctx context.Context, containerName string) error {
+	// TODO: Implement this.
+	return nil
+}
+
+func (d *dockerClient) killContainer(ctx context.Context, containerName string) error {
+	// TODO: Implement this.
+	return nil
+}
+
+func (d *dockerClient) removeContainer(ctx context.Context, containerName string) error {
+	// TODO: Implement this.
+	return nil
+}
+
+func (d *dockerClient) getContainerState(ctx context.Context, containerName string) (containerState, error) {
+	// TODO: Implement this.
+	return containerStateNotFound, nil
+}
+
+func (d *dockerClient) connectContainerToNetwork(ctx context.Context, containerName string, ip *containerIP) error {
+	// TODO: Implement this.
+	return nil
+}
+
+func (d *dockerClient) createNetwork(ctx context.Context, n *network) error {
+	// TODO: Implement this.
+	return nil
+}
+
+// func (d *dockerClient) deleteNetwork(ctx context.Context, networkName string) error {
+// 	// TODO: Implement this.
+// 	return nil
+// }
+
+func (d *dockerClient) networkExists(ctx context.Context, networkName string) bool {
+	// TODO: Implement this.
+	return true
 }
 
 func (d *dockerClient) close() {

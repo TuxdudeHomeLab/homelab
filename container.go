@@ -71,29 +71,78 @@ func (c *container) start(ctx context.Context, docker *dockerClient) error {
 }
 
 func (c *container) startInternal(ctx context.Context, docker *dockerClient) error {
-	// 1. Create the network for the container if it doesn't exist already.
+	// 1. Execute any pre-start commands.
 	// TODO: Implement this.
 
-	// 2. Execute any pre-start commands.
-	// TODO: Implement this.
-
-	// 3. Pull the container image.
+	// 2. Pull the container image.
 	err := docker.pullImage(ctx, c.config.Image)
 	if err != nil {
 		return err
 	}
 
-	// 4. Purge (i.e. stop and remove) any previously existing containers
+	// 3. Purge (i.e. stop and remove) any previously existing containers
 	// under the same name.
-	// TODO: Implement this.
+	st, err := docker.getContainerState(ctx, c.name())
+	if err != nil {
+		return err
+	}
+	switch st {
+	case containerStateNotFound:
+		// Nothing to stop and/or remove.
+		break
+	case containerStatePaused:
+	case containerStateRunning:
+	case containerStateRestarting:
+		// Stop the container first.
+		err = docker.stopContainer(ctx, c.name())
+		if err != nil {
+			return err
+		}
+		// Kill the container next as a precaution and ignore the error.
+		_ = docker.killContainer(ctx, c.name())
+		// Remove the container next.
+		err = docker.removeContainer(ctx, c.name())
+		if err != nil {
+			return err
+		}
+	case containerStateCreated:
+	case containerStateExited:
+	case containerStateDead:
+		// Directly remove the container.
+		err = docker.removeContainer(ctx, c.name())
+		if err != nil {
+			return err
+		}
+	case containerStateRemoving:
+		// Nothing to be done here.
+		log.Warnf("container %s is in REMOVING state already, can lead to issues next while we create the container next")
+	}
 
 	// 5. Create the container.
-	// TODO: Implement this.
+	err = docker.createContainer(ctx, c)
+	if err != nil {
+		return err
+	}
+
+	// 6. For each network interface of the container, create the network for
+	// the container if it doesn't exist already prior to connecting the
+	// container to the network.
+	for _, ip := range c.ips {
+		if !docker.networkExists(ctx, ip.network.name()) {
+			err = docker.createNetwork(ctx, ip.network)
+			if err != nil {
+				return err
+			}
+		}
+		err = docker.connectContainerToNetwork(ctx, c.name(), ip)
+		if err != nil {
+			return err
+		}
+	}
 
 	// 6. Start the created container.
-	// TODO: Implement this.
-
-	return nil
+	err = docker.startContainer(ctx, c.name())
+	return err
 }
 
 func (c *container) name() string {
