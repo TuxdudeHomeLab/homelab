@@ -117,7 +117,7 @@ func (c *container) purge(ctx context.Context, docker *dockerClient) error {
 		case containerStateRemoving:
 			// Nothing to be done here, although this could lead to some
 			// unknown handling in next steps.
-			log.Warnf("container %s is in REMOVING state already, can lead to issues next while we create the container next")
+			log.Warnf("container %s is in REMOVING state already, can lead to issues while we create the container next")
 			// Add a delay before checking the container state again.
 			time.Sleep(stopAndRemoveKillDelay)
 		default:
