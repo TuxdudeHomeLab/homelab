@@ -10,6 +10,7 @@ import (
 	dcontainer "github.com/docker/docker/api/types/container"
 	dfilters "github.com/docker/docker/api/types/filters"
 	dimage "github.com/docker/docker/api/types/image"
+	dnetwork "github.com/docker/docker/api/types/network"
 	dclient "github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/jsonmessage"
 	"golang.org/x/sys/unix"
@@ -229,8 +230,15 @@ func (d *dockerClient) deleteNetwork(ctx context.Context, networkName string) er
 }
 
 func (d *dockerClient) networkExists(ctx context.Context, networkName string) bool {
-	// TODO: Implement this.
-	return true
+	filter := dfilters.NewArgs()
+	filter.Add("name", networkName)
+	networks, err := d.client.NetworkList(ctx, dnetwork.ListOptions{
+		Filters: filter,
+	})
+
+	// Ignore errors by considering the network is not present in case of
+	// errors.
+	return err == nil && len(networks) > 0
 }
 
 func (d *dockerClient) connectContainerToBridgeModeNetwork(ctx context.Context, containerName, networkName, ip string) error {

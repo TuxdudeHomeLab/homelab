@@ -88,7 +88,7 @@ func (c *container) purge(ctx context.Context, docker *dockerClient) error {
 		if err != nil {
 			return err
 		}
-		log.Debugf("Container %s existing state: %s", c.name(), st)
+		log.Debugf("Container %s current state: %s", c.name(), st)
 
 		switch st {
 		case containerStateNotFound:
@@ -176,6 +176,9 @@ func (c *container) startInternal(ctx context.Context, docker *dockerClient) err
 		if err != nil {
 			return err
 		}
+	}
+	if len(c.ips) == 0 {
+		log.Warnf("Container %s has no network endpoints configured, this is uncommon!", c.name())
 	}
 
 	// 6. Start the created container.

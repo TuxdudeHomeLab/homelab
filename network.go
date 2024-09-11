@@ -41,11 +41,19 @@ func newContainerModeNetwork(dep *deployment, config *ContainerModeNetworkConfig
 }
 
 func (n *network) create(ctx context.Context, docker *dockerClient) error {
+	// TODO: Validate that the existing network and the new network have
+	// exactly the same properties if we choose to reuse the existing
+	// network, and display a warning when they differ.
 	if !docker.networkExists(ctx, n.name()) {
+		log.Debugf("Creating network %s ...", n.name())
 		err := docker.createNetwork(ctx, n)
 		if err != nil {
 			return err
 		}
+		log.Infof("Created network %s", n.name())
+		log.InfoEmpty()
+	} else {
+		log.Debugf("Not re-creating existing network %s", n.name())
 	}
 	return nil
 }
