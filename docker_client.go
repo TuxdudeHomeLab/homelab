@@ -113,11 +113,13 @@ func (d *dockerClient) pullImage(ctx context.Context, imageName string) error {
 
 	// Perform the actual image pull.
 	if showPullProgress {
-		log.Infof("Pulling image: %s", imageName)
-		log.InfoEmpty()
+		if !avail {
+			log.Infof("Pulling image: %s", imageName)
+		} else {
+			log.Debugf("Pulling image: %s", imageName)
+		}
 		termFd, isTerm := term.GetFdInfo(os.Stdout)
 		err = jsonmessage.DisplayJSONMessagesStream(progress, os.Stdout, termFd, isTerm, nil)
-		log.InfoEmpty()
 	} else {
 		_, err = io.Copy(io.Discard, progress)
 	}

@@ -201,6 +201,7 @@ func mergedConfigReader(path string) (io.Reader, error) {
 		}
 		return nil
 	})
+	log.DebugEmpty()
 
 	if err != nil {
 		return nil, err

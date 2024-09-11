@@ -48,6 +48,8 @@ func newHostInfo(config *HomelabConfig) *hostInfo {
 	log.Debugf("OS = %s", res.os)
 	log.Debugf("Arch = %s", res.arch)
 	log.Debugf("Docker Platform = %s", res.dockerPlatform)
+	log.DebugEmpty()
+
 	if res.os != osLinux {
 		log.Fatalf("Only linux OS is supported, found OS: %s", res.os)
 	}

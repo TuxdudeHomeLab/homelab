@@ -32,7 +32,11 @@ func (s *startCmdHandler) run(options *cmdOptions) error {
 	defer dockerClient.close()
 
 	res := queryContainers(s.dep, options)
-	log.Debugf("start command - result containers =\n%s", res)
+	log.Debugf("start command - Starting containers: ")
+	for _, c := range res {
+		log.Debugf("%s", c.name())
+	}
+	log.DebugEmpty()
 
 	ctx := context.Background()
 	for _, c := range res {
