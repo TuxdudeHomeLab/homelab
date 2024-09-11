@@ -216,24 +216,33 @@ func (d *dockerClient) getContainerState(ctx context.Context, containerName stri
 	return containerStateFromString(c.State.Status), nil
 }
 
-func (d *dockerClient) connectContainerToNetwork(ctx context.Context, containerName string, ip *containerIP) error {
-	// TODO: Implement this.
-	return nil
-}
-
 func (d *dockerClient) createNetwork(ctx context.Context, n *network) error {
 	// TODO: Implement this.
 	return nil
 }
 
-// func (d *dockerClient) deleteNetwork(ctx context.Context, networkName string) error {
-// 	// TODO: Implement this.
-// 	return nil
-// }
+// TODO: Remove this after this function is used.
+// nolint (unused)
+func (d *dockerClient) deleteNetwork(ctx context.Context, networkName string) error {
+	// TODO: Implement this.
+	return nil
+}
 
 func (d *dockerClient) networkExists(ctx context.Context, networkName string) bool {
 	// TODO: Implement this.
 	return true
+}
+
+func (d *dockerClient) connectContainerToBridgeModeNetwork(ctx context.Context, containerName, networkName, ip string) error {
+	// TODO: Implement this.
+	return nil
+}
+
+// TODO: Remove this after this function is used.
+// nolint (unused)
+func (d *dockerClient) disconnectContainerFromNetwork(ctx context.Context, containerName, networkName string) error {
+	// TODO: Implement this.
+	return nil
 }
 
 func (d *dockerClient) close() {

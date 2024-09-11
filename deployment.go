@@ -41,6 +41,7 @@ func (d *deployment) populateNetworks() {
 	for _, n := range d.config.IPAM.Networks.BridgeModeNetworks {
 		nt := newBridgeModeNetwork(d, &n)
 		networks[nt.name()] = nt
+		// TODO: Remove these once these functions get used.
 	}
 	for _, n := range d.config.IPAM.Networks.ContainerModeNetworks {
 		nt := newContainerModeNetwork(d, &n)

@@ -20,7 +20,7 @@ type container struct {
 
 type containerIP struct {
 	network *network
-	IP      string
+	ip      string
 }
 
 type containerMap map[string]*container
@@ -61,7 +61,7 @@ func (c *container) isAllowedOnCurrentHost() bool {
 func (c *container) start(ctx context.Context, docker *dockerClient) error {
 	log.Debugf("Starting container %s ...", c.name())
 
-	// 1. Validate the container is allowed to run on the current host.
+	// Validate the container is allowed to run on the current host.
 	if !c.isAllowedOnCurrentHost() {
 		return logToWarnAndReturn("Container %s not allowed to run on host '%s'", c.name(), c.group.deployment.host.humanFriendlyHostName)
 	}
@@ -168,13 +168,11 @@ func (c *container) startInternal(ctx context.Context, docker *dockerClient) err
 	// the container if it doesn't exist already prior to connecting the
 	// container to the network.
 	for _, ip := range c.ips {
-		if !docker.networkExists(ctx, ip.network.name()) {
-			err = docker.createNetwork(ctx, ip.network)
-			if err != nil {
-				return err
-			}
+		err := ip.network.create(ctx, docker)
+		if err != nil {
+			return err
 		}
-		err = docker.connectContainerToNetwork(ctx, c.name(), ip)
+		err = ip.network.connectContainer(ctx, docker, c.name(), ip.ip)
 		if err != nil {
 			return err
 		}
@@ -198,7 +196,7 @@ func (c containerMap) String() string {
 }
 
 func newBridgeModeContainerIP(network *network, ip string) *containerIP {
-	return &containerIP{network: network, IP: ip}
+	return &containerIP{network: network, ip: ip}
 }
 
 func newContainerModeContainerIP(network *network) *containerIP {
