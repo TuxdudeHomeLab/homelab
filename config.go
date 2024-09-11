@@ -103,7 +103,7 @@ type ContainerConfig struct {
 	ParentGroup             string                `yaml:"parentGroup"`
 	Image                   string                `yaml:"image"`
 	Order                   int                   `yaml:"order"`
-	ContainerStopTimeout    int                   `yaml:"containerStopTimeout"`
+	StopTimeout             int                   `yaml:"stopTimeout"`
 	SkipImagePull           bool                  `yaml:"skipImagePull"`
 	IgnoreImagePullFailures bool                  `yaml:"ignoreImagePullFailures"`
 	PullImageAfterStop      bool                  `yaml:"pullImageAfterStop"`

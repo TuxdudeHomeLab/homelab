@@ -5,18 +5,21 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"reflect"
 
-	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/docker/api/types/image"
-	dc "github.com/docker/docker/client"
+	dcontainer "github.com/docker/docker/api/types/container"
+	dfilters "github.com/docker/docker/api/types/filters"
+	dimage "github.com/docker/docker/api/types/image"
+	dclient "github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/jsonmessage"
+	"golang.org/x/sys/unix"
 
 	// "github.com/docker/docker/pkg/term"
 	"github.com/moby/term"
 )
 
 type dockerClient struct {
-	client   *dc.Client
+	client   *dclient.Client
 	platform string
 	debug    bool
 }
@@ -35,8 +38,55 @@ const (
 
 type containerState uint8
 
+func containerStateFromString(state string) containerState {
+	switch state {
+	case "created":
+		return containerStateCreated
+	case "running":
+		return containerStateRunning
+	case "paused":
+		return containerStatePaused
+	case "restarting":
+		return containerStateRestarting
+	case "removing":
+		return containerStateRemoving
+	case "exited":
+		return containerStateExited
+	case "dead":
+		return containerStateDead
+	default:
+		return containerStateUnknown
+	}
+}
+
+func (c containerState) String() string {
+	switch c {
+	case containerStateUnknown:
+		return "Unknown"
+	case containerStateNotFound:
+		return "NotFound"
+	case containerStateCreated:
+		return "Created"
+	case containerStateRunning:
+		return "Running"
+	case containerStatePaused:
+		return "Paused"
+	case containerStateRestarting:
+		return "Restarting"
+	case containerStateRemoving:
+		return "Removing"
+	case containerStateExited:
+		return "Exited"
+	case containerStateDead:
+		return "Dead"
+	default:
+		log.Fatalf("Invalid scenario, possibly indicating a bug in the code")
+		return "invalid-container-state"
+	}
+}
+
 func newDockerClient(platform string) (*dockerClient, error) {
-	client, err := dc.NewClientWithOpts(dc.FromEnv, dc.WithAPIVersionNegotiation())
+	client, err := dclient.NewClientWithOpts(dclient.FromEnv, dclient.WithAPIVersionNegotiation())
 	if err != nil {
 		return nil, fmt.Errorf("failed to create a new docker API client, reason: %w", err)
 	}
@@ -48,7 +98,7 @@ func newDockerClient(platform string) (*dockerClient, error) {
 }
 
 func (d *dockerClient) pullImage(ctx context.Context, imageName string) error {
-	progress, err := d.client.ImagePull(ctx, imageName, image.PullOptions{Platform: d.platform})
+	progress, err := d.client.ImagePull(ctx, imageName, dimage.PullOptions{Platform: d.platform})
 	if err != nil {
 		return fmt.Errorf("failed to pull the image %s, reason: %w", imageName, err)
 	}
@@ -93,9 +143,9 @@ func (d *dockerClient) pullImage(ctx context.Context, imageName string) error {
 }
 
 func (d *dockerClient) queryLocalImage(ctx context.Context, imageName string) (bool, string) {
-	filter := filters.NewArgs()
+	filter := dfilters.NewArgs()
 	filter.Add("reference", imageName)
-	images, err := d.client.ImageList(ctx, image.ListOptions{
+	images, err := d.client.ImageList(ctx, dimage.ListOptions{
 		All:            false,
 		Filters:        filter,
 		SharedSize:     false,
@@ -123,23 +173,47 @@ func (d *dockerClient) startContainer(ctx context.Context, containerName string)
 }
 
 func (d *dockerClient) stopContainer(ctx context.Context, containerName string) error {
-	// TODO: Implement this.
+	log.Debugf("Stopping container %s ...", containerName)
+	err := d.client.ContainerStop(ctx, containerName, dcontainer.StopOptions{})
+	if err != nil {
+		log.Errorf("err: %s", reflect.TypeOf(err))
+		return fmt.Errorf("failed to stop the container, reason: %w", err)
+	}
+	log.Debugf("Container %s stopped successfully", containerName)
 	return nil
 }
 
 func (d *dockerClient) killContainer(ctx context.Context, containerName string) error {
-	// TODO: Implement this.
+	log.Debugf("Killing container %s ...", containerName)
+	err := d.client.ContainerKill(ctx, containerName, unix.SignalName(unix.SIGKILL))
+	if err != nil {
+		log.Errorf("err: %s", reflect.TypeOf(err))
+		return fmt.Errorf("failed to kill the container, reason: %w", err)
+	}
+	log.Debugf("Container %s killed successfully", containerName)
 	return nil
 }
 
 func (d *dockerClient) removeContainer(ctx context.Context, containerName string) error {
-	// TODO: Implement this.
+	log.Debugf("Removing container %s ...", containerName)
+	err := d.client.ContainerRemove(ctx, containerName, dcontainer.RemoveOptions{Force: false})
+	if err != nil {
+		log.Errorf("err: %s", reflect.TypeOf(err))
+		return fmt.Errorf("failed to remove the container, reason: %w", err)
+	}
+	log.Debugf("Container %s removed successfully", containerName)
 	return nil
 }
 
 func (d *dockerClient) getContainerState(ctx context.Context, containerName string) (containerState, error) {
-	// TODO: Implement this.
-	return containerStateNotFound, nil
+	c, err := d.client.ContainerInspect(ctx, containerName)
+	if dclient.IsErrNotFound(err) {
+		return containerStateNotFound, nil
+	}
+	if err != nil {
+		return containerStateUnknown, fmt.Errorf("failed to retrieve the container state, reason: %w", err)
+	}
+	return containerStateFromString(c.State.Status), nil
 }
 
 func (d *dockerClient) connectContainerToNetwork(ctx context.Context, containerName string, ip *containerIP) error {

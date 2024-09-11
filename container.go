@@ -4,6 +4,12 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"time"
+)
+
+const (
+	stopAndRemoveAttempts  = 5
+	stopAndRemoveKillDelay = 1 * time.Second
 )
 
 type container struct {
@@ -70,6 +76,71 @@ func (c *container) start(ctx context.Context, docker *dockerClient) error {
 	return nil
 }
 
+func (c *container) purge(ctx context.Context, docker *dockerClient) error {
+	purged := false
+	stoppedOnceAlready := false
+	attemptsRemaining := stopAndRemoveAttempts
+
+	for !purged && attemptsRemaining > 0 {
+		attemptsRemaining--
+
+		st, err := docker.getContainerState(ctx, c.name())
+		if err != nil {
+			return err
+		}
+		log.Debugf("Container %s existing state: %s", c.name(), st)
+
+		switch st {
+		case containerStateNotFound:
+			// Nothing to stop and/or remove.
+			purged = true
+		case containerStateRunning, containerStatePaused, containerStateRestarting:
+			// Stop the container if not stopped already.
+			if !stoppedOnceAlready {
+				err = docker.stopContainer(ctx, c.name())
+				if err != nil {
+					return err
+				}
+				stoppedOnceAlready = true
+			} else {
+				// Kill the container next as a precaution and ignore any errors.
+				_ = docker.killContainer(ctx, c.name())
+				// Add a delay before checking the container state again.
+				time.Sleep(stopAndRemoveKillDelay)
+			}
+		case containerStateCreated, containerStateExited, containerStateDead:
+			// Directly remove the container.
+			err = docker.removeContainer(ctx, c.name())
+			if err != nil {
+				return err
+			}
+		case containerStateRemoving:
+			// Nothing to be done here, although this could lead to some
+			// unknown handling in next steps.
+			log.Warnf("container %s is in REMOVING state already, can lead to issues next while we create the container next")
+			// Add a delay before checking the container state again.
+			time.Sleep(stopAndRemoveKillDelay)
+		default:
+			log.Fatalf("container %s is in an unsupported state %v, possibly indicating a bug in the code", st)
+		}
+	}
+
+	if purged {
+		return nil
+	}
+
+	// Check the container state one final time after exhausting all purge
+	// attempts, and return the final error status based on that.
+	st, err := docker.getContainerState(ctx, c.name())
+	if err != nil {
+		return err
+	}
+	if st != containerStateNotFound {
+		return fmt.Errorf("failed to stop and remove container %s after %d attempts", c.name(), stopAndRemoveAttempts)
+	}
+	return nil
+}
+
 func (c *container) startInternal(ctx context.Context, docker *dockerClient) error {
 	// 1. Execute any pre-start commands.
 	// TODO: Implement this.
@@ -82,49 +153,18 @@ func (c *container) startInternal(ctx context.Context, docker *dockerClient) err
 
 	// 3. Purge (i.e. stop and remove) any previously existing containers
 	// under the same name.
-	st, err := docker.getContainerState(ctx, c.name())
+	err = c.purge(ctx, docker)
 	if err != nil {
 		return err
 	}
-	switch st {
-	case containerStateNotFound:
-		// Nothing to stop and/or remove.
-		break
-	case containerStatePaused:
-	case containerStateRunning:
-	case containerStateRestarting:
-		// Stop the container first.
-		err = docker.stopContainer(ctx, c.name())
-		if err != nil {
-			return err
-		}
-		// Kill the container next as a precaution and ignore the error.
-		_ = docker.killContainer(ctx, c.name())
-		// Remove the container next.
-		err = docker.removeContainer(ctx, c.name())
-		if err != nil {
-			return err
-		}
-	case containerStateCreated:
-	case containerStateExited:
-	case containerStateDead:
-		// Directly remove the container.
-		err = docker.removeContainer(ctx, c.name())
-		if err != nil {
-			return err
-		}
-	case containerStateRemoving:
-		// Nothing to be done here.
-		log.Warnf("container %s is in REMOVING state already, can lead to issues next while we create the container next")
-	}
 
-	// 5. Create the container.
+	// 4. Create the container.
 	err = docker.createContainer(ctx, c)
 	if err != nil {
 		return err
 	}
 
-	// 6. For each network interface of the container, create the network for
+	// 5. For each network interface of the container, create the network for
 	// the container if it doesn't exist already prior to connecting the
 	// container to the network.
 	for _, ip := range c.ips {
