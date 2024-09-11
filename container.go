@@ -68,7 +68,7 @@ func (c *container) start(ctx context.Context, docker *dockerClient) error {
 
 	err := c.startInternal(ctx, docker)
 	if err != nil {
-		return logToErrorAndReturn("Failed to start container '%s', reason:%v", c.name(), err)
+		return logToErrorAndReturn("Failed to start container %s, reason:%v", c.name(), err)
 	}
 
 	log.Infof("Started container %s", c.name())

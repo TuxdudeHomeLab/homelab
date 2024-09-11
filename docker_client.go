@@ -171,8 +171,15 @@ func (d *dockerClient) createContainer(ctx context.Context, c *container) error 
 }
 
 func (d *dockerClient) startContainer(ctx context.Context, containerName string) error {
-	// TODO: Implement this.
+	log.Debugf("Starting container %s ...", containerName)
+	err := d.client.ContainerStart(ctx, containerName, dcontainer.StartOptions{})
+	if err != nil {
+		log.Errorf("err: %s", reflect.TypeOf(err))
+		return fmt.Errorf("failed to start the container, reason: %w", err)
+	}
+	log.Debugf("Container %s started successfully", containerName)
 	return nil
+
 }
 
 func (d *dockerClient) stopContainer(ctx context.Context, containerName string) error {
