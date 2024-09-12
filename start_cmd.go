@@ -25,7 +25,8 @@ func buildStartCmd(globalOptions *globalCmdOptions) *cobra.Command {
 			cFlag := cmd.Flag(containerFlagStr)
 			if !options.allGroups && !gFlag.Changed {
 				return fmt.Errorf("--group flag must be specified when --all-groups is either not specified or set to false.")
-			} else if !gFlag.Changed && !cFlag.Changed {
+			}
+			if !options.allGroups && !gFlag.Changed && !cFlag.Changed {
 				return fmt.Errorf("when --all-groups is false, either --group flag must be specified or both --group and --container flags must be specified.")
 			}
 			return nil
