@@ -17,9 +17,10 @@ func buildStartCmd(globalOptions *globalCmdOptions) *cobra.Command {
 	options := startCmdOptions{}
 
 	s := &cobra.Command{
-		Use:   startCmdStr,
-		Short: "Starts one or more containers",
-		Long:  `Starts one or more containers as specified in the homelab configuration. Containers can be started individually, as a group or all groups.`,
+		Use:     startCmdStr,
+		GroupID: containersCmdGroupID,
+		Short:   "Starts one or more containers",
+		Long:    `Starts one or more containers as specified in the homelab configuration. Containers can be started individually, as a group or all groups.`,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			gFlag := cmd.Flag(groupFlagStr)
 			cFlag := cmd.Flag(containerFlagStr)

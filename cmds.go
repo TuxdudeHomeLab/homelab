@@ -15,6 +15,9 @@ var (
 	allGroupsFlagStr = "all-groups"
 	groupFlagStr     = "group"
 	containerFlagStr = "container"
+
+	configCmdGroupID     = "config"
+	containersCmdGroupID = "containers"
 )
 
 type globalCmdOptions struct {
@@ -51,6 +54,17 @@ The configuration is managed using a yaml file. The configuration specifies the 
 	}
 
 	h.MarkFlagsMutuallyExclusive(cliConfigFlagStr, configsDirFlagStr)
+
+	h.AddGroup(
+		&cobra.Group{
+			ID:    configCmdGroupID,
+			Title: "Configuration:",
+		},
+		&cobra.Group{
+			ID:    containersCmdGroupID,
+			Title: "Containers:",
+		},
+	)
 
 	return h
 }

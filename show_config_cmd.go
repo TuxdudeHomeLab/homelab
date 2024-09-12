@@ -4,9 +4,10 @@ import "github.com/spf13/cobra"
 
 func buildShowConfigCmd(globalOptions *globalCmdOptions) *cobra.Command {
 	return &cobra.Command{
-		Use:   showConfigCmdStr,
-		Short: "Shows the homelab config",
-		Long:  `Displays the homelab configuration.`,
+		Use:     showConfigCmdStr,
+		GroupID: configCmdGroupID,
+		Short:   "Shows the homelab config",
+		Long:    `Displays the homelab configuration.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return execShowConfigCmd(cmd, args, globalOptions)
 		},
