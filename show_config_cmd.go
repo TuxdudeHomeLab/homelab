@@ -1,18 +1,26 @@
 package main
 
-type showConfigCmdHandler struct{}
+import "github.com/spf13/cobra"
 
-func newShowConfigCmdHandler() *showConfigCmdHandler {
-	return &showConfigCmdHandler{}
+func buildShowConfigCmd(globalOptions *globalCmdOptions) *cobra.Command {
+	return &cobra.Command{
+		Use:   showConfigCmdStr,
+		Short: "Shows the homelab config",
+		Long:  `Displays the homelab configuration.`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return execShowConfigCmd(cmd, args, globalOptions)
+		},
+	}
 }
 
-func (s *showConfigCmdHandler) containerAndGroupFlags() bool {
-	return false
-}
+func execShowConfigCmd(cmd *cobra.Command, args []string, globalOptions *globalCmdOptions) error {
+	configsPath, err := homelabConfigsPath(globalOptions.cliConfig, globalOptions.configsDir)
+	if err != nil {
+		return err
+	}
 
-func (s *showConfigCmdHandler) run(options *cmdOptions) error {
 	config := HomelabConfig{}
-	err := config.parse()
+	err = config.parse(configsPath)
 	if err != nil {
 		return err
 	}

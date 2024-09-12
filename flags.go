@@ -1,9 +1,6 @@
 package main
 
-import (
-	"flag"
-)
-
+/*
 var (
 	cliConfig     = flag.String("cliConfig", "", "The path to the Homelab CLI config")
 	cliConfigFlag = flag.Lookup("cliConfig")
@@ -30,3 +27,4 @@ func validateFlags() bool {
 	}
 	return true
 }
+*/

@@ -187,13 +187,13 @@ type LabelConfig struct {
 	Value string `yaml:"value"`
 }
 
-func homelabConfigsPath() (string, error) {
+func homelabConfigsPath(cliConfigFlag string, configsDirFlag string) (string, error) {
 	// Use the flag from the command line if present.
-	if isFlagPassed(homelabConfigsDirFlag) {
-		log.Debugf("Using Homelab configs path from command line flag: %s", *homelabConfigsDir)
-		return *homelabConfigsDir, nil
+	if len(configsDirFlag) > 0 {
+		log.Debugf("Using Homelab configs path from command line flag: %s", configsDirFlag)
+		return configsDirFlag, nil
 	}
-	path, err := configsPath()
+	path, err := configsPath(cliConfigFlag)
 	if err != nil {
 		return "", err
 	}
@@ -251,21 +251,16 @@ func (h *HomelabConfig) parseUsingReader(s io.Reader) error {
 	return nil
 }
 
-func (h *HomelabConfig) parse() error {
-	path, err := homelabConfigsPath()
-	if err != nil {
-		return err
-	}
-
-	pathStat, err := os.Stat(path)
+func (h *HomelabConfig) parse(configsPath string) error {
+	pathStat, err := os.Stat(configsPath)
 	if err != nil {
 		return fmt.Errorf("os.Stat() failed on homelab configs path, reason: %w", err)
 	}
 	if !pathStat.IsDir() {
-		return fmt.Errorf("homelab configs path %q must be a directory", path)
+		return fmt.Errorf("homelab configs path %q must be a directory", configsPath)
 	}
 
-	m, err := mergedConfigReader(path)
+	m, err := mergedConfigReader(configsPath)
 	if err != nil {
 		return err
 	}

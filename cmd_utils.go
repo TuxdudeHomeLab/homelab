@@ -1,12 +1,12 @@
 package main
 
-func queryContainers(dep *deployment, options *cmdOptions) containerList {
-	if options.containerAndGroup.allGroups {
+func queryContainers(dep *deployment, allGroups bool, group, container string) containerList {
+	if allGroups {
 		return containerMapToList(dep.queryAllContainers())
-	} else if options.containerAndGroup.group != "" && options.containerAndGroup.container == "" {
-		return containerMapToList(dep.queryAllContainersInGroup(options.containerAndGroup.group))
-	} else if options.containerAndGroup.group != "" {
-		c := dep.queryContainer(options.containerAndGroup.group, options.containerAndGroup.container)
+	} else if group != "" && container == "" {
+		return containerMapToList(dep.queryAllContainersInGroup(group))
+	} else if group != "" {
+		c := dep.queryContainer(group, container)
 		if c != nil {
 			return containerList{c}
 		}

@@ -3,7 +3,6 @@
 package main
 
 import (
-	"flag"
 	"os"
 
 	"github.com/tuxdude/zzzlog"
@@ -34,10 +33,7 @@ func buildLogger() zzzlogi.Logger {
 }
 
 func run() int {
-	if !validateFlags() {
-		return 1
-	}
-	err := handleSubCommand()
+	err := execHomelabCmd()
 	if err != nil {
 		log.Errorf("%s", err)
 		return 1
@@ -46,6 +42,5 @@ func run() int {
 }
 
 func main() {
-	flag.Parse()
 	os.Exit(run())
 }

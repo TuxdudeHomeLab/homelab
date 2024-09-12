@@ -11,9 +11,9 @@ type deployment struct {
 	host     *hostInfo
 }
 
-func buildDeployment() (*deployment, error) {
+func buildDeployment(configsPath string) (*deployment, error) {
 	c := HomelabConfig{}
-	err := c.parse()
+	err := c.parse(configsPath)
 	if err != nil {
 		return nil, err
 	}

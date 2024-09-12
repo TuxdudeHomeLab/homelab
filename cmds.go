@@ -1,79 +1,69 @@
 package main
 
 import (
-	"flag"
-	"fmt"
+	"github.com/spf13/cobra"
 )
 
 var (
-	showConfigCmd = "showconfig"
-	startCmd      = "start"
-	cmdHandlers   = map[string]cmd{
-		showConfigCmd: newShowConfigCmdHandler(),
-		startCmd:      newStartCmdHandler(),
-	}
+	homelabCmdStr    = "homelab"
+	showConfigCmdStr = "show-config"
+	startCmdStr      = "start"
+
+	cliConfigFlagStr  = "cli-config"
+	configsDirFlagStr = "configs-dir"
+
+	allGroupsFlagStr = "all-groups"
+	groupFlagStr     = "group"
+	containerFlagStr = "container"
 )
 
-type cmdOptions struct {
-	containerAndGroup containerAndGroupFlags
+type globalCmdOptions struct {
+	cliConfig  string
+	configsDir string
 }
 
-type containerAndGroupFlags struct {
-	allGroups bool
-	group     string
-	container string
+func buildHomelabCmd(options *globalCmdOptions) *cobra.Command {
+	h := &cobra.Command{
+		Use:   homelabCmdStr,
+		Short: "Homelab is a CLI for managing configuration and deployment of docket containers.",
+		Long: `A CLI for managing both the configuration and deployment of groups of docker containers on a given host.
+
+The configuration is managed using a yaml file. The configuration specifies the container groups and individual containers, their properties and how to deploy them.`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// TODO: Just display a help message that a sub-command needs to
+			// be invoked.
+			// TODO: print ascii art.
+			_ = cmd.Help()
+			return nil
+		},
+	}
+
+	h.PersistentFlags().StringVar(
+		&options.cliConfig, cliConfigFlagStr, "", "The path to the Homelab CLI config")
+	if h.MarkPersistentFlagFilename(cliConfigFlagStr) != nil {
+		log.Fatalf("failed to mark --%s flag as filename flag", cliConfigFlagStr)
+	}
+
+	h.PersistentFlags().StringVar(
+		&options.configsDir, configsDirFlagStr, "", "The path to the directory containing the homelab configs")
+	if h.MarkPersistentFlagDirname(configsDirFlagStr) != nil {
+		log.Fatalf("failed to mark --%s flag as dirname flag", configsDirFlagStr)
+	}
+
+	h.MarkFlagsMutuallyExclusive(cliConfigFlagStr, configsDirFlagStr)
+
+	return h
 }
 
-type cmd interface {
-	containerAndGroupFlags() bool
-	run(options *cmdOptions) error
+func initHomelabCmd() *cobra.Command {
+	globalOptions := globalCmdOptions{}
+	homelabCmd := buildHomelabCmd(&globalOptions)
+	homelabCmd.AddCommand(buildShowConfigCmd(&globalOptions))
+	homelabCmd.AddCommand(buildStartCmd(&globalOptions))
+	return homelabCmd
 }
 
-func handleSubCommand() error {
-	args := flag.Args()
-	if len(args) == 0 {
-		// TODO: Print the homelab usage for this case.
-		return fmt.Errorf("need to specify a sub-command")
-	}
-
-	subCmd := args[0]
-	handler, ok := cmdHandlers[subCmd]
-	if !ok {
-		return fmt.Errorf("invalid command: %s", subCmd)
-	}
-
-	// Configure flags for the sub-command and parse the command
-	// line flags and args.
-	options := cmdOptions{}
-	fs := flag.NewFlagSet(subCmd, flag.ExitOnError)
-	if handler.containerAndGroupFlags() {
-		addContainerAndGroupFlags(fs, &options.containerAndGroup)
-	}
-	err := fs.Parse(args[1:])
-	if err != nil {
-		return fmt.Errorf("failed to parse flags for %s command, reason: %w", subCmd, err)
-	}
-
-	return handler.run(&options)
-}
-
-func addContainerAndGroupFlags(fs *flag.FlagSet, c *containerAndGroupFlags) {
-	fs.BoolVar(&c.allGroups, "allGroups", false, "Whether to apply this command across all groups and containers within")
-	fs.StringVar(&c.group, "group", "", "The container group to apply this command")
-	fs.StringVar(&c.container, "container", "", "The container to apply this command")
-}
-
-func validateContainerAndGroupFlags(c *containerAndGroupFlags) error {
-	if c.allGroups {
-		if c.group != "" {
-			return fmt.Errorf("-group flag must not be passed when -allGroups=true")
-		}
-		if c.container != "" {
-			return fmt.Errorf("-container flag must not be passed when -allGroups=true")
-		}
-	}
-	if c.container != "" && c.group == "" {
-		return fmt.Errorf("-group flag must also be passed when -container flag is passed")
-	}
-	return nil
+func execHomelabCmd() error {
+	homelab := initHomelabCmd()
+	return homelab.Execute()
 }
