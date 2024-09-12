@@ -62,8 +62,8 @@ github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsT
 github.com/stretchr/testify v1.9.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
 github.com/tuxdude/zzzlog v0.3.0 h1:HREeOHANV5YEs4NKr7y9iSu37q3ZKcD2CIJp0yc+D0c=
 github.com/tuxdude/zzzlog v0.3.0/go.mod h1:Q04MoIXLrohVY0J1ZkVznQd41u4pzpKwK74su7VWvwc=
-github.com/tuxdude/zzzlogi v0.1.2 h1:APwowwCALOA2QpcrSxcBME20gb+RVm3RZvRXH7DjJCE=
-github.com/tuxdude/zzzlogi v0.1.2/go.mod h1:pDoI7GNJZuYLZtVx4WL7lOQuECECY+XCHF6Sbv7YvzY=
+github.com/tuxdude/zzzlogi v0.2.0 h1:LcOJNqbRNeRdN5FPGu6J4JcoabKbmhlmMtHwDb6n0x8=
+github.com/tuxdude/zzzlogi v0.2.0/go.mod h1:pDoI7GNJZuYLZtVx4WL7lOQuECECY+XCHF6Sbv7YvzY=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.54.0 h1:TT4fX+nBOA/+LUkobKGW1ydGcn+G3vRw9+g5HwCphpk=
