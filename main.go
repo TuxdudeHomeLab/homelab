@@ -14,7 +14,10 @@ const (
 )
 
 var (
-	log = buildLogger()
+	log          = buildLogger()
+	pkgVersion   = "unset"
+	pkgCommit    = "unset"
+	pkgTimestamp = "unset"
 )
 
 func buildLogger() zzzlogi.Logger {

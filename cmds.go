@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 )
 
@@ -27,8 +29,9 @@ type globalCmdOptions struct {
 
 func buildHomelabCmd(options *globalCmdOptions) *cobra.Command {
 	h := &cobra.Command{
-		Use:   homelabCmdStr,
-		Short: "Homelab is a CLI for managing configuration and deployment of docket containers.",
+		Use:     homelabCmdStr,
+		Version: fmt.Sprintf("%s [Revision: %s @ %s]", pkgVersion, pkgCommit, pkgTimestamp),
+		Short:   "Homelab is a CLI for managing configuration and deployment of docket containers.",
 		Long: `A CLI for managing both the configuration and deployment of groups of docker containers on a given host.
 
 The configuration is managed using a yaml file. The configuration specifies the container groups and individual containers, their properties and how to deploy them.`,
@@ -46,13 +49,11 @@ The configuration is managed using a yaml file. The configuration specifies the 
 	if h.MarkPersistentFlagFilename(cliConfigFlagStr) != nil {
 		log.Fatalf("failed to mark --%s flag as filename flag", cliConfigFlagStr)
 	}
-
 	h.PersistentFlags().StringVar(
 		&options.configsDir, configsDirFlagStr, "", "The path to the directory containing the homelab configs")
 	if h.MarkPersistentFlagDirname(configsDirFlagStr) != nil {
 		log.Fatalf("failed to mark --%s flag as dirname flag", configsDirFlagStr)
 	}
-
 	h.MarkFlagsMutuallyExclusive(cliConfigFlagStr, configsDirFlagStr)
 
 	h.AddGroup(
