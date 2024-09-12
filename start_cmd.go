@@ -25,7 +25,7 @@ func (s *startCmdHandler) run(options *cmdOptions) error {
 		return err
 	}
 
-	dockerClient, err := newDockerClient(s.dep.host.dockerPlatform)
+	dockerClient, err := newDockerClient(s.dep.host.dockerPlatform, s.dep.host.arch)
 	if err != nil {
 		return err
 	}

@@ -22,21 +22,30 @@ type HomelabConfig struct {
 }
 
 // GlobalConfig represents the configuration that will be applied
-// globally across all containers.
+// across the entire homelab deployment.
 type GlobalConfig struct {
-	Env                  []EnvConfig    `yaml:"env"`
-	Volumes              []VolumeConfig `yaml:"volumes"`
-	ContainerStopTimeout int            `yaml:"containerStopTimeout"`
-	RestartPolicy        string         `yaml:"restartPolicy"`
-	TimeZone             string         `yaml:"timeZone"`
-	DomainName           string         `yaml:"domainName"`
-	DNSSearch            string         `yaml:"dnsSearch"`
+	Env        []GlobalEnvConfig     `yaml:"env"`
+	VolumeDefs []VolumeConfig        `yaml:"volumeDefs"`
+	Container  GlobalContainerConfig `yaml:"container"`
 }
 
-// EnvConfig is a pair of environment variable name and value that will be
+// GlobalContainerConfig represents container related configuration that
+// will be applied globally across all containers.
+type GlobalContainerConfig struct {
+	StopSignal    string               `yaml:"stopSignal"`
+	StopTimeout   int                  `yaml:"stopTimeout"`
+	RestartPolicy string               `yaml:"restartPolicy"`
+	DomainName    string               `yaml:"domainName"`
+	DNSSearch     []string             `yaml:"dnsSearch"`
+	Env           []ContainerEnvConfig `yaml:"env"`
+	Volumes       []VolumeConfig       `yaml:"volumes"`
+	Labels        []LabelConfig        `yaml:"labels"`
+}
+
+// GlobalEnvConfig is a pair of environment variable name and value that will be
 // substituted in all string field values read from the homelab
 // configuration file.
-type EnvConfig struct {
+type GlobalEnvConfig struct {
 	Var          string `yaml:"var"`
 	Value        string `yaml:"value"`
 	ValueCommand string `yaml:"valueCommand"`
@@ -103,28 +112,38 @@ type ContainerConfig struct {
 	ParentGroup             string                `yaml:"parentGroup"`
 	Image                   string                `yaml:"image"`
 	Order                   int                   `yaml:"order"`
+	AttachToTty             bool                  `yaml:"tty"`
+	StopSignal              string                `yaml:"stopSignal"`
 	StopTimeout             int                   `yaml:"stopTimeout"`
+	RestartPolicy           string                `yaml:"restartPolicy"`
+	AutoRemove              bool                  `yaml:"autoRemove"`
 	SkipImagePull           bool                  `yaml:"skipImagePull"`
 	IgnoreImagePullFailures bool                  `yaml:"ignoreImagePullFailures"`
-	PullImageAfterStop      bool                  `yaml:"pullImageAfterStop"`
+	PullImageBeforeStop     bool                  `yaml:"pullImageBeforeStop"`
 	StartPreHook            string                `yaml:"startPreHook"`
 	User                    string                `yaml:"user"`
-	UserGroup               string                `yaml:"group"`
-	GroupAdd                []string              `yaml:"groupAdd"`
+	PrimaryUserGroup        string                `yaml:"primaryUserGroup"`
+	AdditionalUserGroups    []string              `yaml:"additionalUserGroups"`
 	HostName                string                `yaml:"hostName"`
 	DomainName              string                `yaml:"domainName"`
+	DNSServers              []string              `yaml:"dnsServers"`
+	DNSOptions              []string              `yaml:"dnsOptions"`
+	DNSSearch               []string              `yaml:"dnsSearch"`
 	DynamicFlagsCommand     string                `yaml:"dynamicFlagsCommand"`
 	Devices                 []DeviceConfig        `yaml:"devices"`
 	ShmSize                 string                `yaml:"shmSize"`
 	CapAdd                  []string              `yaml:"capAdd"`
+	CapDrop                 []string              `yaml:"capDrop"`
+	Privileged              bool                  `yaml:"privileged"`
+	Sysctls                 []SysctlConfig        `yaml:"sysctls"`
+	ReadOnlyRootfs          bool                  `yaml:"readOnlyRootfs"`
 	Mounts                  []string              `yaml:"mounts"`
 	Volumes                 []VolumeConfig        `yaml:"volumes"`
 	Env                     []ContainerEnvConfig  `yaml:"env"`
 	PublishedPorts          []PublishedPortConfig `yaml:"publishedPorts"`
 	Labels                  []LabelConfig         `yaml:"labels"`
-	StopSignal              string                `yaml:"stopSignal"`
 	HealthCmd               string                `yaml:"healthCmd"`
-	Entrypoint              string                `yaml:"entrypoint"`
+	Entrypoint              []string              `yaml:"entrypoint"`
 	Args                    []string              `yaml:"args"`
 }
 
@@ -140,6 +159,12 @@ type VolumeConfig struct {
 type DeviceConfig struct {
 	Src string `yaml:"src"`
 	Dst string `yaml:"dst"`
+}
+
+// SysctlConfig represents a sysctl config to apply to a container.
+type SysctlConfig struct {
+	Key   string `yaml:"key"`
+	Value string `yaml:"value"`
 }
 
 // ContainerEnvConfig represents an environment variable and value pair that will be set

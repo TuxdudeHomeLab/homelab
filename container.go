@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"sort"
 	"time"
+
+	dcontainer "github.com/docker/docker/api/types/container"
+	"github.com/docker/go-connections/nat"
 )
 
 const (
@@ -13,9 +16,10 @@ const (
 )
 
 type container struct {
-	config *ContainerConfig
-	group  *containerGroup
-	ips    networkContainerIPMap
+	config       *ContainerConfig
+	globalConfig *GlobalConfig
+	group        *containerGroup
+	ips          networkContainerIPMap
 }
 
 type containerIP struct {
@@ -28,30 +32,33 @@ type containerList []*container
 type networkContainerIPMap map[string]*containerIP
 
 func newContainer(group *containerGroup, config *ContainerConfig) *container {
-	c := container{group: group, config: config}
+	ct := container{
+		config:       config,
+		globalConfig: &group.deployment.config.Global,
+		group:        group,
+		ips:          make(networkContainerIPMap),
+	}
 	cName := config.Name
 	gName := group.name()
 
-	ips := make(networkContainerIPMap)
 	for _, n := range group.deployment.networks {
 		if n.mode == networkModeBridge {
 			for _, c := range n.bridgeModeConfig.Containers {
 				if c.Container.Group == gName && c.Container.Container == cName {
-					ips[n.name()] = newBridgeModeContainerIP(n, c.IP)
+					ct.ips[n.name()] = newBridgeModeContainerIP(n, c.IP)
 					break
 				}
 			}
 		} else if n.mode == networkModeContainer {
 			for _, c := range n.containerModeConfig.Containers {
 				if c.Group == gName && c.Container == cName {
-					ips[n.name()] = newContainerModeContainerIP(n)
+					ct.ips[n.name()] = newContainerModeContainerIP(n)
 					break
 				}
 			}
 		}
 	}
-	c.ips = ips
-	return &c
+	return &ct
 }
 
 func (c *container) isAllowedOnCurrentHost() bool {
@@ -146,7 +153,7 @@ func (c *container) startInternal(ctx context.Context, docker *dockerClient) err
 	// TODO: Implement this.
 
 	// 2. Pull the container image.
-	err := docker.pullImage(ctx, c.config.Image)
+	err := docker.pullImage(ctx, c.imageReference())
 	if err != nil {
 		return err
 	}
@@ -159,7 +166,11 @@ func (c *container) startInternal(ctx context.Context, docker *dockerClient) err
 	}
 
 	// 4. Create the container.
-	err = docker.createContainer(ctx, c)
+	cConfig, hConfig, err := c.generateDockerConfigs()
+	if err != nil {
+		return err
+	}
+	err = docker.createContainer(ctx, c.name(), cConfig, hConfig)
 	if err != nil {
 		return err
 	}
@@ -186,8 +197,235 @@ func (c *container) startInternal(ctx context.Context, docker *dockerClient) err
 	return err
 }
 
+func (c *container) generateDockerConfigs() (*dcontainer.Config, *dcontainer.HostConfig, error) {
+	cConfig := dcontainer.Config{
+		Hostname:   c.hostName(),
+		Domainname: c.domainName(),
+		User:       c.userAndGroup(),
+		// TODO: Value that might be configured in future.
+		// NetworkMode: "",
+		// ExposedPorts: dnat.PortSet{},
+		Tty:             c.attachToTty(),
+		Env:             c.envVars(),
+		Cmd:             c.args(),
+		Entrypoint:      c.entrypoint(),
+		NetworkDisabled: c.isNetworkDisabled(),
+		Labels:          c.labels(),
+		StopSignal:      c.stopSignal(),
+		StopTimeout:     c.stopTimeout(),
+		Image:           c.imageReference(),
+	}
+	hConfig := dcontainer.HostConfig{
+		Binds: c.volumeBindMounts(),
+		// TODO: Value that might be configured in future.
+		// NetworkMode: "",
+		PortBindings:   c.publishedPorts(),
+		RestartPolicy:  c.restartPolicy(),
+		AutoRemove:     c.autoRemove(),
+		CapAdd:         c.capAddList(),
+		CapDrop:        c.capDropList(),
+		DNS:            c.dnsServers(),
+		DNSOptions:     c.dnsOptions(),
+		DNSSearch:      c.dnsSearch(),
+		GroupAdd:       c.additionalUserGroups(),
+		Privileged:     c.privileged(),
+		ReadonlyRootfs: c.readOnlyRootfs(),
+		Tmpfs:          c.tmpfsMounts(),
+		ShmSize:        c.shmSize(),
+		Sysctls:        c.sysctls(),
+	}
+	return &cConfig, &hConfig, nil
+}
+
 func (c *container) name() string {
 	return containerName(c.group.name(), c.config.Name)
+}
+
+func (c *container) hostName() string {
+	return c.config.HostName
+}
+
+func (c *container) domainName() string {
+	d := c.config.DomainName
+	if len(d) == 0 {
+		d = c.globalConfig.Container.DomainName
+	}
+	return d
+}
+
+func (c *container) userAndGroup() string {
+	u := c.config.User
+	g := c.config.PrimaryUserGroup
+	if len(g) > 0 {
+		return fmt.Sprintf("%s:%s", u, g)
+	}
+	return u
+}
+
+func (c *container) attachToTty() bool {
+	return c.config.AttachToTty
+}
+
+func (c *container) envVars() []string {
+	env := make(map[string]string, 0)
+	// TODO: Substitute global config env variables in the value fields.
+	// TODO: Support invoking ValueCmd for evaluating the value.
+	for _, e := range c.globalConfig.Container.Env {
+		env[e.Var] = e.Value
+	}
+	for _, e := range c.config.Env {
+		env[e.Var] = e.Value
+	}
+
+	res := make([]string, 0)
+	for k, v := range env {
+		res = append(res, fmt.Sprintf("%s=%s", k, v))
+	}
+	return res
+}
+
+func (c *container) args() []string {
+	return c.config.Args
+}
+
+func (c *container) entrypoint() []string {
+	return c.config.Entrypoint
+}
+
+func (c *container) isNetworkDisabled() bool {
+	return false
+}
+
+func (c *container) labels() map[string]string {
+	res := make(map[string]string, 0)
+	for _, l := range c.config.Labels {
+		res[l.Name] = l.Value
+	}
+	return res
+}
+
+func (c *container) stopSignal() string {
+	return c.config.StopSignal
+}
+
+func (c *container) stopTimeout() *int {
+	t := c.config.StopTimeout
+	if t == 0 {
+		t = c.globalConfig.Container.StopTimeout
+	}
+	return &t
+}
+
+func (c *container) imageReference() string {
+	return c.config.Image
+}
+
+func (c *container) volumeBindMounts() []string {
+	// TODO: Do this once for the entire deployment and reuse it.
+	vd := make(map[string]string, 0)
+	for _, v := range c.globalConfig.VolumeDefs {
+		vd[v.Name] = volumeConfigToString(&v)
+	}
+
+	binds := make(map[string]string, 0)
+	// Get all the global container config volumes.
+	// TODO: Do this once for the entire deployment and reuse it.
+	for _, vol := range c.globalConfig.Container.Volumes {
+		val, ok := vd[vol.Name]
+		if ok {
+			binds[vol.Name] = val
+		} else {
+			binds[vol.Name] = volumeConfigToString(&vol)
+		}
+	}
+	// Get all the container specific volume configs and apply
+	// them as overrides for the global.
+	for _, vol := range c.config.Volumes {
+		val, ok := vd[vol.Name]
+		if ok {
+			binds[vol.Name] = val
+		} else {
+			binds[vol.Name] = volumeConfigToString(&vol)
+		}
+	}
+
+	// Convert the result to include only the volume bind mount strings.
+	res := make([]string, 0)
+	for _, val := range binds {
+		res = append(res, val)
+	}
+	return res
+}
+
+func (c *container) publishedPorts() nat.PortMap {
+	return nil
+}
+
+func (c *container) restartPolicy() dcontainer.RestartPolicy {
+	pol := c.config.RestartPolicy
+	if len(pol) == 0 {
+		pol = c.globalConfig.Container.RestartPolicy
+	}
+
+	// TODO: Perform better validation of the restart policy config setting
+	// prior to directly covnerting it to RestartPolicyMode.
+	return dcontainer.RestartPolicy{Name: dcontainer.RestartPolicyMode(pol)}
+}
+
+func (c *container) autoRemove() bool {
+	return c.config.AutoRemove
+}
+
+func (c *container) capAddList() []string {
+	return c.config.CapAdd
+}
+
+func (c *container) capDropList() []string {
+	return c.config.CapDrop
+}
+
+func (c *container) dnsServers() []string {
+	return c.config.DNSServers
+}
+
+func (c *container) dnsOptions() []string {
+	return c.config.DNSOptions
+}
+
+func (c *container) dnsSearch() []string {
+	d := c.config.DNSSearch
+	if len(d) == 0 {
+		d = c.globalConfig.Container.DNSSearch
+	}
+	return d
+}
+
+func (c *container) additionalUserGroups() []string {
+	return c.config.AdditionalUserGroups
+}
+
+func (c *container) privileged() bool {
+	return c.config.Privileged
+}
+
+func (c *container) readOnlyRootfs() bool {
+	return c.config.ReadOnlyRootfs
+}
+
+func (c *container) tmpfsMounts() map[string]string {
+	return nil
+}
+
+func (c *container) shmSize() int64 {
+	return 0
+}
+
+func (c *container) sysctls() map[string]string {
+	res := make(map[string]string, 0)
+	for _, s := range c.config.Sysctls {
+		res[s.Key] = s.Value
+	}
+	return res
 }
 
 func (c *container) String() string {
@@ -233,4 +471,11 @@ func containerMapToList(cm containerMap) containerList {
 		}
 	})
 	return res
+}
+
+func volumeConfigToString(v *VolumeConfig) string {
+	if v.ReadOnly {
+		return fmt.Sprintf("%s:%s:ro", v.Src, v.Dst)
+	}
+	return fmt.Sprintf("%s:%s", v.Src, v.Dst)
 }

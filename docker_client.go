@@ -13,6 +13,7 @@ import (
 	dnetwork "github.com/docker/docker/api/types/network"
 	dclient "github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/jsonmessage"
+	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"golang.org/x/sys/unix"
 
 	// "github.com/docker/docker/pkg/term"
@@ -20,9 +21,10 @@ import (
 )
 
 type dockerClient struct {
-	client   *dclient.Client
-	platform string
-	debug    bool
+	client      *dclient.Client
+	platform    string
+	ociPlatform ocispec.Platform
+	debug       bool
 }
 
 const (
@@ -86,15 +88,16 @@ func (c containerState) String() string {
 	}
 }
 
-func newDockerClient(platform string) (*dockerClient, error) {
+func newDockerClient(platform, arch string) (*dockerClient, error) {
 	client, err := dclient.NewClientWithOpts(dclient.FromEnv, dclient.WithAPIVersionNegotiation())
 	if err != nil {
 		return nil, fmt.Errorf("failed to create a new docker API client, reason: %w", err)
 	}
 	return &dockerClient{
-		client:   client,
-		platform: platform,
-		debug:    isLogLevelDebug() || isLogLevelTrace(),
+		client:      client,
+		platform:    platform,
+		ociPlatform: ocispec.Platform{Architecture: arch},
+		debug:       isLogLevelDebug() || isLogLevelTrace(),
 	}, nil
 }
 
@@ -165,8 +168,18 @@ func (d *dockerClient) queryLocalImage(ctx context.Context, imageName string) (b
 	return true, images[0].ID
 }
 
-func (d *dockerClient) createContainer(ctx context.Context, c *container) error {
-	// TODO: Implement this.
+func (d *dockerClient) createContainer(ctx context.Context, containerName string, cConfig *dcontainer.Config, hConfig *dcontainer.HostConfig) error {
+	log.Debugf("Creating container %s ...", containerName)
+	resp, err := d.client.ContainerCreate(ctx, cConfig, hConfig, &dnetwork.NetworkingConfig{}, &d.ociPlatform, containerName)
+	if err != nil {
+		log.Errorf("err: %s", reflect.TypeOf(err))
+		return fmt.Errorf("failed to create the container, reason: %w", err)
+	}
+
+	log.Debugf("Container %s created successfully - %s", containerName, resp.ID)
+	if len(resp.Warnings) > 0 {
+		log.Warnf("Warnings encountered while creating the container %s\n%s", containerName, prettyPrintJSON(resp.Warnings))
+	}
 	return nil
 }
 
@@ -177,9 +190,9 @@ func (d *dockerClient) startContainer(ctx context.Context, containerName string)
 		log.Errorf("err: %s", reflect.TypeOf(err))
 		return fmt.Errorf("failed to start the container, reason: %w", err)
 	}
+
 	log.Debugf("Container %s started successfully", containerName)
 	return nil
-
 }
 
 func (d *dockerClient) stopContainer(ctx context.Context, containerName string) error {
@@ -189,6 +202,7 @@ func (d *dockerClient) stopContainer(ctx context.Context, containerName string) 
 		log.Errorf("err: %s", reflect.TypeOf(err))
 		return fmt.Errorf("failed to stop the container, reason: %w", err)
 	}
+
 	log.Debugf("Container %s stopped successfully", containerName)
 	return nil
 }
@@ -200,6 +214,7 @@ func (d *dockerClient) killContainer(ctx context.Context, containerName string) 
 		log.Errorf("err: %s", reflect.TypeOf(err))
 		return fmt.Errorf("failed to kill the container, reason: %w", err)
 	}
+
 	log.Debugf("Container %s killed successfully", containerName)
 	return nil
 }
@@ -211,6 +226,7 @@ func (d *dockerClient) removeContainer(ctx context.Context, containerName string
 		log.Errorf("err: %s", reflect.TypeOf(err))
 		return fmt.Errorf("failed to remove the container, reason: %w", err)
 	}
+
 	log.Debugf("Container %s removed successfully", containerName)
 	return nil
 }
