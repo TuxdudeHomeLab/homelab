@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -33,7 +34,13 @@ func buildStartCmd(globalOptions *globalCmdOptions) *cobra.Command {
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return execStartCmd(cmd, args, &options, globalOptions)
+			cmd.SilenceUsage = true
+			cmd.SilenceErrors = true
+			err := execStartCmd(cmd, args, &options, globalOptions)
+			if err != nil {
+				return newHomelabRuntimeError(err)
+			}
+			return nil
 		},
 	}
 	s.Flags().BoolVar(
@@ -72,11 +79,23 @@ func execStartCmd(cmd *cobra.Command, args []string, options *startCmdOptions, g
 	log.DebugEmpty()
 
 	ctx := context.Background()
+
+	var errList []error
 	for _, c := range res {
 		// We ignore the errors to keep moving forward even if one or more
 		// of the containers fail to start.
-		_ = c.start(ctx, dockerClient)
+		err := c.start(ctx, dockerClient)
+		if err != nil {
+			errList = append(errList, err)
+		}
 	}
 
+	if len(errList) > 0 {
+		var sb strings.Builder
+		for i, e := range errList {
+			sb.WriteString(fmt.Sprintf("\n%d %s", i+1, e))
+		}
+		return fmt.Errorf("start failed for %d containers, reason(s): %s", len(errList), sb.String())
+	}
 	return nil
 }

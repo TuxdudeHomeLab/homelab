@@ -9,7 +9,13 @@ func buildShowConfigCmd(globalOptions *globalCmdOptions) *cobra.Command {
 		Short:   "Shows the homelab config",
 		Long:    `Displays the homelab configuration.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return execShowConfigCmd(cmd, args, globalOptions)
+			cmd.SilenceUsage = true
+			cmd.SilenceErrors = true
+			err := execShowConfigCmd(cmd, args, globalOptions)
+			if err != nil {
+				return newHomelabRuntimeError(err)
+			}
+			return nil
 		},
 	}
 }

@@ -13,6 +13,12 @@ const (
 	logLevelEnvTrace = "trace"
 )
 
+var (
+	// TODO: Remove this when there is at least one actual usage of
+	// this function.
+	_ = logToWarnAndReturn
+)
+
 // Returns the JSON formatted string representation of the specified object.
 func prettyPrintJSON(x interface{}) string {
 	p, err := json.MarshalIndent(x, "", "  ")
