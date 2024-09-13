@@ -13,12 +13,6 @@ const (
 	logLevelEnvTrace = "trace"
 )
 
-var (
-	// TODO: Remove this when there is at least one actual usage of
-	// this function.
-	_ = logToWarnAndReturn
-)
-
 // Returns the JSON formatted string representation of the specified object.
 func prettyPrintJSON(x interface{}) string {
 	p, err := json.MarshalIndent(x, "", "  ")
@@ -53,6 +47,8 @@ func logToErrorAndReturn(format string, args ...interface{}) error {
 	return fmt.Errorf(format, args...)
 }
 
+// TODO: Remove this after this function is used.
+// nolint (unused)
 func logToWarnAndReturn(format string, args ...interface{}) error {
 	log.Warnf(format, args...)
 	log.WarnEmpty()
