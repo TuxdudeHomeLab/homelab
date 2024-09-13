@@ -2,6 +2,10 @@ package main
 
 import "github.com/spf13/cobra"
 
+const (
+	showConfigCmdStr = "show-config"
+)
+
 func buildShowConfigCmd(globalOptions *globalCmdOptions) *cobra.Command {
 	return &cobra.Command{
 		Use:     showConfigCmdStr,

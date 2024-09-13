@@ -8,6 +8,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	startCmdStr = "start"
+)
+
 type startCmdOptions struct {
 	allGroups bool
 	group     string

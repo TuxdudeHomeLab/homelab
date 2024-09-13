@@ -6,10 +6,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	homelabCmdStr    = "homelab"
-	showConfigCmdStr = "show-config"
-	startCmdStr      = "start"
+const (
+	homelabCmdStr = "homelab"
 
 	cliConfigFlagStr  = "cli-config"
 	configsDirFlagStr = "configs-dir"
