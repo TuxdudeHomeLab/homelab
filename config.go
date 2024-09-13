@@ -177,8 +177,10 @@ type ContainerEnvConfig struct {
 
 // PublishedPortConfig represents a port published from a container.
 type PublishedPortConfig struct {
-	Src string `yaml:"src"`
-	Dst string `yaml:"dst"`
+	ContainerPort int    `yaml:"containerPort"`
+	Proto         string `yaml:"proto"`
+	HostIP        string `yaml:"hostIp"`
+	HostPort      int    `yaml:"hostPort"`
 }
 
 // LabelConfig represents a label set on a container.

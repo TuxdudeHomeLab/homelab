@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strconv"
 	"time"
 
 	dcontainer "github.com/docker/docker/api/types/container"
@@ -199,13 +200,14 @@ func (c *container) startInternal(ctx context.Context, docker *dockerClient) err
 }
 
 func (c *container) generateDockerConfigs() (*dcontainer.Config, *dcontainer.HostConfig, error) {
+	pMap, pSet := c.publishedPorts()
 	cConfig := dcontainer.Config{
 		Hostname:   c.hostName(),
 		Domainname: c.domainName(),
 		User:       c.userAndGroup(),
 		// TODO: Value that might be configured in future.
 		// NetworkMode: "",
-		// ExposedPorts: dnat.PortSet{},
+		ExposedPorts:    pSet,
 		Tty:             c.attachToTty(),
 		Env:             c.envVars(),
 		Cmd:             c.args(),
@@ -220,7 +222,7 @@ func (c *container) generateDockerConfigs() (*dcontainer.Config, *dcontainer.Hos
 		Binds: c.volumeBindMounts(),
 		// TODO: Value that might be configured in future.
 		// NetworkMode: "",
-		PortBindings:   c.publishedPorts(),
+		PortBindings:   pMap,
 		RestartPolicy:  c.restartPolicy(),
 		AutoRemove:     c.autoRemove(),
 		CapAdd:         c.capAddList(),
@@ -358,9 +360,20 @@ func (c *container) volumeBindMounts() []string {
 	return res
 }
 
-func (c *container) publishedPorts() nat.PortMap {
-	// TODO: Implement this.
-	return nil
+func (c *container) publishedPorts() (nat.PortMap, nat.PortSet) {
+	pMap := make(nat.PortMap)
+	pSet := make(nat.PortSet)
+	for _, p := range c.config.PublishedPorts {
+		natPort := nat.Port(fmt.Sprintf("%d/%s", p.ContainerPort, p.Proto))
+		pMap[natPort] = []nat.PortBinding{
+			{
+				HostIP:   p.HostIP,
+				HostPort: strconv.Itoa(p.HostPort),
+			},
+		}
+		pSet[natPort] = struct{}{}
+	}
+	return pMap, pSet
 }
 
 func (c *container) restartPolicy() dcontainer.RestartPolicy {
