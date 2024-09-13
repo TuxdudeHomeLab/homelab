@@ -241,8 +241,8 @@ func mergedConfigReader(path string) (io.Reader, error) {
 	return bytes.NewReader(result), nil
 }
 
-func (h *HomelabConfig) parseUsingReader(s io.Reader) error {
-	dec := yaml.NewDecoder(s)
+func (h *HomelabConfig) parseUsingReader(r io.Reader) error {
+	dec := yaml.NewDecoder(r)
 	dec.KnownFields(true)
 	err := dec.Decode(h)
 	if err != nil {
