@@ -193,13 +193,16 @@ func (c *container) startInternal(ctx context.Context, docker *dockerClient) err
 	}
 
 	// 4. For the primary network interface of the container, create
-	// the network for the container if it doesn't exist already prior to
-	// creating the container attached to the network.
+	// the network for the container prior to creating the container
+	// attached to this network.
 	if len(c.ips) > 0 {
+		// network.create(...) gracefully handles the case for when the
+		// network exists already.
 		err := c.ips[0].network.create(ctx, docker)
 		if err != nil {
 			return err
 		}
+		log.Debugf("Connecting container %s to network %s with IP %s at the time of container creation ...", c.name(), c.ips[0].network.name(), c.ips[0].ip)
 	} else {
 		log.Warnf("Container %s has no network endpoints configured, this is uncommon!", c.name())
 	}

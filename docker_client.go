@@ -267,14 +267,32 @@ func (d *dockerClient) networkExists(ctx context.Context, networkName string) bo
 }
 
 func (d *dockerClient) connectContainerToBridgeModeNetwork(ctx context.Context, containerName, networkName, ip string) error {
-	// TODO: Implement this.
+	log.Debugf("Connecting container %s to network %s with IP %s ...", containerName, networkName, ip)
+	err := d.client.NetworkConnect(ctx, networkName, containerName, &dnetwork.EndpointSettings{
+		IPAMConfig: &dnetwork.EndpointIPAMConfig{
+			IPv4Address: ip,
+		},
+	})
+	if err != nil {
+		log.Errorf("err: %s", reflect.TypeOf(err))
+		return fmt.Errorf("failed to connect container %s to network %s, reason: %w", containerName, networkName, err)
+	}
+
+	log.Debugf("Container %s connected to network %s successfully", containerName, networkName)
 	return nil
 }
 
 // TODO: Remove this after this function is used.
 // nolint (unused)
 func (d *dockerClient) disconnectContainerFromNetwork(ctx context.Context, containerName, networkName string) error {
-	// TODO: Implement this.
+	log.Debugf("Disconnecting container %s from network %s ...", containerName, networkName)
+	err := d.client.NetworkDisconnect(ctx, networkName, containerName, false)
+	if err != nil {
+		log.Errorf("err: %s", reflect.TypeOf(err))
+		return fmt.Errorf("failed to disconnect container %s from network %s, reason: %w", containerName, networkName, err)
+	}
+
+	log.Debugf("Container %s disconnected from network %s successfully", containerName, networkName)
 	return nil
 }
 
