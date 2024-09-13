@@ -359,6 +359,7 @@ func (c *container) volumeBindMounts() []string {
 }
 
 func (c *container) publishedPorts() nat.PortMap {
+	// TODO: Implement this.
 	return nil
 }
 
