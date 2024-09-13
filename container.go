@@ -8,6 +8,7 @@ import (
 	"time"
 
 	dcontainer "github.com/docker/docker/api/types/container"
+	dnetwork "github.com/docker/docker/api/types/network"
 	"github.com/docker/go-connections/nat"
 )
 
@@ -20,7 +21,7 @@ type container struct {
 	config       *ContainerConfig
 	globalConfig *GlobalConfig
 	group        *containerGroup
-	ips          networkContainerIPMap
+	ips          networkContainerIPList
 }
 
 type containerIP struct {
@@ -30,35 +31,59 @@ type containerIP struct {
 
 type containerMap map[string]*container
 type containerList []*container
-type networkContainerIPMap map[string]*containerIP
+type networkContainerIPList []*containerIP
 
 func newContainer(group *containerGroup, config *ContainerConfig) *container {
 	ct := container{
 		config:       config,
 		globalConfig: &group.deployment.config.Global,
 		group:        group,
-		ips:          make(networkContainerIPMap),
 	}
 	cName := config.Name
 	gName := group.name()
 
+	var ips networkContainerIPList
 	for _, n := range group.deployment.networks {
 		if n.mode == networkModeBridge {
 			for _, c := range n.bridgeModeConfig.Containers {
 				if c.Container.Group == gName && c.Container.Container == cName {
-					ct.ips[n.name()] = newBridgeModeContainerIP(n, c.IP)
+					ips = append(ips, newBridgeModeContainerIP(n, c.IP))
 					break
 				}
 			}
 		} else if n.mode == networkModeContainer {
 			for _, c := range n.containerModeConfig.Containers {
 				if c.Group == gName && c.Container == cName {
-					ct.ips[n.name()] = newContainerModeContainerIP(n)
+					ips = append(ips, newContainerModeContainerIP(n))
 					break
 				}
 			}
 		}
 	}
+
+	// Sort the networks by priority (i.e. lowest priority is the primary
+	// network interface for the container).
+	sort.Slice(ips, func(i, j int) bool {
+		n1 := ips[i].network
+		n2 := ips[j].network
+
+		if n1.mode != n2.mode {
+			log.Fatalf("Container %s has networks of different types which is unsupported", ct.name())
+		}
+		if n1.mode == networkModeBridge {
+			if n1.bridgeModeConfig.Priority == n2.bridgeModeConfig.Priority {
+				log.Fatalf("Container %s is connected to two bridge mode networks of same priority %d which is unsupported", ct.name(), n1.bridgeModeConfig.Priority)
+			}
+			return n1.bridgeModeConfig.Priority < n2.bridgeModeConfig.Priority
+		} else {
+			if n1.containerModeConfig.Priority == n2.containerModeConfig.Priority {
+				log.Fatalf("Container %s is connected to two container mode networks of same priority %d which is unsupported", ct.name(), n1.containerModeConfig.Priority)
+			}
+			return n1.containerModeConfig.Priority < n2.containerModeConfig.Priority
+		}
+	})
+
+	ct.ips = ips
 	return &ct
 }
 
@@ -167,20 +192,33 @@ func (c *container) startInternal(ctx context.Context, docker *dockerClient) err
 		return err
 	}
 
-	// 4. Create the container.
-	cConfig, hConfig, err := c.generateDockerConfigs()
+	// 4. For the primary network interface of the container, create
+	// the network for the container if it doesn't exist already prior to
+	// creating the container attached to the network.
+	if len(c.ips) > 0 {
+		err := c.ips[0].network.create(ctx, docker)
+		if err != nil {
+			return err
+		}
+	} else {
+		log.Warnf("Container %s has no network endpoints configured, this is uncommon!", c.name())
+	}
+
+	// 5. Create the container.
+	cConfig, hConfig, nConfig, err := c.generateDockerConfigs()
 	if err != nil {
 		return err
 	}
-	err = docker.createContainer(ctx, c.name(), cConfig, hConfig)
+	err = docker.createContainer(ctx, c.name(), cConfig, hConfig, nConfig)
 	if err != nil {
 		return err
 	}
 
-	// 5. For each network interface of the container, create the network for
-	// the container if it doesn't exist already prior to connecting the
-	// container to the network.
-	for _, ip := range c.ips {
+	// 6. For each non-primary network interface of the container, create
+	// the network for the container if it doesn't exist already prior to
+	// connecting the container to the network.
+	for i := 1; i < len(c.ips); i++ {
+		ip := c.ips[i]
 		err := ip.network.create(ctx, docker)
 		if err != nil {
 			return err
@@ -190,23 +228,18 @@ func (c *container) startInternal(ctx context.Context, docker *dockerClient) err
 			return err
 		}
 	}
-	if len(c.ips) == 0 {
-		log.Warnf("Container %s has no network endpoints configured, this is uncommon!", c.name())
-	}
 
-	// 6. Start the created container.
+	// 7. Start the created container.
 	err = docker.startContainer(ctx, c.name())
 	return err
 }
 
-func (c *container) generateDockerConfigs() (*dcontainer.Config, *dcontainer.HostConfig, error) {
+func (c *container) generateDockerConfigs() (*dcontainer.Config, *dcontainer.HostConfig, *dnetwork.NetworkingConfig, error) {
 	pMap, pSet := c.publishedPorts()
 	cConfig := dcontainer.Config{
-		Hostname:   c.hostName(),
-		Domainname: c.domainName(),
-		User:       c.userAndGroup(),
-		// TODO: Value that might be configured in future.
-		// NetworkMode: "",
+		Hostname:        c.hostName(),
+		Domainname:      c.domainName(),
+		User:            c.userAndGroup(),
 		ExposedPorts:    pSet,
 		Tty:             c.attachToTty(),
 		Env:             c.envVars(),
@@ -219,9 +252,8 @@ func (c *container) generateDockerConfigs() (*dcontainer.Config, *dcontainer.Hos
 		Image:           c.imageReference(),
 	}
 	hConfig := dcontainer.HostConfig{
-		Binds: c.volumeBindMounts(),
-		// TODO: Value that might be configured in future.
-		// NetworkMode: "",
+		Binds:          c.volumeBindMounts(),
+		NetworkMode:    c.networkMode(),
 		PortBindings:   pMap,
 		RestartPolicy:  c.restartPolicy(),
 		AutoRemove:     c.autoRemove(),
@@ -237,7 +269,10 @@ func (c *container) generateDockerConfigs() (*dcontainer.Config, *dcontainer.Hos
 		ShmSize:        c.shmSize(),
 		Sysctls:        c.sysctls(),
 	}
-	return &cConfig, &hConfig, nil
+	nConfig := dnetwork.NetworkingConfig{
+		EndpointsConfig: c.primaryNetworkEndpoint(),
+	}
+	return &cConfig, &hConfig, &nConfig, nil
 }
 
 func (c *container) name() string {
@@ -360,6 +395,16 @@ func (c *container) volumeBindMounts() []string {
 	return res
 }
 
+func (c *container) networkMode() dcontainer.NetworkMode {
+	if len(c.ips) > 0 {
+		if c.ips[0].network.mode == networkModeContainer {
+			return dcontainer.NetworkMode(fmt.Sprintf("container:%s", c.ips[0].network))
+		}
+		return dcontainer.NetworkMode(c.ips[0].network.name())
+	}
+	return "none"
+}
+
 func (c *container) publishedPorts() (nat.PortMap, nat.PortSet) {
 	pMap := make(nat.PortMap)
 	pSet := make(nat.PortSet)
@@ -439,6 +484,18 @@ func (c *container) sysctls() map[string]string {
 	res := make(map[string]string, 0)
 	for _, s := range c.config.Sysctls {
 		res[s.Key] = s.Value
+	}
+	return res
+}
+
+func (c *container) primaryNetworkEndpoint() map[string]*dnetwork.EndpointSettings {
+	res := make(map[string]*dnetwork.EndpointSettings)
+	if len(c.ips) > 0 && c.ips[0].network.mode == networkModeBridge {
+		res[c.ips[0].network.name()] = &dnetwork.EndpointSettings{
+			IPAMConfig: &dnetwork.EndpointIPAMConfig{
+				IPv4Address: c.ips[0].ip,
+			},
+		}
 	}
 	return res
 }

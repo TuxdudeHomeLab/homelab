@@ -168,9 +168,9 @@ func (d *dockerClient) queryLocalImage(ctx context.Context, imageName string) (b
 	return true, images[0].ID
 }
 
-func (d *dockerClient) createContainer(ctx context.Context, containerName string, cConfig *dcontainer.Config, hConfig *dcontainer.HostConfig) error {
+func (d *dockerClient) createContainer(ctx context.Context, containerName string, cConfig *dcontainer.Config, hConfig *dcontainer.HostConfig, nConfig *dnetwork.NetworkingConfig) error {
 	log.Debugf("Creating container %s ...", containerName)
-	resp, err := d.client.ContainerCreate(ctx, cConfig, hConfig, &dnetwork.NetworkingConfig{}, &d.ociPlatform, containerName)
+	resp, err := d.client.ContainerCreate(ctx, cConfig, hConfig, nConfig, &d.ociPlatform, containerName)
 	if err != nil {
 		log.Errorf("err: %s", reflect.TypeOf(err))
 		return fmt.Errorf("failed to create the container, reason: %w", err)
