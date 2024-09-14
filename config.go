@@ -68,7 +68,7 @@ type NetworksConfig struct {
 type BridgeModeNetworkConfig struct {
 	Name              string              `yaml:"name"`
 	HostInterfaceName string              `yaml:"hostInterfaceName"`
-	Cidr              string              `yaml:"cidr"`
+	CIDR              string              `yaml:"cidr"`
 	Priority          int                 `yaml:"priority"`
 	Containers        []ContainerIPConfig `yaml:"containers"`
 }
