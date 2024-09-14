@@ -6,6 +6,7 @@ require (
 	github.com/TwiN/deepmerge v0.2.1
 	github.com/docker/docker v27.2.1+incompatible
 	github.com/docker/go-connections v0.5.0
+	github.com/google/go-cmp v0.6.0
 	github.com/moby/term v0.5.0
 	github.com/opencontainers/image-spec v1.1.0
 	github.com/spf13/cobra v1.8.1
