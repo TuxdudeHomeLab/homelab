@@ -1,4 +1,5 @@
 .makesystem
 coverage.out
+coverage.html
 dist/
 homelab
