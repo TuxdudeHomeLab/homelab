@@ -31,7 +31,7 @@ func execShowConfigCmd(cmd *cobra.Command, args []string, globalOptions *globalC
 	}
 
 	config := HomelabConfig{}
-	err = config.parse(configsPath)
+	err = config.parseConfigs(configsPath)
 	if err != nil {
 		return err
 	}

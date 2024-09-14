@@ -241,7 +241,7 @@ func mergedConfigReader(path string) (io.Reader, error) {
 	return bytes.NewReader(result), nil
 }
 
-func (h *HomelabConfig) parseUsingReader(r io.Reader) error {
+func (h *HomelabConfig) parse(r io.Reader) error {
 	dec := yaml.NewDecoder(r)
 	dec.KnownFields(true)
 	err := dec.Decode(h)
@@ -253,7 +253,7 @@ func (h *HomelabConfig) parseUsingReader(r io.Reader) error {
 	return nil
 }
 
-func (h *HomelabConfig) parse(configsPath string) error {
+func (h *HomelabConfig) parseConfigs(configsPath string) error {
 	pathStat, err := os.Stat(configsPath)
 	if err != nil {
 		return fmt.Errorf("os.Stat() failed on homelab configs path, reason: %w", err)
@@ -267,7 +267,7 @@ func (h *HomelabConfig) parse(configsPath string) error {
 		return err
 	}
 
-	return h.parseUsingReader(m)
+	return h.parse(m)
 }
 
 func (h *HomelabConfig) validate() error {

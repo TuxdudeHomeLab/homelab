@@ -13,7 +13,7 @@ type deployment struct {
 
 func buildDeployment(configsPath string) (*deployment, error) {
 	c := HomelabConfig{}
-	err := c.parse(configsPath)
+	err := c.parseConfigs(configsPath)
 	if err != nil {
 		return nil, err
 	}
