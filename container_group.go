@@ -18,7 +18,7 @@ func newContainerGroup(dep *deployment, groupConfig *ContainerGroupConfig, conta
 
 	containers := make(containerMap)
 	for _, c := range *containerConfigs {
-		if c.ParentGroup == g.name() {
+		if c.Info.Group == g.name() {
 			ct := newContainer(&g, &c)
 			containers[ct.name()] = ct
 		}

@@ -39,7 +39,7 @@ func newContainer(group *containerGroup, config *ContainerConfig) *container {
 		globalConfig: &group.deployment.config.Global,
 		group:        group,
 	}
-	cName := config.Name
+	cName := config.Info.Container
 	gName := group.name()
 
 	var ips networkContainerIPList
@@ -255,7 +255,7 @@ func (c *container) generateDockerConfigs() (*dcontainer.Config, *dcontainer.Hos
 		Image:           c.imageReference(),
 	}
 	hConfig := dcontainer.HostConfig{
-		Binds:          c.volumeBindMounts(),
+		Binds:          c.bindMounts(),
 		NetworkMode:    c.networkMode(),
 		PortBindings:   pMap,
 		RestartPolicy:  c.restartPolicy(),
@@ -279,15 +279,15 @@ func (c *container) generateDockerConfigs() (*dcontainer.Config, *dcontainer.Hos
 }
 
 func (c *container) name() string {
-	return containerName(c.group.name(), c.config.Name)
+	return containerName(c.group.name(), c.config.Info.Container)
 }
 
 func (c *container) hostName() string {
-	return c.config.HostName
+	return c.config.Network.HostName
 }
 
 func (c *container) domainName() string {
-	d := c.config.DomainName
+	d := c.config.Network.DomainName
 	if len(d) == 0 {
 		d = c.globalConfig.Container.DomainName
 	}
@@ -295,8 +295,8 @@ func (c *container) domainName() string {
 }
 
 func (c *container) userAndGroup() string {
-	u := c.config.User
-	g := c.config.PrimaryUserGroup
+	u := c.config.User.User
+	g := c.config.User.PrimaryGroup
 	if len(g) > 0 {
 		return fmt.Sprintf("%s:%s", u, g)
 	}
@@ -304,7 +304,7 @@ func (c *container) userAndGroup() string {
 }
 
 func (c *container) attachToTty() bool {
-	return c.config.AttachToTty
+	return c.config.Runtime.AttachToTty
 }
 
 func (c *container) envVars() []string {
@@ -314,7 +314,7 @@ func (c *container) envVars() []string {
 	for _, e := range c.globalConfig.Container.Env {
 		env[e.Var] = e.Value
 	}
-	for _, e := range c.config.Env {
+	for _, e := range c.config.Runtime.Env {
 		env[e.Var] = e.Value
 	}
 
@@ -326,11 +326,11 @@ func (c *container) envVars() []string {
 }
 
 func (c *container) args() []string {
-	return c.config.Args
+	return c.config.Runtime.Args
 }
 
 func (c *container) entrypoint() []string {
-	return c.config.Entrypoint
+	return c.config.Runtime.Entrypoint
 }
 
 func (c *container) isNetworkDisabled() bool {
@@ -339,18 +339,18 @@ func (c *container) isNetworkDisabled() bool {
 
 func (c *container) labels() map[string]string {
 	res := make(map[string]string, 0)
-	for _, l := range c.config.Labels {
+	for _, l := range c.config.Metadata.Labels {
 		res[l.Name] = l.Value
 	}
 	return res
 }
 
 func (c *container) stopSignal() string {
-	return c.config.StopSignal
+	return c.config.Lifecycle.StopSignal
 }
 
 func (c *container) stopTimeout() *int {
-	t := c.config.StopTimeout
+	t := c.config.Lifecycle.StopTimeout
 	if t == 0 {
 		t = c.globalConfig.Container.StopTimeout
 	}
@@ -358,39 +358,39 @@ func (c *container) stopTimeout() *int {
 }
 
 func (c *container) imageReference() string {
-	return c.config.Image
+	return c.config.Image.Image
 }
 
-func (c *container) volumeBindMounts() []string {
+func (c *container) bindMounts() []string {
 	// TODO: Do this once for the entire deployment and reuse it.
-	vd := make(map[string]string, 0)
-	for _, v := range c.globalConfig.VolumeDefs {
-		vd[v.Name] = volumeConfigToString(&v)
+	bm := make(map[string]string, 0)
+	for _, v := range c.globalConfig.MountDefs {
+		bm[v.Name] = mountConfigToString(&v)
 	}
 
 	binds := make(map[string]string, 0)
-	// Get all the global container config volumes.
+	// Get all the global container config mounts.
 	// TODO: Do this once for the entire deployment and reuse it.
-	for _, vol := range c.globalConfig.Container.Volumes {
-		val, ok := vd[vol.Name]
+	for _, mount := range c.globalConfig.Container.Mounts {
+		val, ok := bm[mount.Name]
 		if ok {
-			binds[vol.Name] = val
+			binds[mount.Name] = val
 		} else {
-			binds[vol.Name] = volumeConfigToString(&vol)
+			binds[mount.Name] = mountConfigToString(&mount)
 		}
 	}
-	// Get all the container specific volume configs and apply
+	// Get all the container specific mount configs and apply
 	// them as overrides for the global.
-	for _, vol := range c.config.Volumes {
-		val, ok := vd[vol.Name]
+	for _, mount := range c.config.Filesystem.Mounts {
+		val, ok := bm[mount.Name]
 		if ok {
-			binds[vol.Name] = val
+			binds[mount.Name] = val
 		} else {
-			binds[vol.Name] = volumeConfigToString(&vol)
+			binds[mount.Name] = mountConfigToString(&mount)
 		}
 	}
 
-	// Convert the result to include only the volume bind mount strings.
+	// Convert the result to include only the bind mount strings.
 	res := make([]string, 0)
 	for _, val := range binds {
 		res = append(res, val)
@@ -411,7 +411,7 @@ func (c *container) networkMode() dcontainer.NetworkMode {
 func (c *container) publishedPorts() (nat.PortMap, nat.PortSet) {
 	pMap := make(nat.PortMap)
 	pSet := make(nat.PortSet)
-	for _, p := range c.config.PublishedPorts {
+	for _, p := range c.config.Network.PublishedPorts {
 		natPort := nat.Port(fmt.Sprintf("%d/%s", p.ContainerPort, p.Proto))
 		pMap[natPort] = []nat.PortBinding{
 			{
@@ -425,7 +425,7 @@ func (c *container) publishedPorts() (nat.PortMap, nat.PortSet) {
 }
 
 func (c *container) restartPolicy() dcontainer.RestartPolicy {
-	pol := c.config.RestartPolicy
+	pol := c.config.Lifecycle.RestartPolicy
 	if len(pol) == 0 {
 		pol = c.globalConfig.Container.RestartPolicy
 	}
@@ -436,27 +436,27 @@ func (c *container) restartPolicy() dcontainer.RestartPolicy {
 }
 
 func (c *container) autoRemove() bool {
-	return c.config.AutoRemove
+	return c.config.Lifecycle.AutoRemove
 }
 
 func (c *container) capAddList() []string {
-	return c.config.CapAdd
+	return c.config.Security.CapAdd
 }
 
 func (c *container) capDropList() []string {
-	return c.config.CapDrop
+	return c.config.Security.CapDrop
 }
 
 func (c *container) dnsServers() []string {
-	return c.config.DNSServers
+	return c.config.Network.DNSServers
 }
 
 func (c *container) dnsOptions() []string {
-	return c.config.DNSOptions
+	return c.config.Network.DNSOptions
 }
 
 func (c *container) dnsSearch() []string {
-	d := c.config.DNSSearch
+	d := c.config.Network.DNSSearch
 	if len(d) == 0 {
 		d = c.globalConfig.Container.DNSSearch
 	}
@@ -464,15 +464,15 @@ func (c *container) dnsSearch() []string {
 }
 
 func (c *container) additionalUserGroups() []string {
-	return c.config.AdditionalUserGroups
+	return c.config.User.AdditionalGroups
 }
 
 func (c *container) privileged() bool {
-	return c.config.Privileged
+	return c.config.Security.Privileged
 }
 
 func (c *container) readOnlyRootfs() bool {
-	return c.config.ReadOnlyRootfs
+	return c.config.Filesystem.ReadOnlyRootfs
 }
 
 func (c *container) tmpfsMounts() map[string]string {
@@ -485,7 +485,7 @@ func (c *container) shmSize() int64 {
 
 func (c *container) sysctls() map[string]string {
 	res := make(map[string]string, 0)
-	for _, s := range c.config.Sysctls {
+	for _, s := range c.config.Security.Sysctls {
 		res[s.Key] = s.Value
 	}
 	return res
@@ -537,10 +537,10 @@ func containerMapToList(cm containerMap) containerList {
 		c1 := res[i]
 		c2 := res[j]
 		if c1.group.config.Order == c2.group.config.Order {
-			if c1.config.Order == c2.config.Order {
+			if c1.config.Lifecycle.Order == c2.config.Lifecycle.Order {
 				return c1.name() < c2.name()
 			}
-			return c1.config.Order < c2.config.Order
+			return c1.config.Lifecycle.Order < c2.config.Lifecycle.Order
 		} else {
 			return c1.group.config.Order < c2.group.config.Order
 		}
@@ -548,7 +548,7 @@ func containerMapToList(cm containerMap) containerList {
 	return res
 }
 
-func volumeConfigToString(v *VolumeConfig) string {
+func mountConfigToString(v *MountConfig) string {
 	if v.ReadOnly {
 		return fmt.Sprintf("%s:%s:ro", v.Src, v.Dst)
 	}

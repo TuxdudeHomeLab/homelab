@@ -24,9 +24,9 @@ type HomelabConfig struct {
 // GlobalConfig represents the configuration that will be applied
 // across the entire homelab deployment.
 type GlobalConfig struct {
-	Env        []GlobalEnvConfig     `yaml:"env"`
-	VolumeDefs []VolumeConfig        `yaml:"volumeDefs"`
-	Container  GlobalContainerConfig `yaml:"container"`
+	Env       []GlobalEnvConfig     `yaml:"env"`
+	MountDefs []MountConfig         `yaml:"mountDefs"`
+	Container GlobalContainerConfig `yaml:"container"`
 }
 
 // GlobalContainerConfig represents container related configuration that
@@ -38,7 +38,7 @@ type GlobalContainerConfig struct {
 	DomainName    string               `yaml:"domainName"`
 	DNSSearch     []string             `yaml:"dnsSearch"`
 	Env           []ContainerEnvConfig `yaml:"env"`
-	Volumes       []VolumeConfig       `yaml:"volumes"`
+	Mounts        []MountConfig        `yaml:"mounts"`
 	Labels        []LabelConfig        `yaml:"labels"`
 }
 
@@ -108,51 +108,97 @@ type ContainerGroupConfig struct {
 
 // ContainerConfig represents a single docker container.
 type ContainerConfig struct {
-	Name                    string                `yaml:"name"`
-	ParentGroup             string                `yaml:"parentGroup"`
-	Image                   string                `yaml:"image"`
-	Order                   int                   `yaml:"order"`
-	AttachToTty             bool                  `yaml:"tty"`
-	StopSignal              string                `yaml:"stopSignal"`
-	StopTimeout             int                   `yaml:"stopTimeout"`
-	RestartPolicy           string                `yaml:"restartPolicy"`
-	AutoRemove              bool                  `yaml:"autoRemove"`
-	SkipImagePull           bool                  `yaml:"skipImagePull"`
-	IgnoreImagePullFailures bool                  `yaml:"ignoreImagePullFailures"`
-	PullImageBeforeStop     bool                  `yaml:"pullImageBeforeStop"`
-	StartPreHook            string                `yaml:"startPreHook"`
-	User                    string                `yaml:"user"`
-	PrimaryUserGroup        string                `yaml:"primaryUserGroup"`
-	AdditionalUserGroups    []string              `yaml:"additionalUserGroups"`
-	HostName                string                `yaml:"hostName"`
-	DomainName              string                `yaml:"domainName"`
-	DNSServers              []string              `yaml:"dnsServers"`
-	DNSOptions              []string              `yaml:"dnsOptions"`
-	DNSSearch               []string              `yaml:"dnsSearch"`
-	DynamicFlagsCommand     string                `yaml:"dynamicFlagsCommand"`
-	Devices                 []DeviceConfig        `yaml:"devices"`
-	ShmSize                 string                `yaml:"shmSize"`
-	CapAdd                  []string              `yaml:"capAdd"`
-	CapDrop                 []string              `yaml:"capDrop"`
-	Privileged              bool                  `yaml:"privileged"`
-	Sysctls                 []SysctlConfig        `yaml:"sysctls"`
-	ReadOnlyRootfs          bool                  `yaml:"readOnlyRootfs"`
-	Mounts                  []string              `yaml:"mounts"`
-	Volumes                 []VolumeConfig        `yaml:"volumes"`
-	Env                     []ContainerEnvConfig  `yaml:"env"`
-	PublishedPorts          []PublishedPortConfig `yaml:"publishedPorts"`
-	Labels                  []LabelConfig         `yaml:"labels"`
-	HealthCmd               string                `yaml:"healthCmd"`
-	Entrypoint              []string              `yaml:"entrypoint"`
-	Args                    []string              `yaml:"args"`
+	Info       ContainerReference        `yaml:"info"`
+	Image      ContainerImageConfig      `yaml:"image"`
+	Metadata   ContainerMetadataConfig   `yaml:"metadata"`
+	Lifecycle  ContainerLifecycleConfig  `yaml:"lifecycle"`
+	User       ContainerUserConfig       `yaml:"user"`
+	Filesystem ContainerFilesystemConfig `yaml:"fs"`
+	Network    ContainerNetworkConfig    `yaml:"network"`
+	Security   ContainerSecurityConfig   `yaml:"security"`
+	Runtime    ContainerRuntimeConfig    `yaml:"runtime"`
 }
 
-// VolumeConfig represents a bind mounted volume.
-type VolumeConfig struct {
+// ContainerImageConfig respresents the image configuration for the docker
+// container.
+type ContainerImageConfig struct {
+	Image                   string `yaml:"image"`
+	SkipImagePull           bool   `yaml:"skipImagePull"`
+	IgnoreImagePullFailures bool   `yaml:"ignoreImagePullFailures"`
+	PullImageBeforeStop     bool   `yaml:"pullImageBeforeStop"`
+}
+
+// ContainerMetadataConfig represents the metadata for the docker container.
+type ContainerMetadataConfig struct {
+	Labels []LabelConfig `yaml:"labels"`
+}
+
+// ContainerLifecycleConfig represents the lifecycle information for the
+// docker container.
+type ContainerLifecycleConfig struct {
+	Order         int    `yaml:"order"`
+	StartPreHook  string `yaml:"startPreHook"`
+	RestartPolicy string `yaml:"restartPolicy"`
+	AutoRemove    bool   `yaml:"autoRemove"`
+	StopSignal    string `yaml:"stopSignal"`
+	StopTimeout   int    `yaml:"stopTimeout"`
+}
+
+// ContainerUserConfig represents the user and group information for the
+// docker container.
+type ContainerUserConfig struct {
+	User             string   `yaml:"user"`
+	PrimaryGroup     string   `yaml:"primaryGroup"`
+	AdditionalGroups []string `yaml:"additionalGroups"`
+}
+
+// ContainerFilesystemConfig represents the fileystem information for the
+// docker container.
+type ContainerFilesystemConfig struct {
+	ReadOnlyRootfs bool           `yaml:"readOnlyRootfs"`
+	Mounts         []MountConfig  `yaml:"mounts"`
+	Devices        []DeviceConfig `yaml:"devices"`
+}
+
+// ContainerNetworkConfig represents the networking information for the
+// docker container.
+type ContainerNetworkConfig struct {
+	HostName       string                `yaml:"hostName"`
+	DomainName     string                `yaml:"domainName"`
+	DNSServers     []string              `yaml:"dnsServers"`
+	DNSOptions     []string              `yaml:"dnsOptions"`
+	DNSSearch      []string              `yaml:"dnsSearch"`
+	PublishedPorts []PublishedPortConfig `yaml:"publishedPorts"`
+}
+
+// ContainerSecurityConfig represents the security information for the
+// docker container.
+type ContainerSecurityConfig struct {
+	Privileged bool           `yaml:"privileged"`
+	Sysctls    []SysctlConfig `yaml:"sysctls"`
+	CapAdd     []string       `yaml:"capAdd"`
+	CapDrop    []string       `yaml:"capDrop"`
+}
+
+// ContainerRuntimeConfig represents the execution and runtime information
+// for the docker container.
+type ContainerRuntimeConfig struct {
+	AttachToTty bool                 `yaml:"tty"`
+	ShmSize     string               `yaml:"shmSize"`
+	HealthCmd   string               `yaml:"healthCmd"`
+	Env         []ContainerEnvConfig `yaml:"env"`
+	Entrypoint  []string             `yaml:"entrypoint"`
+	Args        []string             `yaml:"args"`
+}
+
+// MountConfig represents a filesystem mount.
+type MountConfig struct {
+	Type     string `yaml:"type"`
 	Name     string `yaml:"name"`
 	Src      string `yaml:"src"`
 	Dst      string `yaml:"dst"`
 	ReadOnly bool   `yaml:"readOnly,omitempty"`
+	Options  string `yaml:"options"`
 }
 
 // DeviceConfig represents a device node that will be exposed to a container.
@@ -277,8 +323,8 @@ func (h *HomelabConfig) validate() error {
 	//     b. Validate mandatory properties of every global config env.
 	//     c. Every global config env specifies exactly one of value or
 	//        valueCommand, but not both.
-	//     d. Validate mandatory properties of every global config volume.
-	//     e. No duplicate global config volume names.
+	//     d. Validate mandatory properties of every global config mount.
+	//     e. No duplicate global config mount names.
 	// 2. Validate hosts config:
 	//     a. No duplicate host names.
 	//     b. No duplicate allowed containers (i.e. combination of group

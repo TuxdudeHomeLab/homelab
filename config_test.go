@@ -21,7 +21,7 @@ global:
       value: MY_VAR_1_VALUE
     - var: MY_VAR_2
       value: MY_VAR_2_VALUE
-  volumeDefs:
+  mountDefs:
     - name: vol-def-1
       src: /abc/def/ghi
       dst: /pqr/stu/vwx
@@ -42,7 +42,7 @@ global:
         value: MY_CONTAINER_ENV_VAR_1_VALUE
       - var: MY_CONTAINER_ENV_VAR_2
         value: MY_CONTAINER_ENV_VAR_2_VALUE
-    volumes:
+    mounts:
       - name: vol-def-1
       - name: vol-def-2
       - name: vol-def-3
@@ -125,6 +125,103 @@ groups:
     order: 2
   - name: group3
     order: 3
+containers:
+  - info:
+      group: group1
+      container: ct1
+    image:
+      image: tuxdude/homelab-base:master
+      skipImagePull: true
+      ignoreImagePullFailures: true
+      pullImageBeforeStop: true
+    metadata:
+      labels:
+        - name: my.ct1.label.name.1
+          value: my.ct1.label.value.1
+        - name: my.ct1.label.name.2
+          value: my.ct1.label.value.2
+    lifecycle:
+      order: 1
+      startPreHook: $$SCRIPTS_DIR$$/my-start-prehook.sh
+      restartPolicy: always
+      autoRemove: true
+      stopSignal: SIGHUP
+      stopTimeout: 10
+    user:
+      user: $$CURRENT_USER$$
+      primaryGroup: $$CURRENT_GROUP$$
+      additionalGroups:
+        - dialout
+        - someRandomGroup
+    fs:
+      readOnlyRootfs: true
+      mounts:
+        - type: bind
+          src: $$CONFIG_DIR$$/generated/config.yml
+          dst: /data/blocky/config/config.yml
+          readOnly: true
+        - name: homelab-self-signed-tls-cert
+        - type: tmpfs
+          dst: /tmp/cache
+          options: tmpfs-size=100000000
+      devices:
+        - src: /dev/foo
+          dst: /dev/bar
+        - src: /dev/dev1
+          dst: /dev/dev2
+    network:
+      hostName: foobar
+      domainName: somedomain
+      dnsServers:
+        - 1.1.1.1
+        - 1.0.0.1
+      dnsOptions:
+        - dns-option-1
+        - dns-option-2
+      dnsSearch:
+        - dns-ct-search-1
+        - dns-ct-search-2
+      publishedPorts:
+        - containerPort: 53
+          proto: tcp
+          hostIp: $$HOST_IP$$
+          hostPort: 53
+        - containerPort: 53
+          proto: udp
+          hostIp: $$HOST_IP$$
+          hostPort: 53
+    security:
+      privileged: true
+      sysctls:
+        - key: net.ipv4.ip_forward
+          value: 1
+        - key: net.ipv4.conf.all.src_valid_mark
+          value: 1
+      capAdd:
+        - SYS_RAWIO
+        - SYS_ADMIN
+      capDrop:
+        - NET_ADMIN
+        - SYS_MODULE
+    runtime:
+      tty: true
+      shmSize: 1g
+      healthCmd: my-health-cmd
+      env:
+        - var: MY_ENV
+          value: MY_ENV_VALUE
+        - var: MY_ENV_2
+          valueCommand: cat /foo/bar/baz.txt
+        - var: MY_ENV_3
+          value: SomeHostName.$$HUMAN_FRIENDLY_HOST_NAME$$.SomeDomainName
+      entrypoint:
+        - my-custom-entrypoint
+        - ep-arg1
+        - ep-arg2
+      args:
+        - foo
+        - bar
+        - baz
 `,
 		want: HomelabConfig{
 			Global: GlobalConfig{
@@ -138,7 +235,7 @@ groups:
 						Value: "MY_VAR_2_VALUE",
 					},
 				},
-				VolumeDefs: []VolumeConfig{
+				MountDefs: []MountConfig{
 					{
 						Name:     "vol-def-1",
 						Src:      "/abc/def/ghi",
@@ -170,7 +267,7 @@ groups:
 							Value: "MY_CONTAINER_ENV_VAR_2_VALUE",
 						},
 					},
-					Volumes: []VolumeConfig{
+					Mounts: []MountConfig{
 						{
 							Name: "vol-def-1",
 						},
@@ -327,6 +424,157 @@ groups:
 				{
 					Name:  "group3",
 					Order: 3,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "group1",
+						Container: "ct1",
+					},
+					Image: ContainerImageConfig{
+						Image:                   "tuxdude/homelab-base:master",
+						SkipImagePull:           true,
+						IgnoreImagePullFailures: true,
+						PullImageBeforeStop:     true,
+					},
+					Metadata: ContainerMetadataConfig{
+						Labels: []LabelConfig{
+							{
+								Name:  "my.ct1.label.name.1",
+								Value: "my.ct1.label.value.1",
+							},
+							{
+								Name:  "my.ct1.label.name.2",
+								Value: "my.ct1.label.value.2",
+							},
+						},
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order:         1,
+						StartPreHook:  "$$SCRIPTS_DIR$$/my-start-prehook.sh",
+						RestartPolicy: "always",
+						AutoRemove:    true,
+						StopSignal:    "SIGHUP",
+						StopTimeout:   10,
+					},
+					User: ContainerUserConfig{
+						User:         "$$CURRENT_USER$$",
+						PrimaryGroup: "$$CURRENT_GROUP$$",
+						AdditionalGroups: []string{
+							"dialout",
+							"someRandomGroup",
+						},
+					},
+					Filesystem: ContainerFilesystemConfig{
+						ReadOnlyRootfs: true,
+						Mounts: []MountConfig{
+							{
+								Type:     "bind",
+								Src:      "$$CONFIG_DIR$$/generated/config.yml",
+								Dst:      "/data/blocky/config/config.yml",
+								ReadOnly: true,
+							},
+							{
+								Name: "homelab-self-signed-tls-cert",
+							},
+							{
+								Type:    "tmpfs",
+								Dst:     "/tmp/cache",
+								Options: "tmpfs-size=100000000",
+							},
+						},
+						Devices: []DeviceConfig{
+							{
+								Src: "/dev/foo",
+								Dst: "/dev/bar",
+							},
+							{
+								Src: "/dev/dev1",
+								Dst: "/dev/dev2",
+							},
+						},
+					},
+					Network: ContainerNetworkConfig{
+						HostName:   "foobar",
+						DomainName: "somedomain",
+						DNSServers: []string{
+							"1.1.1.1",
+							"1.0.0.1",
+						},
+						DNSOptions: []string{
+							"dns-option-1",
+							"dns-option-2",
+						},
+						DNSSearch: []string{
+							"dns-ct-search-1",
+							"dns-ct-search-2",
+						},
+						PublishedPorts: []PublishedPortConfig{
+							{
+								ContainerPort: 53,
+								Proto:         "tcp",
+								HostIP:        "$$HOST_IP$$",
+								HostPort:      53,
+							},
+							{
+								ContainerPort: 53,
+								Proto:         "udp",
+								HostIP:        "$$HOST_IP$$",
+								HostPort:      53,
+							},
+						},
+					},
+					Security: ContainerSecurityConfig{
+						Privileged: true,
+						Sysctls: []SysctlConfig{
+							{
+								Key:   "net.ipv4.ip_forward",
+								Value: "1",
+							},
+							{
+								Key:   "net.ipv4.conf.all.src_valid_mark",
+								Value: "1",
+							},
+						},
+						CapAdd: []string{
+							"SYS_RAWIO",
+							"SYS_ADMIN",
+						},
+						CapDrop: []string{
+							"NET_ADMIN",
+							"SYS_MODULE",
+						},
+					},
+					Runtime: ContainerRuntimeConfig{
+						AttachToTty: true,
+						ShmSize:     "1g",
+						HealthCmd:   "my-health-cmd",
+						Env: []ContainerEnvConfig{
+							{
+								Var:   "MY_ENV",
+								Value: "MY_ENV_VALUE",
+							},
+							{
+								Var:          "MY_ENV_2",
+								ValueCommand: "cat /foo/bar/baz.txt",
+							},
+							{
+								Var:   "MY_ENV_3",
+								Value: "SomeHostName.$$HUMAN_FRIENDLY_HOST_NAME$$.SomeDomainName",
+							},
+						},
+						Entrypoint: []string{
+							"my-custom-entrypoint",
+							"ep-arg1",
+							"ep-arg2",
+						},
+						Args: []string{
+							"foo",
+							"bar",
+							"baz",
+						},
+					},
 				},
 			},
 		},
