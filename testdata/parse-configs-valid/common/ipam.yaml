@@ -1,0 +1,52 @@
+ipam:
+  networks:
+    bridgeModeNetworks:
+      - name: net1
+        hostInterfaceName: docker-net1
+        cidr: 172.18.100.0/24
+        priority: 1
+        containers:
+          - ip: 172.18.100.11
+            container:
+              group: g1
+              container: c1
+          - ip: 172.18.100.12
+            container:
+              group: g1
+              container: c2
+      - name: net2
+        hostInterfaceName: docker-net2
+        cidr: 172.18.101.0/24
+        priority: 1
+        containers:
+          - ip: 172.18.101.21
+            container:
+              group: g2
+              container: c3
+      - name: net-common
+        hostInterfaceName: docker-cmn
+        cidr: 172.19.200.0/24
+        priority: 2
+        containers:
+          - ip: 172.19.200.201
+            container:
+              group: g1
+              container: c1
+          - ip: 172.19.200.202
+            container:
+              group: g1
+              container: c2
+          - ip: 172.19.200.203
+            container:
+              group: g2
+              container: c3
+    containerModeNetworks:
+      - name: g3-c4
+        priority: 1
+        containers:
+          - group: g3
+            container: c5
+          - group: g3
+            container: c6
+          - group: g3
+            container: c7

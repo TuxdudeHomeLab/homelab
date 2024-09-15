@@ -1,0 +1,12 @@
+hosts:
+  - name: host1
+    allowedContainers:
+      - group: g1
+        container: c1
+      - group: g3
+        container: c4
+  - name: host2
+  - name: host3
+    allowedContainers:
+      - group: g2
+        container: c3

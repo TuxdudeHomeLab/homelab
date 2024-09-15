@@ -1,13 +1,15 @@
 package main
 
 import (
+	"fmt"
+	"os"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 )
 
-var validParseTests = []struct {
+var validParseConfigUsingReaderTests = []struct {
 	name   string
 	config string
 	want   HomelabConfig
@@ -581,8 +583,8 @@ containers:
 	},
 }
 
-func TestParseConfig(t *testing.T) {
-	for _, test := range validParseTests {
+func TestParseConfigUsingReader(t *testing.T) {
+	for _, test := range validParseConfigUsingReaderTests {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
@@ -602,4 +604,245 @@ func TestParseConfig(t *testing.T) {
 			}
 		})
 	}
+}
+
+var validParseConfigsFromPathTests = []struct {
+	name        string
+	configsPath string
+	want        HomelabConfig
+}{
+	{
+		name:        "Valid multi file config",
+		configsPath: "parse-configs-valid",
+		want: HomelabConfig{
+			Global: GlobalConfig{
+				Env: []GlobalEnvConfig{
+					{
+						Var:   "MY_GLOBAL_FOO",
+						Value: "MY_GLOBAL_BAR",
+					},
+				},
+				Container: GlobalContainerConfig{
+					StopSignal:    "SIGTERM",
+					StopTimeout:   5,
+					RestartPolicy: "unless-stopped",
+					DomainName:    "somedomain",
+				},
+			},
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					BridgeModeNetworks: []BridgeModeNetworkConfig{
+						{
+							Name:              "net1",
+							HostInterfaceName: "docker-net1",
+							CIDR:              "172.18.100.0/24",
+							Priority:          1,
+							Containers: []ContainerIPConfig{
+								{
+									IP: "172.18.100.11",
+									Container: ContainerReference{
+										Group:     "g1",
+										Container: "c1",
+									},
+								},
+								{
+									IP: "172.18.100.12",
+									Container: ContainerReference{
+										Group:     "g1",
+										Container: "c2",
+									},
+								},
+							},
+						},
+						{
+							Name:              "net2",
+							HostInterfaceName: "docker-net2",
+							CIDR:              "172.18.101.0/24",
+							Priority:          1,
+							Containers: []ContainerIPConfig{
+								{
+									IP: "172.18.101.21",
+									Container: ContainerReference{
+										Group:     "g2",
+										Container: "c3",
+									},
+								},
+							},
+						},
+						{
+							Name:              "net-common",
+							HostInterfaceName: "docker-cmn",
+							CIDR:              "172.19.200.0/24",
+							Priority:          2,
+							Containers: []ContainerIPConfig{
+								{
+									IP: "172.19.200.201",
+									Container: ContainerReference{
+										Group:     "g1",
+										Container: "c1",
+									},
+								},
+								{
+									IP: "172.19.200.202",
+									Container: ContainerReference{
+										Group:     "g1",
+										Container: "c2",
+									},
+								},
+								{
+									IP: "172.19.200.203",
+									Container: ContainerReference{
+										Group:     "g2",
+										Container: "c3",
+									},
+								},
+							},
+						},
+					},
+					ContainerModeNetworks: []ContainerModeNetworkConfig{
+						{
+							Name:     "g3-c4",
+							Priority: 1,
+							Containers: []ContainerReference{
+								{
+									Group:     "g3",
+									Container: "c5",
+								},
+								{
+									Group:     "g3",
+									Container: "c6",
+								},
+								{
+									Group:     "g3",
+									Container: "c7",
+								},
+							},
+						},
+					},
+				},
+			},
+			Hosts: []HostConfig{
+				{
+					Name: "host1",
+					AllowedContainers: []ContainerReference{
+						{
+							Group:     "g1",
+							Container: "c1",
+						},
+						{
+							Group:     "g3",
+							Container: "c4",
+						},
+					},
+				},
+				{
+					Name: "host2",
+				},
+				{
+					Name: "host3",
+					AllowedContainers: []ContainerReference{
+						{
+							Group:     "g2",
+							Container: "c3",
+						},
+					},
+				},
+			},
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+				{
+					Name:  "g2",
+					Order: 2,
+				},
+				{
+					Name:  "g3",
+					Order: 3,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "abc/xyz",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+				},
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c2",
+					},
+					Image: ContainerImageConfig{
+						Image: "abc/xyz2",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 2,
+					},
+				},
+				{
+					Info: ContainerReference{
+						Group:     "g2",
+						Container: "c3",
+					},
+					Image: ContainerImageConfig{
+						Image: "abc/xyz3",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+				},
+				{
+					Info: ContainerReference{
+						Group:     "g3",
+						Container: "c4",
+					},
+					Image: ContainerImageConfig{
+						Image: "abc/xyz4",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+				},
+			},
+		},
+	},
+}
+
+func TestParseConfigsFromPath(t *testing.T) {
+	for _, test := range validParseConfigsFromPathTests {
+		tc := test
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			p := fmt.Sprintf("%s/testdata/%s", pwd(), tc.configsPath)
+			got := HomelabConfig{}
+			if gotErr := got.parseConfigs(p); nil != gotErr {
+				t.Errorf(
+					"HomelabConfig.parseConfigs()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v",
+					tc.name, gotErr)
+				return
+			}
+
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Errorf(
+					"HomelabConfig.parseConfigs()\nTest Case: %q\nFailure: got did not match the want config\nDiff(-want +got): %s", tc.name, diff)
+			}
+		})
+	}
+}
+
+func pwd() string {
+	pwd, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+	return pwd
 }
