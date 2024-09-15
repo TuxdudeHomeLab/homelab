@@ -1,0 +1,9 @@
+global:
+  container:
+    stopSignal: SIGHUP
+    stopTimeout: 8
+    restartPolicy: always
+    domainName: somedomain2
+  env:
+    - var: MY_GLOBAL_FOO
+      value: MY_GLOBAL_BAR

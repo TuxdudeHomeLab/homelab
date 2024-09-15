@@ -1,0 +1,10 @@
+global:
+  env:
+    - var: MY_GLOBAL_FOO
+      value: MY_GLOBAL_BAR
+  container:
+    stopSignal: SIGTERM
+    stopTimeout: 5
+    restartPolicy: unless-stopped
+    domainName: somedomain
+    someInvalidKey: someInvalidValue

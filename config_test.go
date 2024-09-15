@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"os"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -839,10 +839,65 @@ func TestParseConfigsFromPath(t *testing.T) {
 	}
 }
 
-func pwd() string {
-	pwd, err := os.Getwd()
-	if err != nil {
-		panic(err)
+var parseConfigsErrorTests = []struct {
+	name        string
+	configsPath string
+	want        string
+}{
+	{
+		name:        "Non-existing configs dir path",
+		configsPath: "foo-bar",
+		want:        `os.Stat\(\) failed on homelab configs path, reason: stat [^ ]+foo-bar: no such file or directory`,
+	},
+	{
+		name:        "No configs",
+		configsPath: "parse-configs-invalid-empty-dir",
+		want:        `no homelab configs found in [^ ]+/parse-configs-invalid-empty-dir`,
+	},
+	{
+		name:        "File configs dir path",
+		configsPath: "parse-configs-invalid-with-empty-file/.empty",
+		want:        `homelab configs path "[^ ]+parse-configs-invalid-with-empty-file/.empty" must be a directory`,
+	},
+	{
+		name:        "Deep merge configs fail",
+		configsPath: "parse-configs-invalid-deepmerge-fail",
+		want:        `failed to deep merge config file "[^ ]+parse-configs-invalid-deepmerge-fail/config2.yaml", reason: error due to parameter with value of primitive type: only maps and slices/arrays can be merged, which means you cannot have define the same key twice for parameters that are not maps or slices/arrays`,
+	},
+	{
+		name:        "Invalid config key",
+		configsPath: "parse-configs-invalid-config-key",
+		want:        `(?s)failed to parse homelab config, reason: yaml: unmarshal errors:.+: field someInvalidKey not found in type main\.GlobalContainerConfig`,
+	},
+}
+
+func TestParseConfigsFromPathErrors(t *testing.T) {
+	for _, test := range parseConfigsErrorTests {
+		tc := test
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			p := fmt.Sprintf("%s/testdata/%s", pwd(), tc.configsPath)
+			c := HomelabConfig{}
+			gotErr := c.parseConfigs(p)
+			if gotErr == nil {
+				t.Errorf(
+					"HomelabConfig.parseConfigs()\nTest Case: %q\nFailure: gotErr == nil\nReason: want = %q",
+					tc.name, tc.want)
+				return
+			}
+
+			match, err := regexp.MatchString(tc.want, gotErr.Error())
+			if err != nil {
+				t.Errorf(
+					"HomelabConfig.parseConfigs()\nTest Case: %q\nFailure: unexpected exception while matching against gotErr error string\nReason: error = %v", tc.name, err)
+				return
+			}
+
+			if !match {
+				t.Errorf(
+					"HomelabConfig.parseConfigs()\nTest Case: %q\nFailure: gotErr did not match the want regex\nReason:\n\ngotErr = %q\n\twant = %q", tc.name, gotErr, tc.want)
+			}
+		})
 	}
-	return pwd
 }
