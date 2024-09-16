@@ -303,16 +303,12 @@ func (h *HomelabConfig) parseConfigs(configsPath string) error {
 }
 
 func (h *HomelabConfig) validate() error {
-	// TODO: Perform the following (and more) validations:
-	// 1. Validate global config:
-	//     a. No duplicate global config env names.
-	//     b. Validate mandatory properties of every global config env.
-	//     c. Every global config env specifies exactly one of value or
-	//        valueCommand, but not both.
-	//     d. Validate mandatory properties of every global config mount.
-	//     e. No duplicate global config mount names.
+	err := validateGlobalConfig(&h.Global)
+	if err != nil {
+		return err
+	}
 
-	err := validateHostsConfig(h.Hosts)
+	err = validateHostsConfig(h.Hosts)
 	if err != nil {
 		return err
 	}
@@ -327,21 +323,23 @@ func (h *HomelabConfig) validate() error {
 		return err
 	}
 
-	// TODO: Perform the following (and more) validations:
-	// 3. Container configs:
-	//     a. Parent group name is a valid group defined under group config.
-	//     b. No duplicate container names within the same group.
-	//     c. Order defined for all the containers.
-	//     d. Image defined for all the containers.
-	//     e. Validate mandatory properties of every device config.
-	//     f. Validate manadatory properties of every container config mount.
-	//     g. Mount pure name references are valid global config mount references.
-	//     h. Validate manadatory properties of every container config env.
-	//     i. Every container config env specifies exactly one of value or
-	//        valueCommand, but not both.
-	//     j. Validate mandatory properties of every published port config.
-	//     k. Validate mandatory properties of every label config.
+	err = validateContainersConfig(h.Containers)
+	if err != nil {
+		return err
+	}
 
+	return nil
+}
+
+func validateGlobalConfig(config *GlobalConfig) error {
+	// TODO: Perform the following (and more) validations:
+	// Validate global config:
+	//     a. No duplicate global config env names.
+	//     b. Validate mandatory properties of every global config env.
+	//     c. Every global config env specifies exactly one of value or
+	//        valueCommand, but not both.
+	//     d. Validate mandatory properties of every global config mount.
+	//     e. No duplicate global config mount names.
 	return nil
 }
 
@@ -435,6 +433,25 @@ func validateIPAMConfig(config *IPAMConfig) error {
 	return nil
 }
 
+func validateHostsConfig(hosts []HostConfig) error {
+	hostNames := make(map[string]bool)
+	for _, h := range hosts {
+		if hostNames[h.Name] {
+			return fmt.Errorf("host %s defined more than once in the hosts config", h.Name)
+		}
+		hostNames[h.Name] = true
+
+		containers := make(map[ContainerReference]bool)
+		for _, ct := range h.AllowedContainers {
+			if containers[ct] {
+				return fmt.Errorf("container {Group:%s Container:%s} defined more than once in the hosts config for host %s", ct.Group, ct.Container, h.Name)
+			}
+			containers[ct] = true
+		}
+	}
+	return nil
+}
+
 func validateGroupsConfig(groups []ContainerGroupConfig) error {
 	groupNames := make(map[string]bool)
 	for _, g := range groups {
@@ -453,21 +470,20 @@ func validateGroupsConfig(groups []ContainerGroupConfig) error {
 	return nil
 }
 
-func validateHostsConfig(hosts []HostConfig) error {
-	hostNames := make(map[string]bool)
-	for _, h := range hosts {
-		if hostNames[h.Name] {
-			return fmt.Errorf("host %s defined more than once in the hosts config", h.Name)
-		}
-		hostNames[h.Name] = true
-
-		containers := make(map[ContainerReference]bool)
-		for _, ct := range h.AllowedContainers {
-			if containers[ct] {
-				return fmt.Errorf("container {Group:%s Container:%s} defined more than once in the hosts config for host %s", ct.Group, ct.Container, h.Name)
-			}
-			containers[ct] = true
-		}
-	}
+func validateContainersConfig(containers []ContainerConfig) error {
+	// TODO: Perform the following (and more) validations:
+	// Container configs:
+	//     a. Parent group name is a valid group defined under group config.
+	//     b. No duplicate container names within the same group.
+	//     c. Order defined for all the containers.
+	//     d. Image defined for all the containers.
+	//     e. Validate mandatory properties of every device config.
+	//     f. Validate manadatory properties of every container config mount.
+	//     g. Mount pure name references are valid global config mount references.
+	//     h. Validate manadatory properties of every container config env.
+	//     i. Every container config env specifies exactly one of value or
+	//        valueCommand, but not both.
+	//     j. Validate mandatory properties of every published port config.
+	//     k. Validate mandatory properties of every label config.
 	return nil
 }
