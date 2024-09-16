@@ -311,12 +311,13 @@ func (h *HomelabConfig) validate() error {
 	//        valueCommand, but not both.
 	//     d. Validate mandatory properties of every global config mount.
 	//     e. No duplicate global config mount names.
-	// 2. Validate hosts config:
-	//     a. No duplicate host names.
-	//     b. No duplicate allowed containers (i.e. combination of group
-	//        and container name).
 
-	err := validateIPAMConfig(&h.IPAM)
+	err := validateHostsConfig(h.Hosts)
+	if err != nil {
+		return err
+	}
+
+	err = validateIPAMConfig(&h.IPAM)
 	if err != nil {
 		return err
 	}
@@ -448,6 +449,25 @@ func validateGroupsConfig(groups []ContainerGroupConfig) error {
 		}
 
 		groupNames[g.Name] = true
+	}
+	return nil
+}
+
+func validateHostsConfig(hosts []HostConfig) error {
+	hostNames := make(map[string]bool)
+	for _, h := range hosts {
+		if hostNames[h.Name] {
+			return fmt.Errorf("host %s defined more than once in the hosts config", h.Name)
+		}
+		hostNames[h.Name] = true
+
+		containers := make(map[ContainerReference]bool)
+		for _, ct := range h.AllowedContainers {
+			if containers[ct] {
+				return fmt.Errorf("container {Group:%s Container:%s} defined more than once in the hosts config for host %s", ct.Group, ct.Container, h.Name)
+			}
+			containers[ct] = true
+		}
 	}
 	return nil
 }

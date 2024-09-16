@@ -1654,6 +1654,69 @@ var validateConfigErrorTests = []struct {
 		},
 		want: `group g1 has a non-positive order -1`,
 	},
+	{
+		name: "Duplicate Host Name",
+		config: HomelabConfig{
+			Hosts: []HostConfig{
+				{
+					Name: "h1",
+					AllowedContainers: []ContainerReference{
+						{
+							Group:     "g1",
+							Container: "ct1",
+						},
+						{
+							Group:     "g2",
+							Container: "ct2",
+						},
+					},
+				},
+				{
+					Name: "h1",
+					AllowedContainers: []ContainerReference{
+						{
+							Group:     "g3",
+							Container: "ct3",
+						},
+						{
+							Group:     "g4",
+							Container: "ct4",
+						},
+					},
+				},
+			},
+		},
+		want: `host h1 defined more than once in the hosts config`,
+	},
+	{
+		name: "Duplicate Container Within Host Config",
+		config: HomelabConfig{
+			Hosts: []HostConfig{
+				{
+					Name: "h1",
+					AllowedContainers: []ContainerReference{
+						{
+							Group:     "g1",
+							Container: "ct1",
+						},
+						{
+							Group:     "g2",
+							Container: "ct2",
+						},
+						{
+							Group:     "g3",
+							Container: "ct3",
+						},
+						{
+							Group:     "g2",
+							Container: "ct2",
+						},
+					},
+				},
+			},
+		},
+		want: `container {Group:g2 Container:ct2} defined more than once in the hosts config for host h1`,
+	},
 }
 
 func TestValidateConfigErrors(t *testing.T) {
