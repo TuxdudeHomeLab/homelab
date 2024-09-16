@@ -1043,6 +1043,30 @@ var validateConfigErrorTests = []struct {
 		},
 		want: `network net1 defined more than once in the IPAM config`,
 	},
+	{
+		name: "Duplicate network host interface names",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					BridgeModeNetworks: []BridgeModeNetworkConfig{
+						{
+							Name:              "net1",
+							HostInterfaceName: "docker-net1",
+							CIDR:              "172.18.100.0/24",
+							Priority:          1,
+						},
+						{
+							Name:              "net2",
+							HostInterfaceName: "docker-net1",
+							CIDR:              "172.18.101.0/24",
+							Priority:          1,
+						},
+					},
+				},
+			},
+		},
+		want: `host interface name docker-net1 of network net2 is already used by another network in the IPAM config`,
+	},
 }
 
 func TestValidateConfigErrors(t *testing.T) {

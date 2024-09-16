@@ -369,12 +369,17 @@ func validateIPAMConfig(config *IPAMConfig) error {
 	//     f. No duplicate IPs within a bridge network.
 
 	networks := make(map[string]bool)
+	hostInterfaces := make(map[string]bool)
 	bridgeModeNetworks := config.Networks.BridgeModeNetworks
 	for _, n := range bridgeModeNetworks {
 		if networks[n.Name] {
 			return fmt.Errorf("network %s defined more than once in the IPAM config", n.Name)
 		}
+		if hostInterfaces[n.HostInterfaceName] {
+			return fmt.Errorf("host interface name %s of network %s is already used by another network in the IPAM config", n.HostInterfaceName, n.Name)
+		}
 		networks[n.Name] = true
+		hostInterfaces[n.HostInterfaceName] = true
 	}
 	containerModeNetworks := config.Networks.ContainerModeNetworks
 	for _, n := range containerModeNetworks {
