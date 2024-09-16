@@ -332,14 +332,42 @@ func (h *HomelabConfig) validate() error {
 }
 
 func validateGlobalConfig(config *GlobalConfig) error {
+	err := validateGlobalEnvConfig(config.Env)
+	if err != nil {
+		return err
+	}
+
+	err = validateMountDefs(config.MountDefs)
+	if err != nil {
+		return err
+	}
+
+	err = validateGlobalContainerConfig(&config.Container)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func validateGlobalEnvConfig(config []GlobalEnvConfig) error {
 	// TODO: Perform the following (and more) validations:
-	// Validate global config:
 	//     a. No duplicate global config env names.
 	//     b. Validate mandatory properties of every global config env.
 	//     c. Every global config env specifies exactly one of value or
 	//        valueCommand, but not both.
-	//     d. Validate mandatory properties of every global config mount.
-	//     e. No duplicate global config mount names.
+	return nil
+}
+
+func validateMountDefs(config []MountConfig) error {
+	// TODO: Perform the following (and more) validations:
+	//     a. Validate mandatory properties of every global config mount.
+	//     b. No duplicate global config mount names.
+	return nil
+}
+
+func validateGlobalContainerConfig(config *GlobalContainerConfig) error {
+	// TODO: Perform the following (and more) validations:
 	return nil
 }
 
