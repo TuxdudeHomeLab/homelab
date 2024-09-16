@@ -386,6 +386,9 @@ func validateIPAMConfig(config *IPAMConfig) error {
 		if prefixLen > 30 {
 			return fmt.Errorf("CIDR %s of network %s (prefix length: %d) has a prefix length more than 30 which makes the network unusable for container IP address allocations", n.CIDR, n.Name, prefixLen)
 		}
+		if !netAddr.IsPrivate() {
+			return fmt.Errorf("CIDR %s of network %s is not within the RFC1918 private address space", n.CIDR, n.Name)
+		}
 		for pre, preNet := range prefixes {
 			if prefix.Overlaps(pre) {
 				return fmt.Errorf("CIDR %s of network %s overlaps with CIDR %s of network %s", n.CIDR, n.Name, pre, preNet)

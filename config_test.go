@@ -1212,6 +1212,60 @@ var validateConfigErrorTests = []struct {
 		want: `CIDR 172\.18\.100\.0/32 of network net1 \(prefix length: 32\) has a prefix length more than 30 which makes the network unusable for container IP address allocations`,
 	},
 	{
+		name: "Non-RFC1918 CIDR - Public IPv4",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					BridgeModeNetworks: []BridgeModeNetworkConfig{
+						{
+							Name:              "net1",
+							HostInterfaceName: "docker-net1",
+							CIDR:              "11.12.13.0/24",
+							Priority:          1,
+						},
+					},
+				},
+			},
+		},
+		want: `CIDR 11\.12\.13\.0/24 of network net1 is not within the RFC1918 private address space`,
+	},
+	{
+		name: "Non-RFC1918 CIDR - Link Local",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					BridgeModeNetworks: []BridgeModeNetworkConfig{
+						{
+							Name:              "net1",
+							HostInterfaceName: "docker-net1",
+							CIDR:              "169.254.10.0/24",
+							Priority:          1,
+						},
+					},
+				},
+			},
+		},
+		want: `CIDR 169\.254\.10\.0/24 of network net1 is not within the RFC1918 private address space`,
+	},
+	{
+		name: "Non-RFC1918 CIDR - Multicast",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					BridgeModeNetworks: []BridgeModeNetworkConfig{
+						{
+							Name:              "net1",
+							HostInterfaceName: "docker-net1",
+							CIDR:              "224.0.0.0/26",
+							Priority:          1,
+						},
+					},
+				},
+			},
+		},
+		want: `CIDR 224\.0\.0\.0/26 of network net1 is not within the RFC1918 private address space`,
+	},
+	{
 		name: "Overlapping CIDR",
 		config: HomelabConfig{
 			IPAM: IPAMConfig{
