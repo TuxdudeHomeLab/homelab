@@ -1485,6 +1485,54 @@ var validateConfigErrorTests = []struct {
 		},
 		want: `container {Group:group1 Container:ct1} has multiple endpoints in network net1`,
 	},
+	{
+		name: "Duplicate Container IPs",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					BridgeModeNetworks: []BridgeModeNetworkConfig{
+						{
+							Name:              "net1",
+							HostInterfaceName: "docker-net1",
+							CIDR:              "172.18.100.0/24",
+							Priority:          1,
+							Containers: []ContainerIPConfig{
+								{
+									IP: "172.18.100.2",
+									Container: ContainerReference{
+										Group:     "group1",
+										Container: "ct1",
+									},
+								},
+								{
+									IP: "172.18.100.3",
+									Container: ContainerReference{
+										Group:     "group1",
+										Container: "ct2",
+									},
+								},
+								{
+									IP: "172.18.100.4",
+									Container: ContainerReference{
+										Group:     "group1",
+										Container: "ct3",
+									},
+								},
+								{
+									IP: "172.18.100.2",
+									Container: ContainerReference{
+										Group:     "group1",
+										Container: "ct4",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `IP 172\.18\.100\.2 of container {Group:group1 Container:ct4} is already in use by another container in network net1`,
+	},
 }
 
 func TestValidateConfigErrors(t *testing.T) {

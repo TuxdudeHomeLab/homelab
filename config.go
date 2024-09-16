@@ -344,17 +344,6 @@ func (h *HomelabConfig) validate() error {
 }
 
 func validateIPAMConfig(config *IPAMConfig) error {
-	// Validate IPAM config:
-	//     a. No duplicate network names across bridge and container mode
-	//        networks.
-	//     b. No duplicate host interface names across bridge networks.
-	//     c. Strictly valid CIDR.
-	//     d. No overlapping CIDR across networks.
-	//     e. No duplicate container names within a bridge or container
-	//        mode network.
-	//     f. All IPs in a bridge network belong to the CIDR.
-	//     g. No duplicate IPs within a bridge network.
-
 	networks := make(map[string]bool)
 	hostInterfaces := make(map[string]bool)
 	bridgeModeNetworks := config.Networks.BridgeModeNetworks
@@ -398,6 +387,7 @@ func validateIPAMConfig(config *IPAMConfig) error {
 
 		gatewayAddr := netAddr.Next()
 		containers := make(map[ContainerReference]bool)
+		containerIPs := make(map[netip.Addr]bool)
 		for _, cip := range n.Containers {
 			ip := cip.IP
 			ct := cip.Container
@@ -417,7 +407,12 @@ func validateIPAMConfig(config *IPAMConfig) error {
 			if containers[ct] {
 				return fmt.Errorf("container {Group:%s Container:%s} has multiple endpoints in network %s", ct.Group, ct.Container, n.Name)
 			}
+			if containerIPs[caddr] {
+				return fmt.Errorf("IP %s of container {Group:%s Container:%s} is already in use by another container in network %s", ip, ct.Group, ct.Container, n.Name)
+			}
+
 			containers[ct] = true
+			containerIPs[caddr] = true
 		}
 	}
 	containerModeNetworks := config.Networks.ContainerModeNetworks
