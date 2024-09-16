@@ -104,7 +104,7 @@ type ContainerReference struct {
 // basically a collection of containers within.
 type ContainerGroupConfig struct {
 	Name  string `yaml:"name"`
-	Order int    `yaml:"order"`
+	Order *int   `yaml:"order"`
 }
 
 // ContainerConfig represents a single docker container.
@@ -137,7 +137,7 @@ type ContainerMetadataConfig struct {
 // ContainerLifecycleConfig represents the lifecycle information for the
 // docker container.
 type ContainerLifecycleConfig struct {
-	Order         int    `yaml:"order"`
+	Order         *int   `yaml:"order"`
 	StartPreHook  string `yaml:"startPreHook"`
 	RestartPolicy string `yaml:"restartPolicy"`
 	AutoRemove    bool   `yaml:"autoRemove"`
@@ -316,17 +316,18 @@ func (h *HomelabConfig) validate() error {
 	//     b. No duplicate allowed containers (i.e. combination of group
 	//        and container name).
 
-	// 3. Validate IPAM config:
 	err := validateIPAMConfig(&h.IPAM)
 	if err != nil {
 		return err
 	}
 
+	err = validateGroupsConfig(h.Groups)
+	if err != nil {
+		return err
+	}
+
 	// TODO: Perform the following (and more) validations:
-	// 4. Groups config:
-	//     a. No duplicate group names.
-	//     b. Order defined for all the groups.
-	// 5. Container configs:
+	// 3. Container configs:
 	//     a. Parent group name is a valid group defined under group config.
 	//     b. No duplicate container names within the same group.
 	//     c. Order defined for all the containers.
@@ -429,6 +430,24 @@ func validateIPAMConfig(config *IPAMConfig) error {
 			}
 			containers[ct] = true
 		}
+	}
+	return nil
+}
+
+func validateGroupsConfig(groups []ContainerGroupConfig) error {
+	groupNames := make(map[string]bool)
+	for _, g := range groups {
+		if groupNames[g.Name] {
+			return fmt.Errorf("group %s defined more than once in the groups config", g.Name)
+		}
+		if g.Order == nil {
+			return fmt.Errorf("group %s doesn't have an order set", g.Name)
+		}
+		if *g.Order < 1 {
+			return fmt.Errorf("group %s has a non-positive order %d", g.Name, *g.Order)
+		}
+
+		groupNames[g.Name] = true
 	}
 	return nil
 }

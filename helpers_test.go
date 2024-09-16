@@ -9,3 +9,7 @@ func pwd() string {
 	}
 	return pwd
 }
+
+func newInt(i int) *int {
+	return &i
+}

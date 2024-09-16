@@ -223,8 +223,7 @@ containers:
       args:
         - foo
         - bar
-        - baz
-`,
+        - baz`,
 		want: HomelabConfig{
 			Global: GlobalConfig{
 				Env: []GlobalEnvConfig{
@@ -417,15 +416,15 @@ containers:
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "group1",
-					Order: 1,
+					Order: newInt(1),
 				},
 				{
 					Name:  "group2",
-					Order: 2,
+					Order: newInt(2),
 				},
 				{
 					Name:  "group3",
-					Order: 3,
+					Order: newInt(3),
 				},
 			},
 			Containers: []ContainerConfig{
@@ -453,7 +452,7 @@ containers:
 						},
 					},
 					Lifecycle: ContainerLifecycleConfig{
-						Order:         1,
+						Order:         newInt(1),
 						StartPreHook:  "$$SCRIPTS_DIR$$/my-start-prehook.sh",
 						RestartPolicy: "always",
 						AutoRemove:    true,
@@ -577,6 +576,31 @@ containers:
 							"baz",
 						},
 					},
+				},
+			},
+		},
+	},
+	{
+		name: "Valid Groups Only config",
+		config: `
+groups:
+  - name: group1
+    order: 1
+  - name: group2
+  - name: group3
+    order: 2`,
+		want: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "group1",
+					Order: newInt(1),
+				},
+				{
+					Name: "group2",
+				},
+				{
+					Name:  "group3",
+					Order: newInt(2),
 				},
 			},
 		},
@@ -751,15 +775,15 @@ var validParseConfigsFromPathTests = []struct {
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
-					Order: 1,
+					Order: newInt(1),
 				},
 				{
 					Name:  "g2",
-					Order: 2,
+					Order: newInt(2),
 				},
 				{
 					Name:  "g3",
-					Order: 3,
+					Order: newInt(3),
 				},
 			},
 			Containers: []ContainerConfig{
@@ -772,7 +796,7 @@ var validParseConfigsFromPathTests = []struct {
 						Image: "abc/xyz",
 					},
 					Lifecycle: ContainerLifecycleConfig{
-						Order: 1,
+						Order: newInt(1),
 					},
 				},
 				{
@@ -784,7 +808,7 @@ var validParseConfigsFromPathTests = []struct {
 						Image: "abc/xyz2",
 					},
 					Lifecycle: ContainerLifecycleConfig{
-						Order: 2,
+						Order: newInt(2),
 					},
 				},
 				{
@@ -796,7 +820,7 @@ var validParseConfigsFromPathTests = []struct {
 						Image: "abc/xyz3",
 					},
 					Lifecycle: ContainerLifecycleConfig{
-						Order: 1,
+						Order: newInt(1),
 					},
 				},
 				{
@@ -808,7 +832,7 @@ var validParseConfigsFromPathTests = []struct {
 						Image: "abc/xyz4",
 					},
 					Lifecycle: ContainerLifecycleConfig{
-						Order: 1,
+						Order: newInt(1),
 					},
 				},
 			},
@@ -919,6 +943,10 @@ var validateConfigTests = []struct {
 	name   string
 	config HomelabConfig
 }{
+	{
+		name:   "Valid Empty config",
+		config: HomelabConfig{},
+	},
 	{
 		name: "Valid IPAM config",
 		config: HomelabConfig{
@@ -1566,6 +1594,65 @@ var validateConfigErrorTests = []struct {
 			},
 		},
 		want: `container {Group:group1 Container:ct2} has multiple endpoints in network net1`,
+	},
+	{
+		name: "Duplicate Container Group Name",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: newInt(1),
+				},
+				{
+					Name:  "g2",
+					Order: newInt(1),
+				},
+				{
+					Name:  "g3",
+					Order: newInt(1),
+				},
+				{
+					Name:  "g1",
+					Order: newInt(2),
+				},
+			},
+		},
+		want: `group g1 defined more than once in the groups config`,
+	},
+	{
+		name: "Container Group Without Order",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name: "g1",
+				},
+			},
+		},
+		want: `group g1 doesn't have an order set`,
+	},
+	{
+		name: "Container Group With Zero Order",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: newInt(0),
+				},
+			},
+		},
+		want: `group g1 has a non-positive order 0`,
+	},
+	{
+		name: "Container Group With Negative Order",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: newInt(-1),
+				},
+			},
+		},
+		want: `group g1 has a non-positive order -1`,
 	},
 }
 
