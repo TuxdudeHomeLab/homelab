@@ -254,7 +254,7 @@ func mergedConfigReader(path string) (io.Reader, error) {
 	var result []byte
 	err := filepath.WalkDir(path, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to read contents of directory %s, reason: %w", path, err)
 		} else if d == nil || d.IsDir() {
 			return nil
 		}
@@ -266,11 +266,11 @@ func mergedConfigReader(path string) (io.Reader, error) {
 		log.Debugf("Picked up homelab config: %s", p)
 		configFile, err := os.ReadFile(p)
 		if err != nil {
-			return fmt.Errorf("failed to read homelab config file %q, reason: %w", p, err)
+			return fmt.Errorf("failed to read homelab config file %s, reason: %w", p, err)
 		}
 		result, err = deepmerge.YAML(result, configFile)
 		if err != nil {
-			return fmt.Errorf("failed to deep merge config file %q, reason: %w", p, err)
+			return fmt.Errorf("failed to deep merge config file %s, reason: %w", p, err)
 		}
 		return nil
 	})
@@ -305,7 +305,7 @@ func (h *HomelabConfig) parseConfigs(configsPath string) error {
 		return fmt.Errorf("os.Stat() failed on homelab configs path, reason: %w", err)
 	}
 	if !pathStat.IsDir() {
-		return fmt.Errorf("homelab configs path %q must be a directory", configsPath)
+		return fmt.Errorf("homelab configs path %s must be a directory", configsPath)
 	}
 
 	m, err := mergedConfigReader(configsPath)
@@ -329,15 +329,14 @@ func (h *HomelabConfig) validate() error {
 	//     a. No duplicate host names.
 	//     b. No duplicate allowed containers (i.e. combination of group
 	//        and container name).
+
 	// 3. Validate IPAM config:
-	//     a. No duplicate network names across bridge and container mode
-	//        networks.
-	//     b. No duplicate host interface names across bridge networks.
-	//     c. No overlapping CIDR across networks.
-	//     d. No duplicate container names within a bridge or container
-	//        mode network.
-	//     e. All IPs in a bridge network belong to the CIDR.
-	//     f. No duplicate IPs within a bridge network.
+	err := validateIPAMConfig(&h.IPAM)
+	if err != nil {
+		return err
+	}
+
+	// TODO: Perform the following (and more) validations:
 	// 4. Groups config:
 	//     a. No duplicate group names.
 	//     b. Order defined for all the groups.
@@ -347,12 +346,42 @@ func (h *HomelabConfig) validate() error {
 	//     c. Order defined for all the containers.
 	//     d. Image defined for all the containers.
 	//     e. Validate mandatory properties of every device config.
-	//     f. Validate manadatory properties of every container config volume.
-	//     g. Volume pure name references are valid global config volume references.
+	//     f. Validate manadatory properties of every container config mount.
+	//     g. Mount pure name references are valid global config mount references.
 	//     h. Validate manadatory properties of every container config env.
 	//     i. Every container config env specifies exactly one of value or
 	//        valueCommand, but not both.
 	//     j. Validate mandatory properties of every published port config.
 	//     k. Validate mandatory properties of every label config.
+
+	return nil
+}
+
+func validateIPAMConfig(config *IPAMConfig) error {
+	// Validate IPAM config:
+	//     a. No duplicate network names across bridge and container mode
+	//        networks.
+	//     b. No duplicate host interface names across bridge networks.
+	//     c. No overlapping CIDR across networks.
+	//     d. No duplicate container names within a bridge or container
+	//        mode network.
+	//     e. All IPs in a bridge network belong to the CIDR.
+	//     f. No duplicate IPs within a bridge network.
+
+	networks := make(map[string]bool)
+	bridgeModeNetworks := config.Networks.BridgeModeNetworks
+	for _, n := range bridgeModeNetworks {
+		if networks[n.Name] {
+			return fmt.Errorf("network %s defined more than once in the IPAM config", n.Name)
+		}
+		networks[n.Name] = true
+	}
+	containerModeNetworks := config.Networks.ContainerModeNetworks
+	for _, n := range containerModeNetworks {
+		if networks[n.Name] {
+			return fmt.Errorf("network %s defined more than once in the IPAM config", n.Name)
+		}
+		networks[n.Name] = true
+	}
 	return nil
 }

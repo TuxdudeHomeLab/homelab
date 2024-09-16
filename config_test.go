@@ -9,7 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-var validParseConfigUsingReaderTests = []struct {
+var parseConfigUsingReaderTests = []struct {
 	name   string
 	config string
 	want   HomelabConfig
@@ -584,7 +584,7 @@ containers:
 }
 
 func TestParseConfigUsingReader(t *testing.T) {
-	for _, test := range validParseConfigUsingReaderTests {
+	for _, test := range parseConfigUsingReaderTests {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
@@ -852,17 +852,27 @@ var parseConfigsErrorTests = []struct {
 	{
 		name:        "No configs",
 		configsPath: "parse-configs-invalid-empty-dir",
-		want:        `no homelab configs found in [^ ]+/parse-configs-invalid-empty-dir`,
+		want:        `no homelab configs found in [^ ]+/testdata/parse-configs-invalid-empty-dir`,
 	},
 	{
 		name:        "File configs dir path",
 		configsPath: "parse-configs-invalid-with-empty-file/.empty",
-		want:        `homelab configs path "[^ ]+parse-configs-invalid-with-empty-file/.empty" must be a directory`,
+		want:        `homelab configs path [^ ]+/testdata/parse-configs-invalid-with-empty-file/.empty must be a directory`,
+	},
+	{
+		name:        "Unreadable config dir",
+		configsPath: "/root",
+		want:        `failed to read contents of directory /root, reason: open /root: permission denied`,
+	},
+	{
+		name:        "Unreadable config file",
+		configsPath: "parse-configs-invalid-unreadable-config",
+		want:        `failed to read homelab config file [^ ]+/testdata/parse-configs-invalid-unreadable-config/invalid-symlink.yaml, reason: open [^ ]+/testdata/parse-configs-invalid-unreadable-config/invalid-symlink.yaml: no such file or directory`,
 	},
 	{
 		name:        "Deep merge configs fail",
 		configsPath: "parse-configs-invalid-deepmerge-fail",
-		want:        `failed to deep merge config file "[^ ]+parse-configs-invalid-deepmerge-fail/config2.yaml", reason: error due to parameter with value of primitive type: only maps and slices/arrays can be merged, which means you cannot have define the same key twice for parameters that are not maps or slices/arrays`,
+		want:        `failed to deep merge config file [^ ]+parse-configs-invalid-deepmerge-fail/config2.yaml, reason: error due to parameter with value of primitive type: only maps and slices/arrays can be merged, which means you cannot have define the same key twice for parameters that are not maps or slices/arrays`,
 	},
 	{
 		name:        "Invalid config key",
@@ -877,7 +887,10 @@ func TestParseConfigsFromPathErrors(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			p := fmt.Sprintf("%s/testdata/%s", pwd(), tc.configsPath)
+			p := tc.configsPath
+			if !strings.HasPrefix(tc.configsPath, "/") {
+				p = fmt.Sprintf("%s/testdata/%s", pwd(), tc.configsPath)
+			}
 			c := HomelabConfig{}
 			gotErr := c.parseConfigs(p)
 			if gotErr == nil {
@@ -897,6 +910,165 @@ func TestParseConfigsFromPathErrors(t *testing.T) {
 			if !match {
 				t.Errorf(
 					"HomelabConfig.parseConfigs()\nTest Case: %q\nFailure: gotErr did not match the want regex\nReason:\n\ngotErr = %q\n\twant = %q", tc.name, gotErr, tc.want)
+			}
+		})
+	}
+}
+
+var validateConfigTests = []struct {
+	name   string
+	config HomelabConfig
+}{
+	{
+		name: "Valid IPAM config",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					BridgeModeNetworks: []BridgeModeNetworkConfig{
+						{
+							Name:              "net1",
+							HostInterfaceName: "docker-net1",
+							CIDR:              "172.18.100.0/24",
+							Priority:          1,
+						},
+						{
+							Name:              "net2",
+							HostInterfaceName: "docker-net2",
+							CIDR:              "172.18.101.0/24",
+							Priority:          1,
+						},
+					},
+					ContainerModeNetworks: []ContainerModeNetworkConfig{
+						{
+							Name:     "net3",
+							Priority: 1,
+						},
+						{
+							Name:     "net4",
+							Priority: 1,
+						},
+					},
+				},
+			},
+		},
+	},
+}
+
+func TestValidateConfig(t *testing.T) {
+	for _, test := range validateConfigTests {
+		tc := test
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			if gotErr := tc.config.validate(); nil != gotErr {
+				t.Errorf(
+					"HomelabConfig.validate()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v",
+					tc.name, gotErr)
+				return
+			}
+		})
+	}
+}
+
+var validateConfigErrorTests = []struct {
+	name   string
+	config HomelabConfig
+	want   string
+}{
+	{
+		name: "Duplicate bridge mode network",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					BridgeModeNetworks: []BridgeModeNetworkConfig{
+						{
+							Name:              "net1",
+							HostInterfaceName: "docker-net1",
+							CIDR:              "172.18.100.0/24",
+							Priority:          1,
+						},
+						{
+							Name:              "net1",
+							HostInterfaceName: "docker-net1-2",
+							CIDR:              "172.18.101.0/24",
+							Priority:          1,
+						},
+					},
+				},
+			},
+		},
+		want: `network net1 defined more than once in the IPAM config`,
+	},
+	{
+		name: "Duplicate container mode network",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					ContainerModeNetworks: []ContainerModeNetworkConfig{
+						{
+							Name:     "net1",
+							Priority: 1,
+						},
+						{
+							Name:     "net1",
+							Priority: 2,
+						},
+					},
+				},
+			},
+		},
+		want: `network net1 defined more than once in the IPAM config`,
+	},
+	{
+		name: "Duplicate bridge/container mode networks",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					BridgeModeNetworks: []BridgeModeNetworkConfig{
+						{
+							Name:              "net1",
+							HostInterfaceName: "docker-net1",
+							CIDR:              "172.18.100.0/24",
+							Priority:          1,
+						},
+					},
+					ContainerModeNetworks: []ContainerModeNetworkConfig{
+						{
+							Name:     "net1",
+							Priority: 2,
+						},
+					},
+				},
+			},
+		},
+		want: `network net1 defined more than once in the IPAM config`,
+	},
+}
+
+func TestValidateConfigErrors(t *testing.T) {
+	for _, test := range validateConfigErrorTests {
+		tc := test
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			gotErr := tc.config.validate()
+			if gotErr == nil {
+				t.Errorf(
+					"HomelabConfig.validate()\nTest Case: %q\nFailure: gotErr == nil\nReason: want = %q",
+					tc.name, tc.want)
+				return
+			}
+
+			match, err := regexp.MatchString(tc.want, gotErr.Error())
+			if err != nil {
+				t.Errorf(
+					"HomelabConfig.validate()\nTest Case: %q\nFailure: unexpected exception while matching against gotErr error string\nReason: error = %v", tc.name, err)
+				return
+			}
+
+			if !match {
+				t.Errorf(
+					"HomelabConfig.validate()\nTest Case: %q\nFailure: gotErr did not match the want regex\nReason:\n\ngotErr = %q\n\twant = %q", tc.name, gotErr, tc.want)
 			}
 		})
 	}
