@@ -1452,7 +1452,7 @@ var validateConfigErrorTests = []struct {
 		want: `container {Group:group1 Container:ct1} endpoint in network net1 has IP 172\.18\.100\.1 matching the gateway address 172\.18\.100\.1`,
 	},
 	{
-		name: "Multiple Endpoints For Same Container Within A Network",
+		name: "Multiple Endpoints For Same Container Within A Bridge Mode Network",
 		config: HomelabConfig{
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
@@ -1532,6 +1532,40 @@ var validateConfigErrorTests = []struct {
 			},
 		},
 		want: `IP 172\.18\.100\.2 of container {Group:group1 Container:ct4} is already in use by another container in network net1`,
+	},
+	{
+		name: "Multiple Endpoints For Same Container Within A Container Mode Network",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					ContainerModeNetworks: []ContainerModeNetworkConfig{
+						{
+							Name:     "net1",
+							Priority: 1,
+							Containers: []ContainerReference{
+								{
+									Group:     "group1",
+									Container: "ct1",
+								},
+								{
+									Group:     "group1",
+									Container: "ct2",
+								},
+								{
+									Group:     "group2",
+									Container: "ct3",
+								},
+								{
+									Group:     "group1",
+									Container: "ct2",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `container {Group:group1 Container:ct2} has multiple endpoints in network net1`,
 	},
 }
 

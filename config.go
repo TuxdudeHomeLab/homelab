@@ -421,6 +421,14 @@ func validateIPAMConfig(config *IPAMConfig) error {
 			return fmt.Errorf("network %s defined more than once in the IPAM config", n.Name)
 		}
 		networks[n.Name] = true
+
+		containers := make(map[ContainerReference]bool)
+		for _, ct := range n.Containers {
+			if containers[ct] {
+				return fmt.Errorf("container {Group:%s Container:%s} has multiple endpoints in network %s", ct.Group, ct.Container, n.Name)
+			}
+			containers[ct] = true
+		}
 	}
 	return nil
 }
