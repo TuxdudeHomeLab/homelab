@@ -363,22 +363,28 @@ func validateIPAMConfig(config *IPAMConfig) error {
 		if networks[n.Name] {
 			return fmt.Errorf("network %s defined more than once in the IPAM config", n.Name)
 		}
+
 		if hostInterfaces[n.HostInterfaceName] {
 			return fmt.Errorf("host interface name %s of network %s is already used by another network in the IPAM config", n.HostInterfaceName, n.Name)
 		}
+
 		networks[n.Name] = true
 		hostInterfaces[n.HostInterfaceName] = true
 		prefix, err := netip.ParsePrefix(n.CIDR)
 		if err != nil {
 			return fmt.Errorf("CIDR %s of network %s is invalid, reason: %w", n.CIDR, n.Name, err)
 		}
-		addr := prefix.Addr()
-		if !addr.Is4() {
+		netAddr := prefix.Addr()
+		if !netAddr.Is4() {
 			return fmt.Errorf("CIDR %s of network %s is not an IPv4 subnet CIDR", n.CIDR, n.Name)
 		}
 		masked := prefix.Masked()
-		if masked.Addr() != addr {
+		if masked.Addr() != netAddr {
 			return fmt.Errorf("CIDR %s of network %s is not the same as the network address %s", n.CIDR, n.Name, masked)
+		}
+		prefixLen := prefix.Bits()
+		if prefixLen > 30 {
+			return fmt.Errorf("CIDR %s of network %s (prefix length: %d) has a prefix length more than 30 which makes the network unusable for container IP address allocations", n.CIDR, n.Name, prefixLen)
 		}
 		for pre, preNet := range prefixes {
 			if prefix.Overlaps(pre) {
@@ -386,6 +392,30 @@ func validateIPAMConfig(config *IPAMConfig) error {
 			}
 		}
 		prefixes[prefix] = n.Name
+
+		gatewayAddr := netAddr.Next()
+		containers := make(map[ContainerReference]bool)
+		for _, cip := range n.Containers {
+			ip := cip.IP
+			ct := cip.Container
+			caddr, err := netip.ParseAddr(ip)
+			if err != nil {
+				return fmt.Errorf("container {Group:%s Container:%s} endpoint in network %s has invalid IP %s, reason: %w", ct.Group, ct.Container, n.Name, ip, err)
+			}
+			if !prefix.Contains(caddr) {
+				return fmt.Errorf("container {Group:%s Container:%s} endpoint in network %s has IP %s that does not belong to the network CIDR %s", ct.Group, ct.Container, n.Name, ip, prefix)
+			}
+			if caddr.Compare(netAddr) == 0 {
+				return fmt.Errorf("container {Group:%s Container:%s} endpoint in network %s has IP %s matching the network address %s", ct.Group, ct.Container, n.Name, ip, netAddr)
+			}
+			if caddr.Compare(gatewayAddr) == 0 {
+				return fmt.Errorf("container {Group:%s Container:%s} endpoint in network %s has IP %s matching the gateway address %s", ct.Group, ct.Container, n.Name, ip, gatewayAddr)
+			}
+			if containers[ct] {
+				return fmt.Errorf("container {Group:%s Container:%s} has multiple endpoints in network %s", ct.Group, ct.Container, n.Name)
+			}
+			containers[ct] = true
+		}
 	}
 	containerModeNetworks := config.Networks.ContainerModeNetworks
 	for _, n := range containerModeNetworks {

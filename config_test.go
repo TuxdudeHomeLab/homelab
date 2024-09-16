@@ -1068,6 +1068,24 @@ var validateConfigErrorTests = []struct {
 		want: `host interface name docker-net1 of network net2 is already used by another network in the IPAM config`,
 	},
 	{
+		name: "Invalid CIDR - Unparsable",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					BridgeModeNetworks: []BridgeModeNetworkConfig{
+						{
+							Name:              "net1",
+							HostInterfaceName: "docker-net1",
+							CIDR:              "garbage-cidr",
+							Priority:          1,
+						},
+					},
+				},
+			},
+		},
+		want: `CIDR garbage-cidr of network net1 is invalid, reason: netip\.ParsePrefix\("garbage-cidr"\): no '/'`,
+	},
+	{
 		name: "Invalid CIDR - Missing /",
 		config: HomelabConfig{
 			IPAM: IPAMConfig{
@@ -1122,6 +1140,24 @@ var validateConfigErrorTests = []struct {
 		want: `CIDR 2002::1234:abcd:ffff:c0a8:101/64 of network net1 is not an IPv4 subnet CIDR`,
 	},
 	{
+		name: "Invalid CIDR - Octets Out Of Range",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					BridgeModeNetworks: []BridgeModeNetworkConfig{
+						{
+							Name:              "net1",
+							HostInterfaceName: "docker-net1",
+							CIDR:              "172.18.260.0/24",
+							Priority:          1,
+						},
+					},
+				},
+			},
+		},
+		want: `CIDR 172\.18\.260\.0/24 of network net1 is invalid, reason: netip\.ParsePrefix\("172\.18\.260\.0/24"\): ParseAddr\("172\.18\.260\.0"\): IPv4 field has value >255`,
+	},
+	{
 		name: "Invalid CIDR - Not A Network Address",
 		config: HomelabConfig{
 			IPAM: IPAMConfig{
@@ -1138,6 +1174,42 @@ var validateConfigErrorTests = []struct {
 			},
 		},
 		want: `CIDR 172\.18\.100\.1/25 of network net1 is not the same as the network address 172\.18\.100\.0/25`,
+	},
+	{
+		name: "Invalid CIDR - Long Prefix 31",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					BridgeModeNetworks: []BridgeModeNetworkConfig{
+						{
+							Name:              "net1",
+							HostInterfaceName: "docker-net1",
+							CIDR:              "172.18.100.0/31",
+							Priority:          1,
+						},
+					},
+				},
+			},
+		},
+		want: `CIDR 172\.18\.100\.0/31 of network net1 \(prefix length: 31\) has a prefix length more than 30 which makes the network unusable for container IP address allocations`,
+	},
+	{
+		name: "Invalid CIDR - Long Prefix 32",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					BridgeModeNetworks: []BridgeModeNetworkConfig{
+						{
+							Name:              "net1",
+							HostInterfaceName: "docker-net1",
+							CIDR:              "172.18.100.0/32",
+							Priority:          1,
+						},
+					},
+				},
+			},
+		},
+		want: `CIDR 172\.18\.100\.0/32 of network net1 \(prefix length: 32\) has a prefix length more than 30 which makes the network unusable for container IP address allocations`,
 	},
 	{
 		name: "Overlapping CIDR",
@@ -1162,6 +1234,202 @@ var validateConfigErrorTests = []struct {
 			},
 		},
 		want: `CIDR 172\.18\.0\.0/16 of network net2 overlaps with CIDR 172\.18\.100\.0/24 of network net1`,
+	},
+	{
+		name: "Invalid Container IP - Unparsable",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					BridgeModeNetworks: []BridgeModeNetworkConfig{
+						{
+							Name:              "net1",
+							HostInterfaceName: "docker-net1",
+							CIDR:              "172.18.100.0/24",
+							Priority:          1,
+							Containers: []ContainerIPConfig{
+								{
+									IP: "garbage-ip",
+									Container: ContainerReference{
+										Group:     "group1",
+										Container: "ct1",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `container {Group:group1 Container:ct1} endpoint in network net1 has invalid IP garbage-ip, reason: ParseAddr\("garbage-ip"\): unable to parse IP`,
+	},
+	{
+		name: "Invalid Container IP - Too Short",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					BridgeModeNetworks: []BridgeModeNetworkConfig{
+						{
+							Name:              "net1",
+							HostInterfaceName: "docker-net1",
+							CIDR:              "172.18.100.0/24",
+							Priority:          1,
+							Containers: []ContainerIPConfig{
+								{
+									IP: "172.18.100",
+									Container: ContainerReference{
+										Group:     "group1",
+										Container: "ct1",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `container {Group:group1 Container:ct1} endpoint in network net1 has invalid IP 172\.18\.100, reason: ParseAddr\("172\.18\.100"\): IPv4 address too short`,
+	},
+	{
+		name: "Invalid Container IP - Too Long",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					BridgeModeNetworks: []BridgeModeNetworkConfig{
+						{
+							Name:              "net1",
+							HostInterfaceName: "docker-net1",
+							CIDR:              "172.18.100.0/24",
+							Priority:          1,
+							Containers: []ContainerIPConfig{
+								{
+									IP: "172.18.100.1.2.3.4",
+									Container: ContainerReference{
+										Group:     "group1",
+										Container: "ct1",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `container {Group:group1 Container:ct1} endpoint in network net1 has invalid IP 172\.18\.100\.1\.2\.3\.4, reason: ParseAddr\("172\.18\.100\.1\.2\.3\.4"\): IPv4 address too long`,
+	},
+	{
+		name: "Container IP Not Within Network CIDR",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					BridgeModeNetworks: []BridgeModeNetworkConfig{
+						{
+							Name:              "net1",
+							HostInterfaceName: "docker-net1",
+							CIDR:              "172.18.100.0/24",
+							Priority:          1,
+							Containers: []ContainerIPConfig{
+								{
+									IP: "172.18.101.2",
+									Container: ContainerReference{
+										Group:     "group1",
+										Container: "ct1",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `container {Group:group1 Container:ct1} endpoint in network net1 has IP 172\.18\.101\.2 that does not belong to the network CIDR 172\.18\.100\.0/24`,
+	},
+	{
+		name: "Container IP same as Network Address",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					BridgeModeNetworks: []BridgeModeNetworkConfig{
+						{
+							Name:              "net1",
+							HostInterfaceName: "docker-net1",
+							CIDR:              "172.18.100.0/24",
+							Priority:          1,
+							Containers: []ContainerIPConfig{
+								{
+									IP: "172.18.100.0",
+									Container: ContainerReference{
+										Group:     "group1",
+										Container: "ct1",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `container {Group:group1 Container:ct1} endpoint in network net1 has IP 172\.18\.100\.0 matching the network address 172\.18\.100\.0`,
+	},
+	{
+		name: "Container IP same as Gateway Address",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					BridgeModeNetworks: []BridgeModeNetworkConfig{
+						{
+							Name:              "net1",
+							HostInterfaceName: "docker-net1",
+							CIDR:              "172.18.100.0/24",
+							Priority:          1,
+							Containers: []ContainerIPConfig{
+								{
+									IP: "172.18.100.1",
+									Container: ContainerReference{
+										Group:     "group1",
+										Container: "ct1",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `container {Group:group1 Container:ct1} endpoint in network net1 has IP 172\.18\.100\.1 matching the gateway address 172\.18\.100\.1`,
+	},
+	{
+		name: "Multiple Endpoints For Same Container Within A Network",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					BridgeModeNetworks: []BridgeModeNetworkConfig{
+						{
+							Name:              "net1",
+							HostInterfaceName: "docker-net1",
+							CIDR:              "172.18.100.0/24",
+							Priority:          1,
+							Containers: []ContainerIPConfig{
+								{
+									IP: "172.18.100.2",
+									Container: ContainerReference{
+										Group:     "group1",
+										Container: "ct1",
+									},
+								},
+								{
+									IP: "172.18.100.3",
+									Container: ContainerReference{
+										Group:     "group1",
+										Container: "ct1",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `container {Group:group1 Container:ct1} has multiple endpoints in network net1`,
 	},
 }
 
