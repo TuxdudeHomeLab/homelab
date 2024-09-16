@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"net/netip"
 	"os"
 	"path/filepath"
 
@@ -362,15 +363,17 @@ func validateIPAMConfig(config *IPAMConfig) error {
 	//     a. No duplicate network names across bridge and container mode
 	//        networks.
 	//     b. No duplicate host interface names across bridge networks.
-	//     c. No overlapping CIDR across networks.
-	//     d. No duplicate container names within a bridge or container
+	//     c. Strictly valid CIDR.
+	//     d. No overlapping CIDR across networks.
+	//     e. No duplicate container names within a bridge or container
 	//        mode network.
-	//     e. All IPs in a bridge network belong to the CIDR.
-	//     f. No duplicate IPs within a bridge network.
+	//     f. All IPs in a bridge network belong to the CIDR.
+	//     g. No duplicate IPs within a bridge network.
 
 	networks := make(map[string]bool)
 	hostInterfaces := make(map[string]bool)
 	bridgeModeNetworks := config.Networks.BridgeModeNetworks
+	prefixes := make(map[netip.Prefix]string)
 	for _, n := range bridgeModeNetworks {
 		if networks[n.Name] {
 			return fmt.Errorf("network %s defined more than once in the IPAM config", n.Name)
@@ -380,6 +383,24 @@ func validateIPAMConfig(config *IPAMConfig) error {
 		}
 		networks[n.Name] = true
 		hostInterfaces[n.HostInterfaceName] = true
+		prefix, err := netip.ParsePrefix(n.CIDR)
+		if err != nil {
+			return fmt.Errorf("CIDR %s of network %s is invalid, reason: %w", n.CIDR, n.Name, err)
+		}
+		addr := prefix.Addr()
+		if !addr.Is4() {
+			return fmt.Errorf("CIDR %s of network %s is not an IPv4 subnet CIDR", n.CIDR, n.Name)
+		}
+		masked := prefix.Masked()
+		if masked.Addr() != addr {
+			return fmt.Errorf("CIDR %s of network %s is not the same as the network address %s", n.CIDR, n.Name, masked)
+		}
+		for pre, preNet := range prefixes {
+			if prefix.Overlaps(pre) {
+				return fmt.Errorf("CIDR %s of network %s overlaps with CIDR %s of network %s", n.CIDR, n.Name, pre, preNet)
+			}
+		}
+		prefixes[prefix] = n.Name
 	}
 	containerModeNetworks := config.Networks.ContainerModeNetworks
 	for _, n := range containerModeNetworks {

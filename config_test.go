@@ -1067,6 +1067,102 @@ var validateConfigErrorTests = []struct {
 		},
 		want: `host interface name docker-net1 of network net2 is already used by another network in the IPAM config`,
 	},
+	{
+		name: "Invalid CIDR - Missing /",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					BridgeModeNetworks: []BridgeModeNetworkConfig{
+						{
+							Name:              "net1",
+							HostInterfaceName: "docker-net1",
+							CIDR:              "172.18.100.16",
+							Priority:          1,
+						},
+					},
+				},
+			},
+		},
+		want: `CIDR 172\.18\.100\.16 of network net1 is invalid, reason: netip\.ParsePrefix\("172\.18\.100\.16"\): no '/'`,
+	},
+	{
+		name: "Invalid CIDR - Wrong Prefix Length",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					BridgeModeNetworks: []BridgeModeNetworkConfig{
+						{
+							Name:              "net1",
+							HostInterfaceName: "docker-net1",
+							CIDR:              "172.18.100.0/33",
+							Priority:          1,
+						},
+					},
+				},
+			},
+		},
+		want: `CIDR 172\.18\.100\.0/33 of network net1 is invalid, reason: netip\.ParsePrefix\("172\.18\.100\.0/33"\): prefix length out of range`,
+	},
+	{
+		name: "Invalid CIDR - IPv6",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					BridgeModeNetworks: []BridgeModeNetworkConfig{
+						{
+							Name:              "net1",
+							HostInterfaceName: "docker-net1",
+							CIDR:              "2002::1234:abcd:ffff:c0a8:101/64",
+							Priority:          1,
+						},
+					},
+				},
+			},
+		},
+		want: `CIDR 2002::1234:abcd:ffff:c0a8:101/64 of network net1 is not an IPv4 subnet CIDR`,
+	},
+	{
+		name: "Invalid CIDR - Not A Network Address",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					BridgeModeNetworks: []BridgeModeNetworkConfig{
+						{
+							Name:              "net1",
+							HostInterfaceName: "docker-net1",
+							CIDR:              "172.18.100.1/25",
+							Priority:          1,
+						},
+					},
+				},
+			},
+		},
+		want: `CIDR 172\.18\.100\.1/25 of network net1 is not the same as the network address 172\.18\.100\.0/25`,
+	},
+	{
+		name: "Overlapping CIDR",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					BridgeModeNetworks: []BridgeModeNetworkConfig{
+						{
+							Name:              "net1",
+							HostInterfaceName: "docker-net1",
+							CIDR:              "172.18.100.0/24",
+							Priority:          1,
+						},
+						{
+							Name:              "net2",
+							HostInterfaceName: "docker-net2",
+							CIDR:              "172.18.0.0/16",
+							Priority:          1,
+						},
+					},
+				},
+			},
+		},
+		want: `CIDR 172\.18\.0\.0/16 of network net2 overlaps with CIDR 172\.18\.100\.0/24 of network net1`,
+	},
 }
 
 func TestValidateConfigErrors(t *testing.T) {
