@@ -1215,6 +1215,17 @@ var validateConfigErrorTests = []struct {
 		want: `container stop timeout cannot be negative \(-1\) in global container config`,
 	},
 	{
+		name: "Global Container Config Invalid Restart Policy",
+		config: HomelabConfig{
+			Global: GlobalConfig{
+				Container: GlobalContainerConfig{
+					RestartPolicy: "garbage",
+				},
+			},
+		},
+		want: `invalid restart policy mode garbage in global container config, valid values are \[ 'no', 'always', 'on-failure', 'unless-stopped' \]`,
+	},
+	{
 		name: "Empty Global Container Config Env Var",
 		config: HomelabConfig{
 			Global: GlobalConfig{

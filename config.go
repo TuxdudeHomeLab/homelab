@@ -484,6 +484,11 @@ func validateGlobalContainerConfig(config *GlobalContainerConfig, globalMountDef
 	if config.StopTimeout < 0 {
 		return fmt.Errorf("container stop timeout cannot be negative (%d) in global container config", config.StopTimeout)
 	}
+	if len(config.RestartPolicy) > 0 {
+		if _, err := restartPolicyModeFromString(config.RestartPolicy); err != nil {
+			return fmt.Errorf("invalid restart policy mode %s in global container config, valid values are [ 'no', 'always', 'on-failure', 'unless-stopped' ]", config.RestartPolicy)
+		}
+	}
 	err := validateContainerEnv(config.Env, "global container config")
 	if err != nil {
 		return err
