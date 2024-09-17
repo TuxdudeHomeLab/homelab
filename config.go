@@ -117,6 +117,7 @@ type ContainerConfig struct {
 	Filesystem ContainerFilesystemConfig `yaml:"fs"`
 	Network    ContainerNetworkConfig    `yaml:"network"`
 	Security   ContainerSecurityConfig   `yaml:"security"`
+	Health     ContainerHealthConfig     `yaml:"health"`
 	Runtime    ContainerRuntimeConfig    `yaml:"runtime"`
 }
 
@@ -181,12 +182,22 @@ type ContainerSecurityConfig struct {
 	CapDrop    []string       `yaml:"capDrop"`
 }
 
+// ContainerHealthConfig represents the health check options for the
+// docker container.
+type ContainerHealthConfig struct {
+	Cmd           string `yaml:"cmd"`
+	Interval      string `yaml:"interval"`
+	Retries       int    `yaml:"retries"`
+	StartInterval string `yaml:"startInterval"`
+	StartPeriod   string `yaml:"startPeriod"`
+	Timeout       string `yaml:"timeout"`
+}
+
 // ContainerRuntimeConfig represents the execution and runtime information
 // for the docker container.
 type ContainerRuntimeConfig struct {
 	AttachToTty bool                 `yaml:"tty"`
 	ShmSize     string               `yaml:"shmSize"`
-	HealthCmd   string               `yaml:"healthCmd"`
 	Env         []ContainerEnvConfig `yaml:"env"`
 	Entrypoint  []string             `yaml:"entrypoint"`
 	Args        []string             `yaml:"args"`

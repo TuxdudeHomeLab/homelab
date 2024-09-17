@@ -207,10 +207,16 @@ containers:
       capDrop:
         - NET_ADMIN
         - SYS_MODULE
+    health:
+      cmd: my-health-cmd
+      interval: 60s
+      retries: 3
+      startInterval: 10s
+      startPeriod: 3m
+      timeout: 10s
     runtime:
       tty: true
       shmSize: 1g
-      healthCmd: my-health-cmd
       env:
         - var: MY_ENV
           value: MY_ENV_VALUE
@@ -551,10 +557,17 @@ containers:
 							"SYS_MODULE",
 						},
 					},
+					Health: ContainerHealthConfig{
+						Cmd:           "my-health-cmd",
+						Interval:      "60s",
+						Retries:       3,
+						StartInterval: "10s",
+						StartPeriod:   "3m",
+						Timeout:       "10s",
+					},
 					Runtime: ContainerRuntimeConfig{
 						AttachToTty: true,
 						ShmSize:     "1g",
-						HealthCmd:   "my-health-cmd",
 						Env: []ContainerEnvConfig{
 							{
 								Var:   "MY_ENV",
