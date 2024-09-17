@@ -351,11 +351,23 @@ func validateGlobalConfig(config *GlobalConfig) error {
 }
 
 func validateGlobalEnvConfig(config []GlobalEnvConfig) error {
-	// TODO: Perform the following (and more) validations:
-	//     a. No duplicate global config env names.
-	//     b. Validate mandatory properties of every global config env.
-	//     c. Every global config env specifies exactly one of value or
-	//        valueCommand, but not both.
+	envs := make(map[string]bool)
+	for _, e := range config {
+		if len(e.Var) == 0 {
+			return fmt.Errorf("empty env var in global config")
+		}
+		if envs[e.Var] {
+			return fmt.Errorf("env var %s specified more than once in global config", e.Var)
+		}
+		envs[e.Var] = true
+
+		if len(e.Value) == 0 && len(e.ValueCommand) == 0 {
+			return fmt.Errorf("neither value nor valueCommand specified for env var %s in global config", e.Var)
+		}
+		if len(e.Value) > 0 && len(e.ValueCommand) > 0 {
+			return fmt.Errorf("exactly one of value or valueCommand must be specified for env var %s in global config", e.Var)
+		}
+	}
 	return nil
 }
 

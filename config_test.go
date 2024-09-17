@@ -1004,6 +1004,69 @@ var validateConfigErrorTests = []struct {
 	want   string
 }{
 	{
+		name: "Empty Global Config Env Var",
+		config: HomelabConfig{
+			Global: GlobalConfig{
+				Env: []GlobalEnvConfig{
+					{
+						Value: "foo-bar",
+					},
+				},
+			},
+		},
+		want: `empty env var in global config`,
+	},
+	{
+		name: "Duplicate Global Config Env Var",
+		config: HomelabConfig{
+			Global: GlobalConfig{
+				Env: []GlobalEnvConfig{
+					{
+						Var:   "FOO",
+						Value: "foo-bar",
+					},
+					{
+						Var:   "FOO2",
+						Value: "foo-bar-2",
+					},
+					{
+						Var:   "FOO",
+						Value: "foo-bar-3",
+					},
+				},
+			},
+		},
+		want: `env var FOO specified more than once in global config`,
+	},
+	{
+		name: "Global Config Env Var Without Value And ValueCommand",
+		config: HomelabConfig{
+			Global: GlobalConfig{
+				Env: []GlobalEnvConfig{
+					{
+						Var: "FOO",
+					},
+				},
+			},
+		},
+		want: `neither value nor valueCommand specified for env var FOO in global config`,
+	},
+	{
+		name: "Global Config Env Var With Both Value And ValueCommand",
+		config: HomelabConfig{
+			Global: GlobalConfig{
+				Env: []GlobalEnvConfig{
+					{
+						Var:          "FOO",
+						Value:        "my-foo-bar",
+						ValueCommand: "/foo/bar/baz",
+					},
+				},
+			},
+		},
+		want: `exactly one of value or valueCommand must be specified for env var FOO in global config`,
+	},
+	{
 		name: "Empty Bridge Mode Network Name",
 		config: HomelabConfig{
 			IPAM: IPAMConfig{
