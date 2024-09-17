@@ -194,8 +194,8 @@ type ContainerRuntimeConfig struct {
 
 // MountConfig represents a filesystem mount.
 type MountConfig struct {
-	Type     string `yaml:"type"`
 	Name     string `yaml:"name"`
+	Type     string `yaml:"type"`
 	Src      string `yaml:"src"`
 	Dst      string `yaml:"dst"`
 	ReadOnly bool   `yaml:"readOnly,omitempty"`
@@ -337,7 +337,7 @@ func validateGlobalConfig(config *GlobalConfig) error {
 		return err
 	}
 
-	err = validateMountDefs(config.MountDefs)
+	err = validateMountsConfig(config.MountDefs, nil, nil, "global config mount defs")
 	if err != nil {
 		return err
 	}
@@ -371,10 +371,55 @@ func validateGlobalEnvConfig(config []GlobalEnvConfig) error {
 	return nil
 }
 
-func validateMountDefs(config []MountConfig) error {
-	// TODO: Perform the following (and more) validations:
-	//     a. Validate mandatory properties of every global config mount.
-	//     b. No duplicate global config mount names.
+func validateMountsConfig(config, commonConfig, globalDefs []MountConfig, location string) error {
+	// First build a map of the mounts from the globalDefs (which should
+	// already have been validated).
+	globalMountDefs := make(map[string]bool)
+	for _, m := range globalDefs {
+		globalMountDefs[m.Name] = true
+	}
+
+	// Build a map of the mounts from the commonConfig next which acts
+	// as the first set of mounts to apply. These should also have been
+	// validated prior and hence we don't validate them here again.
+	mounts := make(map[string]bool)
+	for _, m := range commonConfig {
+		mounts[m.Name] = true
+	}
+
+	// Finally iterate and validate the mounts in the current level config.
+	for _, m := range config {
+		if len(m.Name) == 0 {
+			return fmt.Errorf("mount name is empty in %s", location)
+		}
+		if mounts[m.Name] {
+			return fmt.Errorf("mount name %s defined more than once in %s", m.Name, location)
+		}
+		mounts[m.Name] = true
+
+		if len(m.Type) == 0 && len(m.Src) == 0 && len(m.Dst) == 0 && !m.ReadOnly {
+			// This is a mount with just the name. Match this against the
+			// global mount defs.
+			if !globalMountDefs[m.Name] {
+				return fmt.Errorf("mount specified by just the name %s not found in defs", m.Name)
+			}
+			// No further validation needed for a mount referencing a def.
+			return nil
+		}
+
+		if m.Type != "bind" {
+			return fmt.Errorf("unsupported mount type %s for mount %s in %s", m.Type, m.Name, location)
+		}
+		if len(m.Src) == 0 {
+			return fmt.Errorf("mount name %s has empty value for src in %s", m.Name, location)
+		}
+		if len(m.Dst) == 0 {
+			return fmt.Errorf("mount name %s has empty value for dst in %s", m.Name, location)
+		}
+		if len(m.Options) > 0 {
+			return fmt.Errorf("mount name %s specifies options in %s, that are not supported when mount type is bind", m.Name, location)
+		}
+	}
 	return nil
 }
 

@@ -158,12 +158,14 @@ containers:
     fs:
       readOnlyRootfs: true
       mounts:
-        - type: bind
+        - name: blocky-config-mount
+          type: bind
           src: $$CONFIG_DIR$$/generated/config.yml
           dst: /data/blocky/config/config.yml
           readOnly: true
         - name: homelab-self-signed-tls-cert
-        - type: tmpfs
+        - name: tmpfs-mount
+          type: tmpfs
           dst: /tmp/cache
           options: tmpfs-size=100000000
       devices:
@@ -471,6 +473,7 @@ containers:
 						ReadOnlyRootfs: true,
 						Mounts: []MountConfig{
 							{
+								Name:     "blocky-config-mount",
 								Type:     "bind",
 								Src:      "$$CONFIG_DIR$$/generated/config.yml",
 								Dst:      "/data/blocky/config/config.yml",
@@ -480,6 +483,7 @@ containers:
 								Name: "homelab-self-signed-tls-cert",
 							},
 							{
+								Name:    "tmpfs-mount",
 								Type:    "tmpfs",
 								Dst:     "/tmp/cache",
 								Options: "tmpfs-size=100000000",
@@ -1065,6 +1069,113 @@ var validateConfigErrorTests = []struct {
 			},
 		},
 		want: `exactly one of value or valueCommand must be specified for env var FOO in global config`,
+	},
+	{
+		name: "Global Config Empty Mount Def Name",
+		config: HomelabConfig{
+			Global: GlobalConfig{
+				MountDefs: []MountConfig{
+					{
+						Type:     "bind",
+						Src:      "/foo",
+						Dst:      "/bar",
+						ReadOnly: true,
+					},
+				},
+			},
+		},
+		want: `mount name is empty in global config mount defs`,
+	},
+	{
+		name: "Global Config Duplicate Mount Defs",
+		config: HomelabConfig{
+			Global: GlobalConfig{
+				MountDefs: []MountConfig{
+					{
+						Name: "mount-foo1",
+						Type: "bind",
+						Src:  "/foo1",
+						Dst:  "/bar1",
+					},
+					{
+						Name: "mount-foo2",
+						Type: "bind",
+						Src:  "/foo2",
+						Dst:  "/bar2",
+					},
+					{
+						Name: "mount-foo1",
+						Type: "bind",
+						Src:  "/foo3",
+						Dst:  "/bar3",
+					},
+				},
+			},
+		},
+		want: `mount name mount-foo1 defined more than once in global config mount defs`,
+	},
+	{
+		name: "Global Config Mount Def With Invalid Mount Type",
+		config: HomelabConfig{
+			Global: GlobalConfig{
+				MountDefs: []MountConfig{
+					{
+						Name: "foo",
+						Type: "garbage",
+						Src:  "/foo",
+						Dst:  "/bar",
+					},
+				},
+			},
+		},
+		want: `unsupported mount type garbage for mount foo in global config mount defs`,
+	},
+	{
+		name: "Global Config Mount Def With Empty Src",
+		config: HomelabConfig{
+			Global: GlobalConfig{
+				MountDefs: []MountConfig{
+					{
+						Name: "foo",
+						Type: "bind",
+						Dst:  "/bar",
+					},
+				},
+			},
+		},
+		want: `mount name foo has empty value for src in global config mount defs`,
+	},
+	{
+		name: "Global Config Mount Def With Empty Dst",
+		config: HomelabConfig{
+			Global: GlobalConfig{
+				MountDefs: []MountConfig{
+					{
+						Name: "foo",
+						Type: "bind",
+						Src:  "/foo",
+					},
+				},
+			},
+		},
+		want: `mount name foo has empty value for dst in global config mount defs`,
+	},
+	{
+		name: "Global Config Bind Mount Def With Options",
+		config: HomelabConfig{
+			Global: GlobalConfig{
+				MountDefs: []MountConfig{
+					{
+						Name:    "foo",
+						Type:    "bind",
+						Src:     "/foo",
+						Dst:     "/bar",
+						Options: "dummy-option1=val1,dummy-option2=val2",
+					},
+				},
+			},
+		},
+		want: `mount name foo specifies options in global config mount defs, that are not supported when mount type is bind`,
 	},
 	{
 		name: "Empty Bridge Mode Network Name",
