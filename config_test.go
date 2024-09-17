@@ -1204,6 +1204,285 @@ var validateConfigErrorTests = []struct {
 		want: `mount name foo specifies options in global config mount defs, that are not supported when mount type is bind`,
 	},
 	{
+		name: "Global Container Config Negative Stop Timeout",
+		config: HomelabConfig{
+			Global: GlobalConfig{
+				Container: GlobalContainerConfig{
+					StopTimeout: -1,
+				},
+			},
+		},
+		want: `container stop timeout cannot be negative \(-1\) in global container config`,
+	},
+	{
+		name: "Empty Global Container Config Env Var",
+		config: HomelabConfig{
+			Global: GlobalConfig{
+				Container: GlobalContainerConfig{
+					Env: []ContainerEnv{
+						{
+							Value: "foo-bar",
+						},
+					},
+				},
+			},
+		},
+		want: `empty env var in global container config`,
+	},
+	{
+		name: "Duplicate Global Container Config Env Var",
+		config: HomelabConfig{
+			Global: GlobalConfig{
+				Container: GlobalContainerConfig{
+					Env: []ContainerEnv{
+						{
+							Var:   "FOO",
+							Value: "foo-bar",
+						},
+						{
+							Var:   "FOO2",
+							Value: "foo-bar-2",
+						},
+						{
+							Var:   "FOO",
+							Value: "foo-bar-3",
+						},
+					},
+				},
+			},
+		},
+		want: `env var FOO specified more than once in global container config`,
+	},
+	{
+		name: "Global Container Config Env Var Without Value And ValueCommand",
+		config: HomelabConfig{
+			Global: GlobalConfig{
+				Container: GlobalContainerConfig{
+					Env: []ContainerEnv{
+						{
+							Var: "FOO",
+						},
+					},
+				},
+			},
+		},
+		want: `neither value nor valueCommand specified for env var FOO in global container config`,
+	},
+	{
+		name: "Global Container Config Env Var Without Value And ValueCommand",
+		config: HomelabConfig{
+			Global: GlobalConfig{
+				Container: GlobalContainerConfig{
+					Env: []ContainerEnv{
+						{
+							Var:          "FOO",
+							Value:        "my-foo-bar",
+							ValueCommand: "/foo/bar/baz",
+						},
+					},
+				},
+			},
+		},
+		want: `exactly one of value or valueCommand must be specified for env var FOO in global container config`,
+	},
+	{
+		name: "Global Container Config Empty Mount Name",
+		config: HomelabConfig{
+			Global: GlobalConfig{
+				Container: GlobalContainerConfig{
+					Mounts: []MountConfig{
+						{
+							Type:     "bind",
+							Src:      "/foo",
+							Dst:      "/bar",
+							ReadOnly: true,
+						},
+					},
+				},
+			},
+		},
+		want: `mount name is empty in global container config mounts`,
+	},
+	{
+		name: "Global Container Config Duplicate Mounts",
+		config: HomelabConfig{
+			Global: GlobalConfig{
+				Container: GlobalContainerConfig{
+					Mounts: []MountConfig{
+						{
+							Name: "mount-foo1",
+							Type: "bind",
+							Src:  "/foo1",
+							Dst:  "/bar1",
+						},
+						{
+							Name: "mount-foo2",
+							Type: "bind",
+							Src:  "/foo2",
+							Dst:  "/bar2",
+						},
+						{
+							Name: "mount-foo1",
+							Type: "bind",
+							Src:  "/foo3",
+							Dst:  "/bar3",
+						},
+					},
+				},
+			},
+		},
+		want: `mount name mount-foo1 defined more than once in global container config mounts`,
+	},
+	{
+		name: "Global Container Config Mount With Invalid Mount Type",
+		config: HomelabConfig{
+			Global: GlobalConfig{
+				Container: GlobalContainerConfig{
+					Mounts: []MountConfig{
+						{
+							Name: "foo",
+							Type: "garbage",
+							Src:  "/foo",
+							Dst:  "/bar",
+						},
+					},
+				},
+			},
+		},
+		want: `unsupported mount type garbage for mount foo in global container config mounts`,
+	},
+	{
+		name: "Global Container Config Mount With Empty Src",
+		config: HomelabConfig{
+			Global: GlobalConfig{
+				Container: GlobalContainerConfig{
+					Mounts: []MountConfig{
+						{
+							Name: "foo",
+							Type: "bind",
+							Dst:  "/bar",
+						},
+					},
+				},
+			},
+		},
+		want: `mount name foo has empty value for src in global container config mounts`,
+	},
+	{
+		name: "Global Container Config Mount With Empty Dst",
+		config: HomelabConfig{
+			Global: GlobalConfig{
+				Container: GlobalContainerConfig{
+					Mounts: []MountConfig{
+						{
+							Name: "foo",
+							Type: "bind",
+							Src:  "/foo",
+						},
+					},
+				},
+			},
+		},
+		want: `mount name foo has empty value for dst in global container config mounts`,
+	},
+	{
+		name: "Global Container Config Bind Mount With Options",
+		config: HomelabConfig{
+			Global: GlobalConfig{
+				Container: GlobalContainerConfig{
+					Mounts: []MountConfig{
+						{
+							Name:    "foo",
+							Type:    "bind",
+							Src:     "/foo",
+							Dst:     "/bar",
+							Options: "dummy-option1=val1,dummy-option2=val2",
+						},
+					},
+				},
+			},
+		},
+		want: `mount name foo specifies options in global container config mounts, that are not supported when mount type is bind`,
+	},
+	{
+		name: "Global Container Config Mount With Empty Dst",
+		config: HomelabConfig{
+			Global: GlobalConfig{
+				MountDefs: []MountConfig{
+					{
+						Name: "foo",
+						Type: "bind",
+						Src:  "/foo",
+						Dst:  "/bar",
+					},
+				},
+				Container: GlobalContainerConfig{
+					Mounts: []MountConfig{
+						{
+							Name: "foo2",
+						},
+					},
+				},
+			},
+		},
+		want: `mount specified by just the name foo2 not found in defs`,
+	},
+
+	{
+		name: "Empty Global Container Config Label Name",
+		config: HomelabConfig{
+			Global: GlobalConfig{
+				Container: GlobalContainerConfig{
+					Labels: []LabelConfig{
+						{
+							Value: "foo-bar",
+						},
+					},
+				},
+			},
+		},
+		want: `empty label name in global container config`,
+	},
+	{
+		name: "Duplicate Global Container Config Label Name",
+		config: HomelabConfig{
+			Global: GlobalConfig{
+				Container: GlobalContainerConfig{
+					Labels: []LabelConfig{
+						{
+							Name:  "FOO",
+							Value: "foo-bar",
+						},
+						{
+							Name:  "FOO2",
+							Value: "foo-bar-2",
+						},
+						{
+							Name:  "FOO",
+							Value: "foo-bar-3",
+						},
+					},
+				},
+			},
+		},
+		want: `label name FOO specified more than once in global container config`,
+	},
+	{
+		name: "Global Container Config Empty Label Value",
+		config: HomelabConfig{
+			Global: GlobalConfig{
+				Container: GlobalContainerConfig{
+					Labels: []LabelConfig{
+						{
+							Name: "FOO",
+						},
+					},
+				},
+			},
+		},
+		want: `empty label value for label FOO in global container config`,
+	},
+	{
 		name: "Empty Bridge Mode Network Name",
 		config: HomelabConfig{
 			IPAM: IPAMConfig{

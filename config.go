@@ -360,7 +360,7 @@ func validateGlobalConfig(config *GlobalConfig) error {
 		return err
 	}
 
-	err = validateGlobalContainerConfig(&config.Container)
+	err = validateGlobalContainerConfig(&config.Container, config.MountDefs)
 	if err != nil {
 		return err
 	}
@@ -384,6 +384,45 @@ func validateConfigEnv(config []ConfigEnv, location string) error {
 		}
 		if len(e.Value) > 0 && len(e.ValueCommand) > 0 {
 			return fmt.Errorf("exactly one of value or valueCommand must be specified for env var %s in %s", e.Var, location)
+		}
+	}
+	return nil
+}
+
+func validateContainerEnv(config []ContainerEnv, location string) error {
+	envs := make(map[string]bool)
+	for _, e := range config {
+		if len(e.Var) == 0 {
+			return fmt.Errorf("empty env var in %s", location)
+		}
+		if envs[e.Var] {
+			return fmt.Errorf("env var %s specified more than once in %s", e.Var, location)
+		}
+		envs[e.Var] = true
+
+		if len(e.Value) == 0 && len(e.ValueCommand) == 0 {
+			return fmt.Errorf("neither value nor valueCommand specified for env var %s in %s", e.Var, location)
+		}
+		if len(e.Value) > 0 && len(e.ValueCommand) > 0 {
+			return fmt.Errorf("exactly one of value or valueCommand must be specified for env var %s in %s", e.Var, location)
+		}
+	}
+	return nil
+}
+
+func validateLabelsConfig(config []LabelConfig, location string) error {
+	labels := make(map[string]bool)
+	for _, l := range config {
+		if len(l.Name) == 0 {
+			return fmt.Errorf("empty label name in %s", location)
+		}
+		if labels[l.Name] {
+			return fmt.Errorf("label name %s specified more than once in %s", l.Name, location)
+		}
+		labels[l.Name] = true
+
+		if len(l.Value) == 0 {
+			return fmt.Errorf("empty label value for label %s in %s", l.Name, location)
 		}
 	}
 	return nil
@@ -441,8 +480,22 @@ func validateMountsConfig(config, commonConfig, globalDefs []MountConfig, locati
 	return nil
 }
 
-func validateGlobalContainerConfig(config *GlobalContainerConfig) error {
-	// TODO: Perform the following (and more) validations:
+func validateGlobalContainerConfig(config *GlobalContainerConfig, globalMountDefs []MountConfig) error {
+	if config.StopTimeout < 0 {
+		return fmt.Errorf("container stop timeout cannot be negative (%d) in global container config", config.StopTimeout)
+	}
+	err := validateContainerEnv(config.Env, "global container config")
+	if err != nil {
+		return err
+	}
+	err = validateMountsConfig(config.Mounts, nil, globalMountDefs, "global container config mounts")
+	if err != nil {
+		return err
+	}
+	err = validateLabelsConfig(config.Labels, "global container config")
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
