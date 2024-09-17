@@ -416,15 +416,15 @@ containers:
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "group1",
-					Order: newInt(1),
+					Order: 1,
 				},
 				{
 					Name:  "group2",
-					Order: newInt(2),
+					Order: 2,
 				},
 				{
 					Name:  "group3",
-					Order: newInt(3),
+					Order: 3,
 				},
 			},
 			Containers: []ContainerConfig{
@@ -452,7 +452,7 @@ containers:
 						},
 					},
 					Lifecycle: ContainerLifecycleConfig{
-						Order:         newInt(1),
+						Order:         1,
 						StartPreHook:  "$$SCRIPTS_DIR$$/my-start-prehook.sh",
 						RestartPolicy: "always",
 						AutoRemove:    true,
@@ -593,14 +593,14 @@ groups:
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "group1",
-					Order: newInt(1),
+					Order: 1,
 				},
 				{
 					Name: "group2",
 				},
 				{
 					Name:  "group3",
-					Order: newInt(2),
+					Order: 2,
 				},
 			},
 		},
@@ -775,15 +775,15 @@ var validParseConfigsFromPathTests = []struct {
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
-					Order: newInt(1),
+					Order: 1,
 				},
 				{
 					Name:  "g2",
-					Order: newInt(2),
+					Order: 2,
 				},
 				{
 					Name:  "g3",
-					Order: newInt(3),
+					Order: 3,
 				},
 			},
 			Containers: []ContainerConfig{
@@ -796,7 +796,7 @@ var validParseConfigsFromPathTests = []struct {
 						Image: "abc/xyz",
 					},
 					Lifecycle: ContainerLifecycleConfig{
-						Order: newInt(1),
+						Order: 1,
 					},
 				},
 				{
@@ -808,7 +808,7 @@ var validParseConfigsFromPathTests = []struct {
 						Image: "abc/xyz2",
 					},
 					Lifecycle: ContainerLifecycleConfig{
-						Order: newInt(2),
+						Order: 2,
 					},
 				},
 				{
@@ -820,7 +820,7 @@ var validParseConfigsFromPathTests = []struct {
 						Image: "abc/xyz3",
 					},
 					Lifecycle: ContainerLifecycleConfig{
-						Order: newInt(1),
+						Order: 1,
 					},
 				},
 				{
@@ -832,7 +832,7 @@ var validParseConfigsFromPathTests = []struct {
 						Image: "abc/xyz4",
 					},
 					Lifecycle: ContainerLifecycleConfig{
-						Order: newInt(1),
+						Order: 1,
 					},
 				},
 			},
@@ -1601,19 +1601,19 @@ var validateConfigErrorTests = []struct {
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
-					Order: newInt(1),
+					Order: 1,
 				},
 				{
 					Name:  "g2",
-					Order: newInt(1),
+					Order: 1,
 				},
 				{
 					Name:  "g3",
-					Order: newInt(1),
+					Order: 1,
 				},
 				{
 					Name:  "g1",
-					Order: newInt(2),
+					Order: 2,
 				},
 			},
 		},
@@ -1628,7 +1628,7 @@ var validateConfigErrorTests = []struct {
 				},
 			},
 		},
-		want: `group g1 doesn't have an order set`,
+		want: `group g1 has a non-positive order 0`,
 	},
 	{
 		name: "Container Group With Zero Order",
@@ -1636,7 +1636,7 @@ var validateConfigErrorTests = []struct {
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
-					Order: newInt(0),
+					Order: 0,
 				},
 			},
 		},
@@ -1648,7 +1648,7 @@ var validateConfigErrorTests = []struct {
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
-					Order: newInt(-1),
+					Order: -1,
 				},
 			},
 		},

@@ -10,6 +10,7 @@ func pwd() string {
 	return pwd
 }
 
+// nolint: unused
 func newInt(i int) *int {
 	return &i
 }

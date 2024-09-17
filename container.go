@@ -540,9 +540,9 @@ func containerMapToList(cm containerMap) containerList {
 			if c1.config.Lifecycle.Order == c2.config.Lifecycle.Order {
 				return c1.name() < c2.name()
 			}
-			return *c1.config.Lifecycle.Order < *c2.config.Lifecycle.Order
+			return c1.config.Lifecycle.Order < c2.config.Lifecycle.Order
 		} else {
-			return *c1.group.config.Order < *c2.group.config.Order
+			return c1.group.config.Order < c2.group.config.Order
 		}
 	})
 	return res

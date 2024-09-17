@@ -104,7 +104,7 @@ type ContainerReference struct {
 // basically a collection of containers within.
 type ContainerGroupConfig struct {
 	Name  string `yaml:"name"`
-	Order *int   `yaml:"order"`
+	Order int    `yaml:"order"`
 }
 
 // ContainerConfig represents a single docker container.
@@ -137,7 +137,7 @@ type ContainerMetadataConfig struct {
 // ContainerLifecycleConfig represents the lifecycle information for the
 // docker container.
 type ContainerLifecycleConfig struct {
-	Order         *int   `yaml:"order"`
+	Order         int    `yaml:"order"`
 	StartPreHook  string `yaml:"startPreHook"`
 	RestartPolicy string `yaml:"restartPolicy"`
 	AutoRemove    bool   `yaml:"autoRemove"`
@@ -486,11 +486,8 @@ func validateGroupsConfig(groups []ContainerGroupConfig) error {
 		if groupNames[g.Name] {
 			return fmt.Errorf("group %s defined more than once in the groups config", g.Name)
 		}
-		if g.Order == nil {
-			return fmt.Errorf("group %s doesn't have an order set", g.Name)
-		}
-		if *g.Order < 1 {
-			return fmt.Errorf("group %s has a non-positive order %d", g.Name, *g.Order)
+		if g.Order < 1 {
+			return fmt.Errorf("group %s has a non-positive order %d", g.Name, g.Order)
 		}
 
 		groupNames[g.Name] = true
