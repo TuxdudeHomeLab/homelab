@@ -1004,7 +1004,24 @@ var validateConfigErrorTests = []struct {
 	want   string
 }{
 	{
-		name: "Duplicate bridge mode network",
+		name: "Empty Bridge Mode Network Name",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					BridgeModeNetworks: []BridgeModeNetworkConfig{
+						{
+							HostInterfaceName: "docker-net1",
+							CIDR:              "172.18.100.0/24",
+							Priority:          1,
+						},
+					},
+				},
+			},
+		},
+		want: `network name cannot be empty`,
+	},
+	{
+		name: "Duplicate Bridge Mode Network",
 		config: HomelabConfig{
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
@@ -1028,48 +1045,21 @@ var validateConfigErrorTests = []struct {
 		want: `network net1 defined more than once in the IPAM config`,
 	},
 	{
-		name: "Duplicate container mode network",
-		config: HomelabConfig{
-			IPAM: IPAMConfig{
-				Networks: NetworksConfig{
-					ContainerModeNetworks: []ContainerModeNetworkConfig{
-						{
-							Name:     "net1",
-							Priority: 1,
-						},
-						{
-							Name:     "net1",
-							Priority: 2,
-						},
-					},
-				},
-			},
-		},
-		want: `network net1 defined more than once in the IPAM config`,
-	},
-	{
-		name: "Duplicate bridge/container mode networks",
+		name: "Empty Host Interface Name",
 		config: HomelabConfig{
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					BridgeModeNetworks: []BridgeModeNetworkConfig{
 						{
-							Name:              "net1",
-							HostInterfaceName: "docker-net1",
-							CIDR:              "172.18.100.0/24",
-							Priority:          1,
-						},
-					},
-					ContainerModeNetworks: []ContainerModeNetworkConfig{
-						{
 							Name:     "net1",
-							Priority: 2,
+							CIDR:     "172.18.100.0/24",
+							Priority: 1,
 						},
 					},
 				},
 			},
 		},
-		want: `network net1 defined more than once in the IPAM config`,
+		want: `host interface name of network net1 cannot be empty`,
 	},
 	{
 		name: "Duplicate network host interface names",
@@ -1094,6 +1084,40 @@ var validateConfigErrorTests = []struct {
 			},
 		},
 		want: `host interface name docker-net1 of network net2 is already used by another network in the IPAM config`,
+	},
+	{
+		name: "Empty Bridge Mode Network Priority",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					BridgeModeNetworks: []BridgeModeNetworkConfig{
+						{
+							Name:              "net1",
+							HostInterfaceName: "docker-net1",
+							CIDR:              "172.18.100.0/24",
+						},
+					},
+				},
+			},
+		},
+		want: `network net1 has a non-positive priority 0`,
+	},
+	{
+		name: "Invalid CIDR - Empty",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					BridgeModeNetworks: []BridgeModeNetworkConfig{
+						{
+							Name:              "net1",
+							HostInterfaceName: "docker-net1",
+							Priority:          1,
+						},
+					},
+				},
+			},
+		},
+		want: `CIDR  of network net1 is invalid, reason: netip\.ParsePrefix\(""\): no '/'`,
 	},
 	{
 		name: "Invalid CIDR - Unparsable",
@@ -1316,6 +1340,58 @@ var validateConfigErrorTests = []struct {
 			},
 		},
 		want: `CIDR 172\.18\.0\.0/16 of network net2 overlaps with CIDR 172\.18\.100\.0/24 of network net1`,
+	},
+	{
+		name: "Bridge Mode Network Invalid Container Reference - Empty Group",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					BridgeModeNetworks: []BridgeModeNetworkConfig{
+						{
+							Name:              "net1",
+							HostInterfaceName: "docker-net1",
+							CIDR:              "172.18.100.0/24",
+							Priority:          1,
+							Containers: []ContainerIPConfig{
+								{
+									IP: "172.18.100.11",
+									Container: ContainerReference{
+										Container: "ct1",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `container IP config within network net1 has invalid container reference, reason: container reference cannot have an empty group name`,
+	},
+	{
+		name: "Bridge Mode Network Invalid Container Reference - Empty Container",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					BridgeModeNetworks: []BridgeModeNetworkConfig{
+						{
+							Name:              "net1",
+							HostInterfaceName: "docker-net1",
+							CIDR:              "172.18.100.0/24",
+							Priority:          1,
+							Containers: []ContainerIPConfig{
+								{
+									IP: "172.18.100.11",
+									Container: ContainerReference{
+										Group: "g1",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `container IP config within network net1 has invalid container reference, reason: container reference cannot have an empty container name`,
 	},
 	{
 		name: "Invalid Container IP - Unparsable",
@@ -1562,7 +1638,124 @@ var validateConfigErrorTests = []struct {
 		want: `IP 172\.18\.100\.2 of container {Group:group1 Container:ct4} is already in use by another container in network net1`,
 	},
 	{
-		name: "Multiple Endpoints For Same Container Within A Container Mode Network",
+		name: "Empty Container Mode Network Name",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					ContainerModeNetworks: []ContainerModeNetworkConfig{
+						{
+							Priority: 1,
+						},
+					},
+				},
+			},
+		},
+		want: `network name cannot be empty`,
+	},
+	{
+		name: "Duplicate container mode network",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					ContainerModeNetworks: []ContainerModeNetworkConfig{
+						{
+							Name:     "net1",
+							Priority: 1,
+						},
+						{
+							Name:     "net1",
+							Priority: 2,
+						},
+					},
+				},
+			},
+		},
+		want: `network net1 defined more than once in the IPAM config`,
+	},
+	{
+		name: "Duplicate bridge/container mode networks",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					BridgeModeNetworks: []BridgeModeNetworkConfig{
+						{
+							Name:              "net1",
+							HostInterfaceName: "docker-net1",
+							CIDR:              "172.18.100.0/24",
+							Priority:          1,
+						},
+					},
+					ContainerModeNetworks: []ContainerModeNetworkConfig{
+						{
+							Name:     "net1",
+							Priority: 2,
+						},
+					},
+				},
+			},
+		},
+		want: `network net1 defined more than once in the IPAM config`,
+	},
+	{
+		name: "Empty Container Mode Network Priority",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					ContainerModeNetworks: []ContainerModeNetworkConfig{
+						{
+							Name: "net1",
+						},
+					},
+				},
+			},
+		},
+		want: `network net1 has a non-positive priority 0`,
+	},
+	{
+		name: "Container Mode Network Invalid Container Reference - Empty Group",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					ContainerModeNetworks: []ContainerModeNetworkConfig{
+						{
+							Name:     "net1",
+							Priority: 1,
+							Containers: []ContainerReference{
+								{
+									Container: "ct1",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `container IP config within network net1 has invalid container reference, reason: container reference cannot have an empty group name`,
+	},
+	{
+		name: "Container Mode Network Invalid Container Reference - Empty Container",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					ContainerModeNetworks: []ContainerModeNetworkConfig{
+						{
+							Name:     "net1",
+							Priority: 1,
+							Containers: []ContainerReference{
+								{
+									Group: "g1",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `container IP config within network net1 has invalid container reference, reason: container reference cannot have an empty container name`,
+	},
+
+	{
+		name: "Multiple Container Mode Network Stacks For Same Container",
 		config: HomelabConfig{
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
@@ -1593,7 +1786,7 @@ var validateConfigErrorTests = []struct {
 				},
 			},
 		},
-		want: `container {Group:group1 Container:ct2} has multiple endpoints in network net1`,
+		want: `container {Group:group1 Container:ct2} is connected to multiple container mode network stacks`,
 	},
 	{
 		name: "Duplicate Host Name",

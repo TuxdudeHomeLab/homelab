@@ -377,12 +377,21 @@ func validateIPAMConfig(config *IPAMConfig) error {
 	bridgeModeNetworks := config.Networks.BridgeModeNetworks
 	prefixes := make(map[netip.Prefix]string)
 	for _, n := range bridgeModeNetworks {
+		if len(n.Name) == 0 {
+			return fmt.Errorf("network name cannot be empty")
+		}
 		if networks[n.Name] {
 			return fmt.Errorf("network %s defined more than once in the IPAM config", n.Name)
 		}
 
+		if len(n.HostInterfaceName) == 0 {
+			return fmt.Errorf("host interface name of network %s cannot be empty", n.Name)
+		}
 		if hostInterfaces[n.HostInterfaceName] {
 			return fmt.Errorf("host interface name %s of network %s is already used by another network in the IPAM config", n.HostInterfaceName, n.Name)
+		}
+		if n.Priority <= 0 {
+			return fmt.Errorf("network %s has a non-positive priority %d", n.Name, n.Priority)
 		}
 
 		networks[n.Name] = true
@@ -419,6 +428,11 @@ func validateIPAMConfig(config *IPAMConfig) error {
 		for _, cip := range n.Containers {
 			ip := cip.IP
 			ct := cip.Container
+			err := validateContainerReference(&ct)
+			if err != nil {
+				return fmt.Errorf("container IP config within network %s has invalid container reference, reason: %w", n.Name, err)
+			}
+
 			caddr, err := netip.ParseAddr(ip)
 			if err != nil {
 				return fmt.Errorf("container {Group:%s Container:%s} endpoint in network %s has invalid IP %s, reason: %w", ct.Group, ct.Container, n.Name, ip, err)
@@ -445,15 +459,25 @@ func validateIPAMConfig(config *IPAMConfig) error {
 	}
 	containerModeNetworks := config.Networks.ContainerModeNetworks
 	for _, n := range containerModeNetworks {
+		if len(n.Name) == 0 {
+			return fmt.Errorf("network name cannot be empty")
+		}
 		if networks[n.Name] {
 			return fmt.Errorf("network %s defined more than once in the IPAM config", n.Name)
+		}
+		if n.Priority <= 0 {
+			return fmt.Errorf("network %s has a non-positive priority %d", n.Name, n.Priority)
 		}
 		networks[n.Name] = true
 
 		containers := make(map[ContainerReference]bool)
 		for _, ct := range n.Containers {
+			err := validateContainerReference(&ct)
+			if err != nil {
+				return fmt.Errorf("container IP config within network %s has invalid container reference, reason: %w", n.Name, err)
+			}
 			if containers[ct] {
-				return fmt.Errorf("container {Group:%s Container:%s} has multiple endpoints in network %s", ct.Group, ct.Container, n.Name)
+				return fmt.Errorf("container {Group:%s Container:%s} is connected to multiple container mode network stacks", ct.Group, ct.Container)
 			}
 			containers[ct] = true
 		}
@@ -510,5 +534,15 @@ func validateContainersConfig(containers []ContainerConfig) error {
 	//        valueCommand, but not both.
 	//     j. Validate mandatory properties of every published port config.
 	//     k. Validate mandatory properties of every label config.
+	return nil
+}
+
+func validateContainerReference(ref *ContainerReference) error {
+	if len(ref.Group) == 0 {
+		return fmt.Errorf("container reference cannot have an empty group name")
+	}
+	if len(ref.Container) == 0 {
+		return fmt.Errorf("container reference cannot have an empty container name")
+	}
 	return nil
 }
