@@ -488,6 +488,9 @@ func validateIPAMConfig(config *IPAMConfig) error {
 func validateHostsConfig(hosts []HostConfig) error {
 	hostNames := make(map[string]bool)
 	for _, h := range hosts {
+		if len(h.Name) == 0 {
+			return fmt.Errorf("host name cannot be empty in the hosts config")
+		}
 		if hostNames[h.Name] {
 			return fmt.Errorf("host %s defined more than once in the hosts config", h.Name)
 		}
@@ -495,6 +498,10 @@ func validateHostsConfig(hosts []HostConfig) error {
 
 		containers := make(map[ContainerReference]bool)
 		for _, ct := range h.AllowedContainers {
+			err := validateContainerReference(&ct)
+			if err != nil {
+				return fmt.Errorf("allowed container config within host %s has invalid container reference, reason: %w", h.Name, err)
+			}
 			if containers[ct] {
 				return fmt.Errorf("container {Group:%s Container:%s} defined more than once in the hosts config for host %s", ct.Group, ct.Container, h.Name)
 			}
@@ -507,6 +514,9 @@ func validateHostsConfig(hosts []HostConfig) error {
 func validateGroupsConfig(groups []ContainerGroupConfig) error {
 	groupNames := make(map[string]bool)
 	for _, g := range groups {
+		if len(g.Name) == 0 {
+			return fmt.Errorf("group name cannot be empty in the groups config")
+		}
 		if groupNames[g.Name] {
 			return fmt.Errorf("group %s defined more than once in the groups config", g.Name)
 		}

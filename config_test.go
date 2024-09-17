@@ -1789,7 +1789,23 @@ var validateConfigErrorTests = []struct {
 		want: `container {Group:group1 Container:ct2} is connected to multiple container mode network stacks`,
 	},
 	{
-		name: "Duplicate Host Name",
+		name: "Empty Host Name In Hosts Config",
+		config: HomelabConfig{
+			Hosts: []HostConfig{
+				{
+					AllowedContainers: []ContainerReference{
+						{
+							Group:     "g1",
+							Container: "ct1",
+						},
+					},
+				},
+			},
+		},
+		want: `host name cannot be empty in the hosts config`,
+	},
+	{
+		name: "Duplicate Host Name In Hosts Config",
 		config: HomelabConfig{
 			Hosts: []HostConfig{
 				{
@@ -1823,6 +1839,38 @@ var validateConfigErrorTests = []struct {
 		want: `host h1 defined more than once in the hosts config`,
 	},
 	{
+		name: "Invalid Container Reference Within Host Config - Empty Group",
+		config: HomelabConfig{
+			Hosts: []HostConfig{
+				{
+					Name: "h1",
+					AllowedContainers: []ContainerReference{
+						{
+							Container: "ct1",
+						},
+					},
+				},
+			},
+		},
+		want: `allowed container config within host h1 has invalid container reference, reason: container reference cannot have an empty group name`,
+	},
+	{
+		name: "Invalid Container Reference Within Host Config - Empty Container",
+		config: HomelabConfig{
+			Hosts: []HostConfig{
+				{
+					Name: "h1",
+					AllowedContainers: []ContainerReference{
+						{
+							Group: "g1",
+						},
+					},
+				},
+			},
+		},
+		want: `allowed container config within host h1 has invalid container reference, reason: container reference cannot have an empty container name`,
+	},
+	{
 		name: "Duplicate Container Within Host Config",
 		config: HomelabConfig{
 			Hosts: []HostConfig{
@@ -1850,6 +1898,17 @@ var validateConfigErrorTests = []struct {
 			},
 		},
 		want: `container {Group:g2 Container:ct2} defined more than once in the hosts config for host h1`,
+	},
+	{
+		name: "Empty Group Name In Groups Config",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Order: 1,
+				},
+			},
+		},
+		want: `group name cannot be empty in the groups config`,
 	},
 	{
 		name: "Duplicate Container Group Name",
