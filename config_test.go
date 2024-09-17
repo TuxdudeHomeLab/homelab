@@ -9,7 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-var parseConfigUsingReaderTests = []struct {
+var parseAndValidateConfigUsingReaderTests = []struct {
 	name   string
 	config string
 	want   HomelabConfig
@@ -19,16 +19,18 @@ var parseConfigUsingReaderTests = []struct {
 		config: `
 global:
   env:
-    - var: MY_VAR_1
-      value: MY_VAR_1_VALUE
-    - var: MY_VAR_2
-      value: MY_VAR_2_VALUE
+    - var: MY_CONFIG_VAR_1
+      value: MY_CONFIG_VAR_1_VALUE
+    - var: MY_CONFIG_VAR_2
+      value: MY_CONFIG_VAR_2_VALUE
   mountDefs:
-    - name: vol-def-1
+    - name: mount-def-1
+      type: bind
       src: /abc/def/ghi
       dst: /pqr/stu/vwx
       readOnly: true
-    - name: vol-def-2
+    - name: mount-def-2
+      type: bind
       src: /abc1/def1
       dst: /pqr2/stu2/vwx2
   container:
@@ -45,9 +47,9 @@ global:
       - var: MY_CONTAINER_ENV_VAR_2
         value: MY_CONTAINER_ENV_VAR_2_VALUE
     mounts:
-      - name: vol-def-1
-      - name: vol-def-2
-      - name: vol-def-3
+      - name: mount-def-1
+      - name: mount-def-2
+      - name: mount-def-3
         src: /foo
         dst: /bar
         readOnly: true
@@ -236,23 +238,25 @@ containers:
 			Global: GlobalConfig{
 				Env: []ConfigEnv{
 					{
-						Var:   "MY_VAR_1",
-						Value: "MY_VAR_1_VALUE",
+						Var:   "MY_CONFIG_VAR_1",
+						Value: "MY_CONFIG_VAR_1_VALUE",
 					},
 					{
-						Var:   "MY_VAR_2",
-						Value: "MY_VAR_2_VALUE",
+						Var:   "MY_CONFIG_VAR_2",
+						Value: "MY_CONFIG_VAR_2_VALUE",
 					},
 				},
 				MountDefs: []MountConfig{
 					{
-						Name:     "vol-def-1",
+						Name:     "mount-def-1",
+						Type:     "bind",
 						Src:      "/abc/def/ghi",
 						Dst:      "/pqr/stu/vwx",
 						ReadOnly: true,
 					},
 					{
-						Name: "vol-def-2",
+						Name: "mount-def-2",
+						Type: "bind",
 						Src:  "/abc1/def1",
 						Dst:  "/pqr2/stu2/vwx2",
 					},
@@ -278,13 +282,13 @@ containers:
 					},
 					Mounts: []MountConfig{
 						{
-							Name: "vol-def-1",
+							Name: "mount-def-1",
 						},
 						{
-							Name: "vol-def-2",
+							Name: "mount-def-2",
 						},
 						{
-							Name:     "vol-def-3",
+							Name:     "mount-def-3",
 							Src:      "/foo",
 							Dst:      "/bar",
 							ReadOnly: true,
@@ -604,6 +608,7 @@ groups:
   - name: group1
     order: 1
   - name: group2
+    order: 3
   - name: group3
     order: 2`,
 		want: HomelabConfig{
@@ -613,7 +618,8 @@ groups:
 					Order: 1,
 				},
 				{
-					Name: "group2",
+					Name:  "group2",
+					Order: 3,
 				},
 				{
 					Name:  "group3",
@@ -625,7 +631,7 @@ groups:
 }
 
 func TestParseConfigUsingReader(t *testing.T) {
-	for _, test := range parseConfigUsingReaderTests {
+	for _, test := range parseAndValidateConfigUsingReaderTests {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
@@ -642,6 +648,13 @@ func TestParseConfigUsingReader(t *testing.T) {
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Errorf(
 					"HomelabConfig.parse()\nTest Case: %q\nFailure: got did not match the want config\nDiff(-want +got): %s", tc.name, diff)
+			}
+
+			if gotErr := got.validate(); nil != gotErr {
+				t.Errorf(
+					"HomelabConfig.validate()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v",
+					tc.name, gotErr)
+				return
 			}
 		})
 	}
