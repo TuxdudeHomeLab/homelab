@@ -234,7 +234,7 @@ containers:
         - baz`,
 		want: HomelabConfig{
 			Global: GlobalConfig{
-				Env: []GlobalEnvConfig{
+				Env: []ConfigEnv{
 					{
 						Var:   "MY_VAR_1",
 						Value: "MY_VAR_1_VALUE",
@@ -266,7 +266,7 @@ containers:
 						"dns-search-1",
 						"dns-search-2",
 					},
-					Env: []ContainerEnvConfig{
+					Env: []ContainerEnv{
 						{
 							Var:   "MY_CONTAINER_ENV_VAR_1",
 							Value: "MY_CONTAINER_ENV_VAR_1_VALUE",
@@ -568,7 +568,7 @@ containers:
 					Runtime: ContainerRuntimeConfig{
 						AttachToTty: true,
 						ShmSize:     "1g",
-						Env: []ContainerEnvConfig{
+						Env: []ContainerEnv{
 							{
 								Var:   "MY_ENV",
 								Value: "MY_ENV_VALUE",
@@ -657,7 +657,7 @@ var validParseConfigsFromPathTests = []struct {
 		configsPath: "parse-configs-valid",
 		want: HomelabConfig{
 			Global: GlobalConfig{
-				Env: []GlobalEnvConfig{
+				Env: []ConfigEnv{
 					{
 						Var:   "MY_GLOBAL_FOO",
 						Value: "MY_GLOBAL_BAR",
@@ -1024,7 +1024,7 @@ var validateConfigErrorTests = []struct {
 		name: "Empty Global Config Env Var",
 		config: HomelabConfig{
 			Global: GlobalConfig{
-				Env: []GlobalEnvConfig{
+				Env: []ConfigEnv{
 					{
 						Value: "foo-bar",
 					},
@@ -1037,7 +1037,7 @@ var validateConfigErrorTests = []struct {
 		name: "Duplicate Global Config Env Var",
 		config: HomelabConfig{
 			Global: GlobalConfig{
-				Env: []GlobalEnvConfig{
+				Env: []ConfigEnv{
 					{
 						Var:   "FOO",
 						Value: "foo-bar",
@@ -1059,7 +1059,7 @@ var validateConfigErrorTests = []struct {
 		name: "Global Config Env Var Without Value And ValueCommand",
 		config: HomelabConfig{
 			Global: GlobalConfig{
-				Env: []GlobalEnvConfig{
+				Env: []ConfigEnv{
 					{
 						Var: "FOO",
 					},
@@ -1072,7 +1072,7 @@ var validateConfigErrorTests = []struct {
 		name: "Global Config Env Var With Both Value And ValueCommand",
 		config: HomelabConfig{
 			Global: GlobalConfig{
-				Env: []GlobalEnvConfig{
+				Env: []ConfigEnv{
 					{
 						Var:          "FOO",
 						Value:        "my-foo-bar",

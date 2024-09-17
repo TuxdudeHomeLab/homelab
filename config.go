@@ -25,7 +25,7 @@ type HomelabConfig struct {
 // GlobalConfig represents the configuration that will be applied
 // across the entire homelab deployment.
 type GlobalConfig struct {
-	Env       []GlobalEnvConfig     `yaml:"env"`
+	Env       []ConfigEnv           `yaml:"env"`
 	MountDefs []MountConfig         `yaml:"mountDefs"`
 	Container GlobalContainerConfig `yaml:"container"`
 }
@@ -33,20 +33,20 @@ type GlobalConfig struct {
 // GlobalContainerConfig represents container related configuration that
 // will be applied globally across all containers.
 type GlobalContainerConfig struct {
-	StopSignal    string               `yaml:"stopSignal"`
-	StopTimeout   int                  `yaml:"stopTimeout"`
-	RestartPolicy string               `yaml:"restartPolicy"`
-	DomainName    string               `yaml:"domainName"`
-	DNSSearch     []string             `yaml:"dnsSearch"`
-	Env           []ContainerEnvConfig `yaml:"env"`
-	Mounts        []MountConfig        `yaml:"mounts"`
-	Labels        []LabelConfig        `yaml:"labels"`
+	StopSignal    string         `yaml:"stopSignal"`
+	StopTimeout   int            `yaml:"stopTimeout"`
+	RestartPolicy string         `yaml:"restartPolicy"`
+	DomainName    string         `yaml:"domainName"`
+	DNSSearch     []string       `yaml:"dnsSearch"`
+	Env           []ContainerEnv `yaml:"env"`
+	Mounts        []MountConfig  `yaml:"mounts"`
+	Labels        []LabelConfig  `yaml:"labels"`
 }
 
-// GlobalEnvConfig is a pair of environment variable name and value that will be
+// ConfigEnv is a pair of environment variable name and value that will be
 // substituted in all string field values read from the homelab
 // configuration file.
-type GlobalEnvConfig struct {
+type ConfigEnv struct {
 	Var          string `yaml:"var"`
 	Value        string `yaml:"value"`
 	ValueCommand string `yaml:"valueCommand"`
@@ -110,6 +110,7 @@ type ContainerGroupConfig struct {
 // ContainerConfig represents a single docker container.
 type ContainerConfig struct {
 	Info       ContainerReference        `yaml:"info"`
+	Config     ContainerConfigOptions    `yaml:"config"`
 	Image      ContainerImageConfig      `yaml:"image"`
 	Metadata   ContainerMetadataConfig   `yaml:"metadata"`
 	Lifecycle  ContainerLifecycleConfig  `yaml:"lifecycle"`
@@ -128,6 +129,12 @@ type ContainerImageConfig struct {
 	SkipImagePull           bool   `yaml:"skipImagePull"`
 	IgnoreImagePullFailures bool   `yaml:"ignoreImagePullFailures"`
 	PullImageBeforeStop     bool   `yaml:"pullImageBeforeStop"`
+}
+
+// ContainerConfigOptions represents options that are applied while
+// evaluating the config for this docker container.
+type ContainerConfigOptions struct {
+	Env []ConfigEnv `yaml:"env"`
 }
 
 // ContainerMetadataConfig represents the metadata for the docker container.
@@ -196,11 +203,11 @@ type ContainerHealthConfig struct {
 // ContainerRuntimeConfig represents the execution and runtime information
 // for the docker container.
 type ContainerRuntimeConfig struct {
-	AttachToTty bool                 `yaml:"tty"`
-	ShmSize     string               `yaml:"shmSize"`
-	Env         []ContainerEnvConfig `yaml:"env"`
-	Entrypoint  []string             `yaml:"entrypoint"`
-	Args        []string             `yaml:"args"`
+	AttachToTty bool           `yaml:"tty"`
+	ShmSize     string         `yaml:"shmSize"`
+	Env         []ContainerEnv `yaml:"env"`
+	Entrypoint  []string       `yaml:"entrypoint"`
+	Args        []string       `yaml:"args"`
 }
 
 // MountConfig represents a filesystem mount.
@@ -225,9 +232,9 @@ type SysctlConfig struct {
 	Value string `yaml:"value"`
 }
 
-// ContainerEnvConfig represents an environment variable and value pair that will be set
+// ContainerEnv represents an environment variable and value pair that will be set
 // on the specified container.
-type ContainerEnvConfig struct {
+type ContainerEnv struct {
 	Var          string `yaml:"var"`
 	Value        string `yaml:"value,omitempty"`
 	ValueCommand string `yaml:"valueCommand,omitempty"`
@@ -343,7 +350,7 @@ func (h *HomelabConfig) validate() error {
 }
 
 func validateGlobalConfig(config *GlobalConfig) error {
-	err := validateGlobalEnvConfig(config.Env)
+	err := validateConfigEnv(config.Env, "global config")
 	if err != nil {
 		return err
 	}
@@ -361,22 +368,22 @@ func validateGlobalConfig(config *GlobalConfig) error {
 	return nil
 }
 
-func validateGlobalEnvConfig(config []GlobalEnvConfig) error {
+func validateConfigEnv(config []ConfigEnv, location string) error {
 	envs := make(map[string]bool)
 	for _, e := range config {
 		if len(e.Var) == 0 {
-			return fmt.Errorf("empty env var in global config")
+			return fmt.Errorf("empty env var in %s", location)
 		}
 		if envs[e.Var] {
-			return fmt.Errorf("env var %s specified more than once in global config", e.Var)
+			return fmt.Errorf("env var %s specified more than once in %s", e.Var, location)
 		}
 		envs[e.Var] = true
 
 		if len(e.Value) == 0 && len(e.ValueCommand) == 0 {
-			return fmt.Errorf("neither value nor valueCommand specified for env var %s in global config", e.Var)
+			return fmt.Errorf("neither value nor valueCommand specified for env var %s in %s", e.Var, location)
 		}
 		if len(e.Value) > 0 && len(e.ValueCommand) > 0 {
-			return fmt.Errorf("exactly one of value or valueCommand must be specified for env var %s in global config", e.Var)
+			return fmt.Errorf("exactly one of value or valueCommand must be specified for env var %s in %s", e.Var, location)
 		}
 	}
 	return nil
