@@ -5,5 +5,7 @@ global:
   container:
     stopSignal: SIGTERM
     stopTimeout: 5
-    restartPolicy: unless-stopped
+    restartPolicy:
+      mode: on-failure
+      maxRetryCount: 5
     domainName: somedomain

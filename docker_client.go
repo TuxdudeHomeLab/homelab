@@ -77,6 +77,10 @@ func restartPolicyModeFromString(pol string) (dcontainer.RestartPolicyMode, erro
 	}
 }
 
+func restartPolicyModeValidValues() string {
+	return "[ 'no', 'always', 'on-failure', 'unless-stopped' ]"
+}
+
 func (c containerState) String() string {
 	switch c {
 	case containerStateUnknown:

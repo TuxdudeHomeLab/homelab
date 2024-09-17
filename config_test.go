@@ -36,7 +36,8 @@ global:
   container:
     stopSignal: SIGTERM
     stopTimeout: 8
-    restartPolicy: unless-stopped
+    restartPolicy:
+      mode: unless-stopped
     domainName: example.tld
     dnsSearch:
       - dns-search-1
@@ -147,7 +148,8 @@ containers:
     lifecycle:
       order: 1
       startPreHook: $$SCRIPTS_DIR$$/my-start-prehook.sh
-      restartPolicy: always
+      restartPolicy:
+        mode: always
       autoRemove: true
       stopSignal: SIGHUP
       stopTimeout: 10
@@ -262,10 +264,12 @@ containers:
 					},
 				},
 				Container: GlobalContainerConfig{
-					StopSignal:    "SIGTERM",
-					StopTimeout:   8,
-					RestartPolicy: "unless-stopped",
-					DomainName:    "example.tld",
+					StopSignal:  "SIGTERM",
+					StopTimeout: 8,
+					RestartPolicy: ContainerRestartPolicyConfig{
+						Mode: "unless-stopped",
+					},
+					DomainName: "example.tld",
 					DNSSearch: []string{
 						"dns-search-1",
 						"dns-search-2",
@@ -464,12 +468,14 @@ containers:
 						},
 					},
 					Lifecycle: ContainerLifecycleConfig{
-						Order:         1,
-						StartPreHook:  "$$SCRIPTS_DIR$$/my-start-prehook.sh",
-						RestartPolicy: "always",
-						AutoRemove:    true,
-						StopSignal:    "SIGHUP",
-						StopTimeout:   10,
+						Order:        1,
+						StartPreHook: "$$SCRIPTS_DIR$$/my-start-prehook.sh",
+						RestartPolicy: ContainerRestartPolicyConfig{
+							Mode: "always",
+						},
+						AutoRemove:  true,
+						StopSignal:  "SIGHUP",
+						StopTimeout: 10,
 					},
 					User: ContainerUserConfig{
 						User:         "$$CURRENT_USER$$",
@@ -677,10 +683,13 @@ var validParseConfigsFromPathTests = []struct {
 					},
 				},
 				Container: GlobalContainerConfig{
-					StopSignal:    "SIGTERM",
-					StopTimeout:   5,
-					RestartPolicy: "unless-stopped",
-					DomainName:    "somedomain",
+					StopSignal:  "SIGTERM",
+					StopTimeout: 5,
+					RestartPolicy: ContainerRestartPolicyConfig{
+						Mode:          "on-failure",
+						MaxRetryCount: 5,
+					},
+					DomainName: "somedomain",
 				},
 			},
 			IPAM: IPAMConfig{
@@ -1215,15 +1224,45 @@ var validateConfigErrorTests = []struct {
 		want: `container stop timeout cannot be negative \(-1\) in global container config`,
 	},
 	{
-		name: "Global Container Config Invalid Restart Policy",
+		name: "Global Container Config Restart Policy MaxRetryCount Set With Non-On-Failure Mode",
 		config: HomelabConfig{
 			Global: GlobalConfig{
 				Container: GlobalContainerConfig{
-					RestartPolicy: "garbage",
+					RestartPolicy: ContainerRestartPolicyConfig{
+						Mode:          "always",
+						MaxRetryCount: 5,
+					},
+				},
+			},
+		},
+		want: `restart policy max retry count can be set in global container config only when the mode is on-failure`,
+	},
+	{
+		name: "Global Container Config Invalid Restart Policy Mode",
+		config: HomelabConfig{
+			Global: GlobalConfig{
+				Container: GlobalContainerConfig{
+					RestartPolicy: ContainerRestartPolicyConfig{
+						Mode: "garbage",
+					},
 				},
 			},
 		},
 		want: `invalid restart policy mode garbage in global container config, valid values are \[ 'no', 'always', 'on-failure', 'unless-stopped' \]`,
+	},
+	{
+		name: "Global Container Config Negative Restart Policy MaxRetryCount",
+		config: HomelabConfig{
+			Global: GlobalConfig{
+				Container: GlobalContainerConfig{
+					RestartPolicy: ContainerRestartPolicyConfig{
+						Mode:          "on-failure",
+						MaxRetryCount: -1,
+					},
+				},
+			},
+		},
+		want: `restart policy max retry count \(-1\) in global container config cannot be negative`,
 	},
 	{
 		name: "Empty Global Container Config Env Var",

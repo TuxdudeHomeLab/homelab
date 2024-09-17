@@ -2,7 +2,8 @@ global:
   container:
     stopSignal: SIGHUP
     stopTimeout: 8
-    restartPolicy: always
+    restartPolicy:
+      mode: always
     domainName: somedomain2
   env:
     - var: MY_GLOBAL_FOO

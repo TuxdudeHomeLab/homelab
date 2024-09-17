@@ -425,14 +425,19 @@ func (c *container) publishedPorts() (nat.PortMap, nat.PortSet) {
 }
 
 func (c *container) restartPolicy() dcontainer.RestartPolicy {
-	pol := c.config.Lifecycle.RestartPolicy
-	if len(pol) == 0 {
-		pol = c.globalConfig.Container.RestartPolicy
+	mode := c.config.Lifecycle.RestartPolicy.Mode
+	maxRetry := c.config.Lifecycle.RestartPolicy.MaxRetryCount
+	if len(mode) == 0 {
+		mode = c.globalConfig.Container.RestartPolicy.Mode
+		maxRetry = c.globalConfig.Container.RestartPolicy.MaxRetryCount
 	}
 
-	// TODO: Perform better validation of the restart policy config setting
-	// prior to directly covnerting it to RestartPolicyMode.
-	return dcontainer.RestartPolicy{Name: dcontainer.RestartPolicyMode(pol)}
+	rpm, err := restartPolicyModeFromString(mode)
+	if err != nil {
+		log.Fatalf("")
+		log.Fatalf("unable to convert restart policy mode %s setting for container %s, possibly indicating a bug in the code", mode, c.name())
+	}
+	return dcontainer.RestartPolicy{Name: rpm, MaximumRetryCount: maxRetry}
 }
 
 func (c *container) autoRemove() bool {

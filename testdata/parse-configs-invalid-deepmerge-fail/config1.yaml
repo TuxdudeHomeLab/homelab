@@ -2,5 +2,6 @@ global:
   container:
     stopSignal: SIGTERM
     stopTimeout: 5
-    restartPolicy: unless-stopped
+    restartPolicy:
+      mode: unless-stopped
     domainName: somedomain

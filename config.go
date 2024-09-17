@@ -33,14 +33,14 @@ type GlobalConfig struct {
 // GlobalContainerConfig represents container related configuration that
 // will be applied globally across all containers.
 type GlobalContainerConfig struct {
-	StopSignal    string         `yaml:"stopSignal"`
-	StopTimeout   int            `yaml:"stopTimeout"`
-	RestartPolicy string         `yaml:"restartPolicy"`
-	DomainName    string         `yaml:"domainName"`
-	DNSSearch     []string       `yaml:"dnsSearch"`
-	Env           []ContainerEnv `yaml:"env"`
-	Mounts        []MountConfig  `yaml:"mounts"`
-	Labels        []LabelConfig  `yaml:"labels"`
+	StopSignal    string                       `yaml:"stopSignal"`
+	StopTimeout   int                          `yaml:"stopTimeout"`
+	RestartPolicy ContainerRestartPolicyConfig `yaml:"restartPolicy"`
+	DomainName    string                       `yaml:"domainName"`
+	DNSSearch     []string                     `yaml:"dnsSearch"`
+	Env           []ContainerEnv               `yaml:"env"`
+	Mounts        []MountConfig                `yaml:"mounts"`
+	Labels        []LabelConfig                `yaml:"labels"`
 }
 
 // ConfigEnv is a pair of environment variable name and value that will be
@@ -145,12 +145,12 @@ type ContainerMetadataConfig struct {
 // ContainerLifecycleConfig represents the lifecycle information for the
 // docker container.
 type ContainerLifecycleConfig struct {
-	Order         int    `yaml:"order"`
-	StartPreHook  string `yaml:"startPreHook"`
-	RestartPolicy string `yaml:"restartPolicy"`
-	AutoRemove    bool   `yaml:"autoRemove"`
-	StopSignal    string `yaml:"stopSignal"`
-	StopTimeout   int    `yaml:"stopTimeout"`
+	Order         int                          `yaml:"order"`
+	StartPreHook  string                       `yaml:"startPreHook"`
+	RestartPolicy ContainerRestartPolicyConfig `yaml:"restartPolicy"`
+	AutoRemove    bool                         `yaml:"autoRemove"`
+	StopSignal    string                       `yaml:"stopSignal"`
+	StopTimeout   int                          `yaml:"stopTimeout"`
 }
 
 // ContainerUserConfig represents the user and group information for the
@@ -252,6 +252,11 @@ type PublishedPortConfig struct {
 type LabelConfig struct {
 	Name  string `yaml:"name"`
 	Value string `yaml:"value"`
+}
+
+type ContainerRestartPolicyConfig struct {
+	Mode          string `yaml:"mode"`
+	MaxRetryCount int    `yaml:"maxRetryCount"`
 }
 
 func mergedConfigReader(path string) (io.Reader, error) {
@@ -484,12 +489,11 @@ func validateGlobalContainerConfig(config *GlobalContainerConfig, globalMountDef
 	if config.StopTimeout < 0 {
 		return fmt.Errorf("container stop timeout cannot be negative (%d) in global container config", config.StopTimeout)
 	}
-	if len(config.RestartPolicy) > 0 {
-		if _, err := restartPolicyModeFromString(config.RestartPolicy); err != nil {
-			return fmt.Errorf("invalid restart policy mode %s in global container config, valid values are [ 'no', 'always', 'on-failure', 'unless-stopped' ]", config.RestartPolicy)
-		}
+	err := validateContainerRestartPolicy(&config.RestartPolicy, "global container config")
+	if err != nil {
+		return err
 	}
-	err := validateContainerEnv(config.Env, "global container config")
+	err = validateContainerEnv(config.Env, "global container config")
 	if err != nil {
 		return err
 	}
@@ -500,6 +504,22 @@ func validateGlobalContainerConfig(config *GlobalContainerConfig, globalMountDef
 	err = validateLabelsConfig(config.Labels, "global container config")
 	if err != nil {
 		return err
+	}
+	return nil
+}
+
+func validateContainerRestartPolicy(config *ContainerRestartPolicyConfig, location string) error {
+	if config.Mode != "on-failure" && config.MaxRetryCount != 0 {
+		return fmt.Errorf("restart policy max retry count can be set in %s only when the mode is on-failure", location)
+	}
+	if len(config.Mode) == 0 {
+		return nil
+	}
+	if _, err := restartPolicyModeFromString(config.Mode); err != nil {
+		return fmt.Errorf("invalid restart policy mode %s in %s, valid values are %s", config.Mode, location, restartPolicyModeValidValues())
+	}
+	if config.MaxRetryCount < 0 {
+		return fmt.Errorf("restart policy max retry count (%d) in %s cannot be negative", config.MaxRetryCount, location)
 	}
 	return nil
 }
