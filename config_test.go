@@ -1596,65 +1596,6 @@ var validateConfigErrorTests = []struct {
 		want: `container {Group:group1 Container:ct2} has multiple endpoints in network net1`,
 	},
 	{
-		name: "Duplicate Container Group Name",
-		config: HomelabConfig{
-			Groups: []ContainerGroupConfig{
-				{
-					Name:  "g1",
-					Order: 1,
-				},
-				{
-					Name:  "g2",
-					Order: 1,
-				},
-				{
-					Name:  "g3",
-					Order: 1,
-				},
-				{
-					Name:  "g1",
-					Order: 2,
-				},
-			},
-		},
-		want: `group g1 defined more than once in the groups config`,
-	},
-	{
-		name: "Container Group Without Order",
-		config: HomelabConfig{
-			Groups: []ContainerGroupConfig{
-				{
-					Name: "g1",
-				},
-			},
-		},
-		want: `group g1 has a non-positive order 0`,
-	},
-	{
-		name: "Container Group With Zero Order",
-		config: HomelabConfig{
-			Groups: []ContainerGroupConfig{
-				{
-					Name:  "g1",
-					Order: 0,
-				},
-			},
-		},
-		want: `group g1 has a non-positive order 0`,
-	},
-	{
-		name: "Container Group With Negative Order",
-		config: HomelabConfig{
-			Groups: []ContainerGroupConfig{
-				{
-					Name:  "g1",
-					Order: -1,
-				},
-			},
-		},
-		want: `group g1 has a non-positive order -1`,
-	},
-	{
 		name: "Duplicate Host Name",
 		config: HomelabConfig{
 			Hosts: []HostConfig{
@@ -1716,6 +1657,65 @@ var validateConfigErrorTests = []struct {
 			},
 		},
 		want: `container {Group:g2 Container:ct2} defined more than once in the hosts config for host h1`,
+	},
+	{
+		name: "Duplicate Container Group Name",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+				{
+					Name:  "g2",
+					Order: 1,
+				},
+				{
+					Name:  "g3",
+					Order: 1,
+				},
+				{
+					Name:  "g1",
+					Order: 2,
+				},
+			},
+		},
+		want: `group g1 defined more than once in the groups config`,
+	},
+	{
+		name: "Container Group Without Order",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name: "g1",
+				},
+			},
+		},
+		want: `group g1 has a non-positive order 0`,
+	},
+	{
+		name: "Container Group With Zero Order",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 0,
+				},
+			},
+		},
+		want: `group g1 has a non-positive order 0`,
+	},
+	{
+		name: "Container Group With Negative Order",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: -1,
+				},
+			},
+		},
+		want: `group g1 has a non-positive order -1`,
 	},
 }
 
