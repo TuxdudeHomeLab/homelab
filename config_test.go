@@ -666,7 +666,7 @@ func TestParseConfigUsingReader(t *testing.T) {
 	}
 }
 
-var validParseConfigsFromPathTests = []struct {
+var validParseAndValidateConfigsFromPathTests = []struct {
 	name        string
 	configsPath string
 	want        HomelabConfig
@@ -879,8 +879,8 @@ var validParseConfigsFromPathTests = []struct {
 	},
 }
 
-func TestParseConfigsFromPath(t *testing.T) {
-	for _, test := range validParseConfigsFromPathTests {
+func TestParseAndValidateConfigsFromPath(t *testing.T) {
+	for _, test := range validParseAndValidateConfigsFromPathTests {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
@@ -897,6 +897,13 @@ func TestParseConfigsFromPath(t *testing.T) {
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Errorf(
 					"HomelabConfig.parseConfigs()\nTest Case: %q\nFailure: got did not match the want config\nDiff(-want +got): %s", tc.name, diff)
+			}
+
+			if gotErr := got.validate(); nil != gotErr {
+				t.Errorf(
+					"HomelabConfig.validate()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v",
+					tc.name, gotErr)
+				return
 			}
 		})
 	}
