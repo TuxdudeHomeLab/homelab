@@ -6,18 +6,15 @@ import (
 )
 
 func validateGlobalConfig(config *GlobalConfig) error {
-	err := validateConfigEnv(config.Env, "global config")
-	if err != nil {
+	if err := validateConfigEnv(config.Env, "global config"); err != nil {
 		return err
 	}
 
-	err = validateMountsConfig(config.MountDefs, nil, nil, "global config mount defs")
-	if err != nil {
+	if err := validateMountsConfig(config.MountDefs, nil, nil, "global config mount defs"); err != nil {
 		return err
 	}
 
-	err = validateGlobalContainerConfig(&config.Container, config.MountDefs)
-	if err != nil {
+	if err := validateGlobalContainerConfig(&config.Container, config.MountDefs); err != nil {
 		return err
 	}
 
@@ -140,20 +137,16 @@ func validateGlobalContainerConfig(config *GlobalContainerConfig, globalMountDef
 	if config.StopTimeout < 0 {
 		return fmt.Errorf("container stop timeout cannot be negative (%d) in global container config", config.StopTimeout)
 	}
-	err := validateContainerRestartPolicy(&config.RestartPolicy, "global container config")
-	if err != nil {
+	if err := validateContainerRestartPolicy(&config.RestartPolicy, "global container config"); err != nil {
 		return err
 	}
-	err = validateContainerEnv(config.Env, "global container config")
-	if err != nil {
+	if err := validateContainerEnv(config.Env, "global container config"); err != nil {
 		return err
 	}
-	err = validateMountsConfig(config.Mounts, nil, globalMountDefs, "global container config mounts")
-	if err != nil {
+	if err := validateMountsConfig(config.Mounts, nil, globalMountDefs, "global container config mounts"); err != nil {
 		return err
 	}
-	err = validateLabelsConfig(config.Labels, "global container config")
-	if err != nil {
+	if err := validateLabelsConfig(config.Labels, "global container config"); err != nil {
 		return err
 	}
 	return nil
@@ -208,12 +201,10 @@ func validateIPAMConfig(config *IPAMConfig) error {
 		if !netAddr.Is4() {
 			return fmt.Errorf("CIDR %s of network %s is not an IPv4 subnet CIDR", n.CIDR, n.Name)
 		}
-		masked := prefix.Masked()
-		if masked.Addr() != netAddr {
+		if masked := prefix.Masked(); masked.Addr() != netAddr {
 			return fmt.Errorf("CIDR %s of network %s is not the same as the network address %s", n.CIDR, n.Name, masked)
 		}
-		prefixLen := prefix.Bits()
-		if prefixLen > 30 {
+		if prefixLen := prefix.Bits(); prefixLen > 30 {
 			return fmt.Errorf("CIDR %s of network %s (prefix length: %d) has a prefix length more than 30 which makes the network unusable for container IP address allocations", n.CIDR, n.Name, prefixLen)
 		}
 		if !netAddr.IsPrivate() {
@@ -232,8 +223,7 @@ func validateIPAMConfig(config *IPAMConfig) error {
 		for _, cip := range n.Containers {
 			ip := cip.IP
 			ct := cip.Container
-			err := validateContainerReference(&ct)
-			if err != nil {
+			if err := validateContainerReference(&ct); err != nil {
 				return fmt.Errorf("container IP config within network %s has invalid container reference, reason: %w", n.Name, err)
 			}
 
@@ -276,8 +266,7 @@ func validateIPAMConfig(config *IPAMConfig) error {
 
 		containers := make(map[ContainerReference]bool)
 		for _, ct := range n.Containers {
-			err := validateContainerReference(&ct)
-			if err != nil {
+			if err := validateContainerReference(&ct); err != nil {
 				return fmt.Errorf("container IP config within network %s has invalid container reference, reason: %w", n.Name, err)
 			}
 			if containers[ct] {
