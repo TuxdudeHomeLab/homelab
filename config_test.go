@@ -1126,7 +1126,7 @@ var validateConfigErrorTests = []struct {
 				},
 			},
 		},
-		want: `mount name is empty in global config mount defs`,
+		want: `mount name cannot be empty in global config mount defs`,
 	},
 	{
 		name: "Global Config Duplicate Mount Defs",
@@ -1185,7 +1185,7 @@ var validateConfigErrorTests = []struct {
 				},
 			},
 		},
-		want: `mount name foo has empty value for src in global config mount defs`,
+		want: `mount name foo cannot have an empty value for src in global config mount defs`,
 	},
 	{
 		name: "Global Config Mount Def With Empty Dst",
@@ -1200,7 +1200,7 @@ var validateConfigErrorTests = []struct {
 				},
 			},
 		},
-		want: `mount name foo has empty value for dst in global config mount defs`,
+		want: `mount name foo cannot have an empty value for dst in global config mount defs`,
 	},
 	{
 		name: "Global Config Bind Mount Def With Options",
@@ -1358,7 +1358,7 @@ var validateConfigErrorTests = []struct {
 				},
 			},
 		},
-		want: `mount name is empty in global container config mounts`,
+		want: `mount name cannot be empty in global container config mounts`,
 	},
 	{
 		name: "Global Container Config Duplicate Mounts",
@@ -1423,7 +1423,7 @@ var validateConfigErrorTests = []struct {
 				},
 			},
 		},
-		want: `mount name foo has empty value for src in global container config mounts`,
+		want: `mount name foo cannot have an empty value for src in global container config mounts`,
 	},
 	{
 		name: "Global Container Config Mount With Empty Dst",
@@ -1440,7 +1440,7 @@ var validateConfigErrorTests = []struct {
 				},
 			},
 		},
-		want: `mount name foo has empty value for dst in global container config mounts`,
+		want: `mount name foo cannot have an empty value for dst in global container config mounts`,
 	},
 	{
 		name: "Global Container Config Bind Mount With Options",
@@ -1636,7 +1636,7 @@ var validateConfigErrorTests = []struct {
 				},
 			},
 		},
-		want: `network net1 has a non-positive priority 0`,
+		want: `network net1 cannot have a non-positive priority 0`,
 	},
 	{
 		name: "Invalid CIDR - Empty",
@@ -1779,7 +1779,7 @@ var validateConfigErrorTests = []struct {
 				},
 			},
 		},
-		want: `CIDR 172\.18\.100\.0/31 of network net1 \(prefix length: 31\) has a prefix length more than 30 which makes the network unusable for container IP address allocations`,
+		want: `CIDR 172\.18\.100\.0/31 of network net1 \(prefix length: 31\) cannot have a prefix length more than 30 which makes the network unusable for container IP address allocations`,
 	},
 	{
 		name: "Invalid CIDR - Long Prefix 32",
@@ -1797,7 +1797,7 @@ var validateConfigErrorTests = []struct {
 				},
 			},
 		},
-		want: `CIDR 172\.18\.100\.0/32 of network net1 \(prefix length: 32\) has a prefix length more than 30 which makes the network unusable for container IP address allocations`,
+		want: `CIDR 172\.18\.100\.0/32 of network net1 \(prefix length: 32\) cannot have a prefix length more than 30 which makes the network unusable for container IP address allocations`,
 	},
 	{
 		name: "Non-RFC1918 CIDR - Public IPv4",
@@ -2035,7 +2035,7 @@ var validateConfigErrorTests = []struct {
 				},
 			},
 		},
-		want: `container {Group:group1 Container:ct1} endpoint in network net1 has IP 172\.18\.101\.2 that does not belong to the network CIDR 172\.18\.100\.0/24`,
+		want: `container {Group:group1 Container:ct1} endpoint in network net1 cannot have an IP 172\.18\.101\.2 that does not belong to the network CIDR 172\.18\.100\.0/24`,
 	},
 	{
 		name: "Container IP same as Network Address",
@@ -2062,7 +2062,7 @@ var validateConfigErrorTests = []struct {
 				},
 			},
 		},
-		want: `container {Group:group1 Container:ct1} endpoint in network net1 has IP 172\.18\.100\.0 matching the network address 172\.18\.100\.0`,
+		want: `container {Group:group1 Container:ct1} endpoint in network net1 cannot have an IP 172\.18\.100\.0 matching the network address 172\.18\.100\.0`,
 	},
 	{
 		name: "Container IP same as Gateway Address",
@@ -2089,7 +2089,7 @@ var validateConfigErrorTests = []struct {
 				},
 			},
 		},
-		want: `container {Group:group1 Container:ct1} endpoint in network net1 has IP 172\.18\.100\.1 matching the gateway address 172\.18\.100\.1`,
+		want: `container {Group:group1 Container:ct1} endpoint in network net1 cannot have an IP 172\.18\.100\.1 matching the gateway address 172\.18\.100\.1`,
 	},
 	{
 		name: "Multiple Endpoints For Same Container Within A Bridge Mode Network",
@@ -2123,7 +2123,7 @@ var validateConfigErrorTests = []struct {
 				},
 			},
 		},
-		want: `container {Group:group1 Container:ct1} has multiple endpoints in network net1`,
+		want: `container {Group:group1 Container:ct1} cannot have multiple endpoints in network net1`,
 	},
 	{
 		name: "Duplicate Container IPs",
@@ -2245,7 +2245,7 @@ var validateConfigErrorTests = []struct {
 				},
 			},
 		},
-		want: `network net1 has a non-positive priority 0`,
+		want: `network net1 cannot have a non-positive priority 0`,
 	},
 	{
 		name: "Container Mode Network Invalid Container Reference - Empty Group",
@@ -2479,7 +2479,7 @@ var validateConfigErrorTests = []struct {
 				},
 			},
 		},
-		want: `group g1 has a non-positive order 0`,
+		want: `group g1 cannot have a non-positive order 0`,
 	},
 	{
 		name: "Container Group With Zero Order",
@@ -2491,7 +2491,7 @@ var validateConfigErrorTests = []struct {
 				},
 			},
 		},
-		want: `group g1 has a non-positive order 0`,
+		want: `group g1 cannot have a non-positive order 0`,
 	},
 	{
 		name: "Container Group With Negative Order",
@@ -2503,7 +2503,7 @@ var validateConfigErrorTests = []struct {
 				},
 			},
 		},
-		want: `group g1 has a non-positive order -1`,
+		want: `group g1 cannot have a non-positive order -1`,
 	},
 }
 

@@ -100,7 +100,7 @@ func validateMountsConfig(config, commonConfig, globalDefs []MountConfig, locati
 	// Finally iterate and validate the mounts in the current level config.
 	for _, m := range config {
 		if len(m.Name) == 0 {
-			return fmt.Errorf("mount name is empty in %s", location)
+			return fmt.Errorf("mount name cannot be empty in %s", location)
 		}
 		if mounts[m.Name] {
 			return fmt.Errorf("mount name %s defined more than once in %s", m.Name, location)
@@ -121,10 +121,10 @@ func validateMountsConfig(config, commonConfig, globalDefs []MountConfig, locati
 			return fmt.Errorf("unsupported mount type %s for mount %s in %s", m.Type, m.Name, location)
 		}
 		if len(m.Src) == 0 {
-			return fmt.Errorf("mount name %s has empty value for src in %s", m.Name, location)
+			return fmt.Errorf("mount name %s cannot have an empty value for src in %s", m.Name, location)
 		}
 		if len(m.Dst) == 0 {
-			return fmt.Errorf("mount name %s has empty value for dst in %s", m.Name, location)
+			return fmt.Errorf("mount name %s cannot have an empty value for dst in %s", m.Name, location)
 		}
 		if len(m.Options) > 0 {
 			return fmt.Errorf("mount name %s specifies options in %s, that are not supported when mount type is bind", m.Name, location)
@@ -188,7 +188,7 @@ func validateIPAMConfig(config *IPAMConfig) error {
 			return fmt.Errorf("host interface name %s of network %s is already used by another network in the IPAM config", n.HostInterfaceName, n.Name)
 		}
 		if n.Priority <= 0 {
-			return fmt.Errorf("network %s has a non-positive priority %d", n.Name, n.Priority)
+			return fmt.Errorf("network %s cannot have a non-positive priority %d", n.Name, n.Priority)
 		}
 
 		networks[n.Name] = true
@@ -205,7 +205,7 @@ func validateIPAMConfig(config *IPAMConfig) error {
 			return fmt.Errorf("CIDR %s of network %s is not the same as the network address %s", n.CIDR, n.Name, masked)
 		}
 		if prefixLen := prefix.Bits(); prefixLen > 30 {
-			return fmt.Errorf("CIDR %s of network %s (prefix length: %d) has a prefix length more than 30 which makes the network unusable for container IP address allocations", n.CIDR, n.Name, prefixLen)
+			return fmt.Errorf("CIDR %s of network %s (prefix length: %d) cannot have a prefix length more than 30 which makes the network unusable for container IP address allocations", n.CIDR, n.Name, prefixLen)
 		}
 		if !netAddr.IsPrivate() {
 			return fmt.Errorf("CIDR %s of network %s is not within the RFC1918 private address space", n.CIDR, n.Name)
@@ -232,16 +232,16 @@ func validateIPAMConfig(config *IPAMConfig) error {
 				return fmt.Errorf("container {Group:%s Container:%s} endpoint in network %s has invalid IP %s, reason: %w", ct.Group, ct.Container, n.Name, ip, err)
 			}
 			if !prefix.Contains(caddr) {
-				return fmt.Errorf("container {Group:%s Container:%s} endpoint in network %s has IP %s that does not belong to the network CIDR %s", ct.Group, ct.Container, n.Name, ip, prefix)
+				return fmt.Errorf("container {Group:%s Container:%s} endpoint in network %s cannot have an IP %s that does not belong to the network CIDR %s", ct.Group, ct.Container, n.Name, ip, prefix)
 			}
 			if caddr.Compare(netAddr) == 0 {
-				return fmt.Errorf("container {Group:%s Container:%s} endpoint in network %s has IP %s matching the network address %s", ct.Group, ct.Container, n.Name, ip, netAddr)
+				return fmt.Errorf("container {Group:%s Container:%s} endpoint in network %s cannot have an IP %s matching the network address %s", ct.Group, ct.Container, n.Name, ip, netAddr)
 			}
 			if caddr.Compare(gatewayAddr) == 0 {
-				return fmt.Errorf("container {Group:%s Container:%s} endpoint in network %s has IP %s matching the gateway address %s", ct.Group, ct.Container, n.Name, ip, gatewayAddr)
+				return fmt.Errorf("container {Group:%s Container:%s} endpoint in network %s cannot have an IP %s matching the gateway address %s", ct.Group, ct.Container, n.Name, ip, gatewayAddr)
 			}
 			if containers[ct] {
-				return fmt.Errorf("container {Group:%s Container:%s} has multiple endpoints in network %s", ct.Group, ct.Container, n.Name)
+				return fmt.Errorf("container {Group:%s Container:%s} cannot have multiple endpoints in network %s", ct.Group, ct.Container, n.Name)
 			}
 			if containerIPs[caddr] {
 				return fmt.Errorf("IP %s of container {Group:%s Container:%s} is already in use by another container in network %s", ip, ct.Group, ct.Container, n.Name)
@@ -260,7 +260,7 @@ func validateIPAMConfig(config *IPAMConfig) error {
 			return fmt.Errorf("network %s defined more than once in the IPAM config", n.Name)
 		}
 		if n.Priority <= 0 {
-			return fmt.Errorf("network %s has a non-positive priority %d", n.Name, n.Priority)
+			return fmt.Errorf("network %s cannot have a non-positive priority %d", n.Name, n.Priority)
 		}
 		networks[n.Name] = true
 
@@ -314,7 +314,7 @@ func validateGroupsConfig(groups []ContainerGroupConfig) error {
 			return fmt.Errorf("group %s defined more than once in the groups config", g.Name)
 		}
 		if g.Order < 1 {
-			return fmt.Errorf("group %s has a non-positive order %d", g.Name, g.Order)
+			return fmt.Errorf("group %s cannot have a non-positive order %d", g.Name, g.Order)
 		}
 
 		groupNames[g.Name] = true
