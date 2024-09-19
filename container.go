@@ -412,7 +412,7 @@ func (c *container) publishedPorts() (nat.PortMap, nat.PortSet) {
 	pMap := make(nat.PortMap)
 	pSet := make(nat.PortSet)
 	for _, p := range c.config.Network.PublishedPorts {
-		natPort := nat.Port(fmt.Sprintf("%d/%s", p.ContainerPort, p.Proto))
+		natPort := nat.Port(fmt.Sprintf("%d/%s", p.ContainerPort, p.Protocol))
 		pMap[natPort] = []nat.PortBinding{
 			{
 				HostIP:   p.HostIP,

@@ -121,6 +121,12 @@ type ContainerConfig struct {
 	Runtime    ContainerRuntimeConfig    `yaml:"runtime,omitempty"`
 }
 
+// ContainerConfigOptions represents options that are applied while
+// evaluating the config for this docker container.
+type ContainerConfigOptions struct {
+	Env []ConfigEnv `yaml:"env,omitempty"`
+}
+
 // ContainerImageConfig respresents the image configuration for the docker
 // container.
 type ContainerImageConfig struct {
@@ -128,12 +134,6 @@ type ContainerImageConfig struct {
 	SkipImagePull           bool   `yaml:"skipImagePull,omitempty"`
 	IgnoreImagePullFailures bool   `yaml:"ignoreImagePullFailures,omitempty"`
 	PullImageBeforeStop     bool   `yaml:"pullImageBeforeStop,omitempty"`
-}
-
-// ContainerConfigOptions represents options that are applied while
-// evaluating the config for this docker container.
-type ContainerConfigOptions struct {
-	Env []ConfigEnv `yaml:"env,omitempty"`
 }
 
 // ContainerMetadataConfig represents the metadata for the docker container.
@@ -191,12 +191,12 @@ type ContainerSecurityConfig struct {
 // ContainerHealthConfig represents the health check options for the
 // docker container.
 type ContainerHealthConfig struct {
-	Cmd           string `yaml:"cmd,omitempty"`
-	Interval      string `yaml:"interval,omitempty"`
-	Retries       int    `yaml:"retries,omitempty"`
-	StartInterval string `yaml:"startInterval,omitempty"`
-	StartPeriod   string `yaml:"startPeriod,omitempty"`
-	Timeout       string `yaml:"timeout,omitempty"`
+	Cmd           []string `yaml:"cmd,omitempty"`
+	Retries       int      `yaml:"retries,omitempty"`
+	Interval      string   `yaml:"interval,omitempty"`
+	Timeout       string   `yaml:"timeout,omitempty"`
+	StartPeriod   string   `yaml:"startPeriod,omitempty"`
+	StartInterval string   `yaml:"startInterval,omitempty"`
 }
 
 // ContainerRuntimeConfig represents the execution and runtime information
@@ -221,8 +221,11 @@ type MountConfig struct {
 
 // DeviceConfig represents a device node that will be exposed to a container.
 type DeviceConfig struct {
-	Src string `yaml:"src,omitempty"`
-	Dst string `yaml:"dst,omitempty"`
+	Src           string `yaml:"src,omitempty"`
+	Dst           string `yaml:"dst,omitempty"`
+	DisallowRead  bool   `yaml:"disallowRead,omitempty"`
+	DisallowWrite bool   `yaml:"disallowWrite,omitempty"`
+	DisallowMknod bool   `yaml:"disallowMknod,omitempty"`
 }
 
 // SysctlConfig represents a sysctl config to apply to a container.
@@ -242,7 +245,7 @@ type ContainerEnv struct {
 // PublishedPortConfig represents a port published from a container.
 type PublishedPortConfig struct {
 	ContainerPort int    `yaml:"containerPort,omitempty"`
-	Proto         string `yaml:"proto,omitempty"`
+	Protocol      string `yaml:"proto,omitempty"`
 	HostIP        string `yaml:"hostIp,omitempty"`
 	HostPort      int    `yaml:"hostPort,omitempty"`
 }
@@ -345,7 +348,7 @@ func (h *HomelabConfig) validate() error {
 		return err
 	}
 
-	err = validateContainersConfig(h.Containers)
+	err = validateContainersConfig(h.Containers, h.Groups, &h.Global)
 	if err != nil {
 		return err
 	}

@@ -23,6 +23,8 @@ global:
       value: MY_CONFIG_VAR_1_VALUE
     - var: MY_CONFIG_VAR_2
       value: MY_CONFIG_VAR_2_VALUE
+    - var: MY_CONFIG_VAR_3
+      valueCommand: /foo/bar/some-env-var-cmd
   mountDefs:
     - name: mount-def-1
       type: bind
@@ -33,6 +35,10 @@ global:
       type: bind
       src: /abc1/def1
       dst: /pqr2/stu2/vwx2
+    - name: homelab-self-signed-tls-cert
+      type: bind
+      src: /path/to/my/self/signed/cert/on/host
+      dst: /path/to/my/self/signed/cert/on/container
   container:
     stopSignal: SIGTERM
     stopTimeout: 8
@@ -47,6 +53,8 @@ global:
         value: MY_CONTAINER_ENV_VAR_1_VALUE
       - var: MY_CONTAINER_ENV_VAR_2
         value: MY_CONTAINER_ENV_VAR_2_VALUE
+      - var: MY_CONTAINER_ENV_VAR_3
+        valueCommand: /foo2/bar2/some-other-env-var-cmd
     mounts:
       - name: mount-def-1
       - name: mount-def-2
@@ -136,7 +144,7 @@ containers:
       container: ct1
     image:
       image: tuxdude/homelab-base:master
-      skipImagePull: true
+      skipImagePull: false
       ignoreImagePullFailures: true
       pullImageBeforeStop: true
     metadata:
@@ -175,8 +183,16 @@ containers:
       devices:
         - src: /dev/foo
           dst: /dev/bar
+          disallowRead: false
+          disallowWrite: true
+          disallowMknod: true
         - src: /dev/dev1
           dst: /dev/dev2
+        - src: /dev/foo2
+          dst: /dev/bar2
+          disallowRead: true
+          disallowWrite: true
+          disallowMknod: false
     network:
       hostName: foobar
       domainName: somedomain
@@ -192,11 +208,11 @@ containers:
       publishedPorts:
         - containerPort: 53
           proto: tcp
-          hostIp: $$HOST_IP$$
+          hostIp: 127.0.0.1
           hostPort: 53
         - containerPort: 53
           proto: udp
-          hostIp: $$HOST_IP$$
+          hostIp: 127.0.0.1
           hostPort: 53
     security:
       privileged: true
@@ -212,12 +228,15 @@ containers:
         - NET_ADMIN
         - SYS_MODULE
     health:
-      cmd: my-health-cmd
-      interval: 60s
+      cmd:
+        - my-health-cmd
+        - health-arg-1
+        - health-arg-2
       retries: 3
-      startInterval: 10s
-      startPeriod: 3m
+      interval: 60s
       timeout: 10s
+      startPeriod: 3m
+      startInterval: 10s
     runtime:
       tty: true
       shmSize: 1g
@@ -247,6 +266,10 @@ containers:
 						Var:   "MY_CONFIG_VAR_2",
 						Value: "MY_CONFIG_VAR_2_VALUE",
 					},
+					{
+						Var:          "MY_CONFIG_VAR_3",
+						ValueCommand: "/foo/bar/some-env-var-cmd",
+					},
 				},
 				MountDefs: []MountConfig{
 					{
@@ -261,6 +284,12 @@ containers:
 						Type: "bind",
 						Src:  "/abc1/def1",
 						Dst:  "/pqr2/stu2/vwx2",
+					},
+					{
+						Name: "homelab-self-signed-tls-cert",
+						Type: "bind",
+						Src:  "/path/to/my/self/signed/cert/on/host",
+						Dst:  "/path/to/my/self/signed/cert/on/container",
 					},
 				},
 				Container: GlobalContainerConfig{
@@ -282,6 +311,10 @@ containers:
 						{
 							Var:   "MY_CONTAINER_ENV_VAR_2",
 							Value: "MY_CONTAINER_ENV_VAR_2_VALUE",
+						},
+						{
+							Var:          "MY_CONTAINER_ENV_VAR_3",
+							ValueCommand: "/foo2/bar2/some-other-env-var-cmd",
 						},
 					},
 					Mounts: []MountConfig{
@@ -451,7 +484,7 @@ containers:
 					},
 					Image: ContainerImageConfig{
 						Image:                   "tuxdude/homelab-base:master",
-						SkipImagePull:           true,
+						SkipImagePull:           false,
 						IgnoreImagePullFailures: true,
 						PullImageBeforeStop:     true,
 					},
@@ -507,12 +540,20 @@ containers:
 						},
 						Devices: []DeviceConfig{
 							{
-								Src: "/dev/foo",
-								Dst: "/dev/bar",
+								Src:           "/dev/foo",
+								Dst:           "/dev/bar",
+								DisallowWrite: true,
+								DisallowMknod: true,
 							},
 							{
 								Src: "/dev/dev1",
 								Dst: "/dev/dev2",
+							},
+							{
+								Src:           "/dev/foo2",
+								Dst:           "/dev/bar2",
+								DisallowRead:  true,
+								DisallowWrite: true,
 							},
 						},
 					},
@@ -534,14 +575,14 @@ containers:
 						PublishedPorts: []PublishedPortConfig{
 							{
 								ContainerPort: 53,
-								Proto:         "tcp",
-								HostIP:        "$$HOST_IP$$",
+								Protocol:      "tcp",
+								HostIP:        "127.0.0.1",
 								HostPort:      53,
 							},
 							{
 								ContainerPort: 53,
-								Proto:         "udp",
-								HostIP:        "$$HOST_IP$$",
+								Protocol:      "udp",
+								HostIP:        "127.0.0.1",
 								HostPort:      53,
 							},
 						},
@@ -568,12 +609,16 @@ containers:
 						},
 					},
 					Health: ContainerHealthConfig{
-						Cmd:           "my-health-cmd",
-						Interval:      "60s",
+						Cmd: []string{
+							"my-health-cmd",
+							"health-arg-1",
+							"health-arg-2",
+						},
 						Retries:       3,
-						StartInterval: "10s",
-						StartPeriod:   "3m",
+						Interval:      "60s",
 						Timeout:       "10s",
+						StartPeriod:   "3m",
+						StartInterval: "10s",
 					},
 					Runtime: ContainerRuntimeConfig{
 						AttachToTty: true,
@@ -970,7 +1015,7 @@ func TestParseConfigsFromPathErrors(t *testing.T) {
 				return
 			}
 
-			match, err := regexp.MatchString(tc.want, gotErr.Error())
+			match, err := regexp.MatchString(fmt.Sprintf("^%s$", tc.want), gotErr.Error())
 			if err != nil {
 				t.Errorf(
 					"HomelabConfig.parseConfigs()\nTest Case: %q\nFailure: unexpected exception while matching against gotErr error string\nReason: error = %v", tc.name, err)
@@ -1217,7 +1262,7 @@ var validateConfigErrorTests = []struct {
 				},
 			},
 		},
-		want: `mount name foo specifies options in global config mount defs, that are not supported when mount type is bind`,
+		want: `bind mount name foo cannot specify options in global config mount defs`,
 	},
 	{
 		name: "Global Container Config Negative Stop Timeout",
@@ -1228,7 +1273,7 @@ var validateConfigErrorTests = []struct {
 				},
 			},
 		},
-		want: `container stop timeout cannot be negative \(-1\) in global container config`,
+		want: `container stop timeout -1 cannot be negative in global container config`,
 	},
 	{
 		name: "Global Container Config Restart Policy MaxRetryCount Set With Non-On-Failure Mode",
@@ -1242,7 +1287,7 @@ var validateConfigErrorTests = []struct {
 				},
 			},
 		},
-		want: `restart policy max retry count can be set in global container config only when the mode is on-failure`,
+		want: `restart policy max retry count can be set only when the mode is on-failure in global container config`,
 	},
 	{
 		name: "Global Container Config Invalid Restart Policy Mode",
@@ -1269,7 +1314,7 @@ var validateConfigErrorTests = []struct {
 				},
 			},
 		},
-		want: `restart policy max retry count \(-1\) in global container config cannot be negative`,
+		want: `restart policy max retry count -1 cannot be negative in global container config`,
 	},
 	{
 		name: "Empty Global Container Config Env Var",
@@ -1326,7 +1371,7 @@ var validateConfigErrorTests = []struct {
 		want: `neither value nor valueCommand specified for env var FOO in global container config`,
 	},
 	{
-		name: "Global Container Config Env Var Without Value And ValueCommand",
+		name: "Global Container Config Env Var With Both Value And ValueCommand",
 		config: HomelabConfig{
 			Global: GlobalConfig{
 				Container: GlobalContainerConfig{
@@ -1459,10 +1504,10 @@ var validateConfigErrorTests = []struct {
 				},
 			},
 		},
-		want: `mount name foo specifies options in global container config mounts, that are not supported when mount type is bind`,
+		want: `bind mount name foo cannot specify options in global container config mounts`,
 	},
 	{
-		name: "Global Container Config Mount With Empty Dst",
+		name: "Global Container Config Mount Def Reference Not Found",
 		config: HomelabConfig{
 			Global: GlobalConfig{
 				MountDefs: []MountConfig{
@@ -1482,9 +1527,8 @@ var validateConfigErrorTests = []struct {
 				},
 			},
 		},
-		want: `mount specified by just the name foo2 not found in defs`,
+		want: `mount specified by just the name foo2 not found in defs in global container config mounts`,
 	},
-
 	{
 		name: "Empty Global Container Config Label Name",
 		config: HomelabConfig{
@@ -2505,6 +2549,1729 @@ var validateConfigErrorTests = []struct {
 		},
 		want: `group g1 cannot have a non-positive order -1`,
 	},
+	{
+		name: "Container Group Definition Missing",
+		config: HomelabConfig{
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+				},
+			},
+		},
+		want: `group definition missing in groups config for the container {Group:g1 Container:c1} in the containers config`,
+	},
+	{
+		name: "Duplicate Container Definition",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+				},
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c2",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar2:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+				},
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar3:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+				},
+			},
+		},
+		want: `container {Group:g1 Container:c1} defined more than once in the containers config`,
+	},
+	{
+		name: "Empty Container Config Env Var",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+					Config: ContainerConfigOptions{
+						Env: []ConfigEnv{
+							{
+								Value: "foo-bar",
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `empty env var in container {Group: g1 Container:c1} config`,
+	},
+	{
+		name: "Duplicate Container Config Env Var",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+					Config: ContainerConfigOptions{
+						Env: []ConfigEnv{
+							{
+								Var:   "FOO",
+								Value: "foo-bar",
+							},
+							{
+								Var:   "FOO2",
+								Value: "foo-bar-2",
+							},
+							{
+								Var:   "FOO",
+								Value: "foo-bar-3",
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `env var FOO specified more than once in container {Group: g1 Container:c1} config`,
+	},
+	{
+		name: "Container Config Env Var Without Value And ValueCommand",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+					Config: ContainerConfigOptions{
+						Env: []ConfigEnv{
+							{
+								Var: "FOO",
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `neither value nor valueCommand specified for env var FOO in container {Group: g1 Container:c1} config`,
+	},
+	{
+		name: "Container Config Env Var With Both Value And ValueCommand",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+					Config: ContainerConfigOptions{
+						Env: []ConfigEnv{
+							{
+								Var:          "FOO",
+								Value:        "my-foo-bar",
+								ValueCommand: "/foo/bar/baz",
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `exactly one of value or valueCommand must be specified for env var FOO in container {Group: g1 Container:c1} config`,
+	},
+	{
+		name: "Empty Container Config Image",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+				},
+			},
+		},
+		want: `image cannot be empty in container {Group: g1 Container:c1} config`,
+	},
+	{
+		name: "Container Config SkipImagePull And IgnoreImagePullFailures Both Set To True",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image:                   "foo/bar:123",
+						SkipImagePull:           true,
+						IgnoreImagePullFailures: true,
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+				},
+			},
+		},
+		want: `ignoreImagePullFailures cannot be true when skipImagePull is true in container {Group: g1 Container:c1} config`,
+	},
+	{
+		name: "Container Config SkipImagePull And PullImageBeforeStop Both Set To True",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image:               "foo/bar:123",
+						SkipImagePull:       true,
+						PullImageBeforeStop: true,
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+				},
+			},
+		},
+		want: `pullImageBeforeStop cannot be true when skipImagePull is true in container {Group: g1 Container:c1} config`,
+	},
+	{
+		name: "Empty Container Config Label Name",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Metadata: ContainerMetadataConfig{
+						Labels: []LabelConfig{
+							{
+								Value: "foo-bar",
+							},
+						},
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+				},
+			},
+		},
+		want: `empty label name in container {Group: g1 Container:c1} config`,
+	},
+	{
+		name: "Duplicate Container Config Label Name",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Metadata: ContainerMetadataConfig{
+						Labels: []LabelConfig{
+							{
+								Name:  "FOO",
+								Value: "foo-bar",
+							},
+							{
+								Name:  "FOO2",
+								Value: "foo-bar-2",
+							},
+							{
+								Name:  "FOO",
+								Value: "foo-bar-3",
+							},
+						},
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+				},
+			},
+		},
+		want: `label name FOO specified more than once in container {Group: g1 Container:c1} config`,
+	},
+	{
+		name: "Container Config Empty Label Value",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Metadata: ContainerMetadataConfig{
+						Labels: []LabelConfig{
+							{
+								Name: "FOO",
+							},
+						},
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+				},
+			},
+		},
+		want: `empty label value for label FOO in container {Group: g1 Container:c1} config`,
+	},
+	{
+		name: "Container Config Empty Order",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+				},
+			},
+		},
+		want: `container order 0 cannot be non-positive in container {Group: g1 Container:c1} config`,
+	},
+	{
+		name: "Container Config Negative Order",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: -1,
+					},
+				},
+			},
+		},
+		want: `container order -1 cannot be non-positive in container {Group: g1 Container:c1} config`,
+	},
+	{
+		name: "Container Config Restart Policy MaxRetryCount Set With Non-On-Failure Mode",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+						RestartPolicy: ContainerRestartPolicyConfig{
+							Mode:          "always",
+							MaxRetryCount: 5,
+						},
+					},
+				},
+			},
+		},
+		want: `restart policy max retry count can be set only when the mode is on-failure in container {Group: g1 Container:c1} config`,
+	},
+	{
+		name: "Container Config Invalid Restart Policy Mode",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+						RestartPolicy: ContainerRestartPolicyConfig{
+							Mode: "garbage",
+						},
+					},
+				},
+			},
+		},
+		want: `invalid restart policy mode garbage in container {Group: g1 Container:c1} config, valid values are \[ 'no', 'always', 'on-failure', 'unless-stopped' \]`,
+	},
+	{
+		name: "Container Config Negative Restart Policy MaxRetryCount",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+						RestartPolicy: ContainerRestartPolicyConfig{
+							Mode:          "on-failure",
+							MaxRetryCount: -1,
+						},
+					},
+				},
+			},
+		},
+		want: `restart policy max retry count -1 cannot be negative in container {Group: g1 Container:c1} config`,
+	},
+	{
+		name: "Container Config Negative StopTimeout",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order:       1,
+						StopTimeout: -1,
+					},
+				},
+			},
+		},
+		want: `container stop timeout -1 cannot be negative in container {Group: g1 Container:c1} config`,
+	},
+	{
+		name: "Container Config PrimaryUserGroup Without User",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+					User: ContainerUserConfig{
+						PrimaryGroup: "my-user-group",
+					},
+				},
+			},
+		},
+		want: `container user primary group cannot be set without setting the user in container {Group: g1 Container:c1} config`,
+	},
+	{
+		name: "Container Config Device Missing Src And Dst",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+					Filesystem: ContainerFilesystemConfig{
+						Devices: []DeviceConfig{
+							{},
+						},
+					},
+				},
+			},
+		},
+		want: `device src cannot be empty in container {Group: g1 Container:c1} config`,
+	},
+	{
+		name: "Container Config Device Missing Src",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+					Filesystem: ContainerFilesystemConfig{
+						Devices: []DeviceConfig{
+							{
+								Dst: "/dev/my-target-dev",
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `device src cannot be empty in container {Group: g1 Container:c1} config`,
+	},
+	{
+		name: "Container Config Empty Mount Name",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+					Filesystem: ContainerFilesystemConfig{
+						Mounts: []MountConfig{
+							{
+								Type:     "bind",
+								Src:      "/foo",
+								Dst:      "/bar",
+								ReadOnly: true,
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `mount name cannot be empty in container {Group: g1 Container:c1} config mounts`,
+	},
+	{
+		name: "Container Config Duplicate Mounts Within Container Config",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+					Filesystem: ContainerFilesystemConfig{
+						Mounts: []MountConfig{
+							{
+								Name: "mount-foo1",
+								Type: "bind",
+								Src:  "/foo1",
+								Dst:  "/bar1",
+							},
+							{
+								Name: "mount-foo2",
+								Type: "bind",
+								Src:  "/foo2",
+								Dst:  "/bar2",
+							},
+							{
+								Name: "mount-foo1",
+								Type: "bind",
+								Src:  "/foo3",
+								Dst:  "/bar3",
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `mount name mount-foo1 defined more than once in container {Group: g1 Container:c1} config mounts`,
+	},
+	{
+		name: "Container Config Duplicate Mounts Within Container And Global Configs Combined",
+		config: HomelabConfig{
+			Global: GlobalConfig{
+				Container: GlobalContainerConfig{
+					Mounts: []MountConfig{
+						{
+							Name: "mount-foo2",
+							Type: "bind",
+							Src:  "/foo2-global",
+							Dst:  "/bar2-global",
+						},
+						{
+							Name: "mount-foo3",
+							Type: "bind",
+							Src:  "/foo3",
+							Dst:  "/bar3",
+						},
+					},
+				},
+			},
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+					Filesystem: ContainerFilesystemConfig{
+						Mounts: []MountConfig{
+							{
+								Name: "mount-foo1",
+								Type: "bind",
+								Src:  "/foo1",
+								Dst:  "/bar1",
+							},
+							{
+								Name: "mount-foo2",
+								Type: "bind",
+								Src:  "/foo2",
+								Dst:  "/bar2",
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `mount name mount-foo2 defined more than once in container {Group: g1 Container:c1} config mounts`,
+	},
+	{
+		name: "Container Config Mount With Invalid Mount Type",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+					Filesystem: ContainerFilesystemConfig{
+						Mounts: []MountConfig{
+							{
+								Name: "foo",
+								Type: "garbage",
+								Src:  "/foo",
+								Dst:  "/bar",
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `unsupported mount type garbage for mount foo in container {Group: g1 Container:c1} config mounts`,
+	},
+	{
+		name: "Container Config Mount With Empty Src",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+					Filesystem: ContainerFilesystemConfig{
+						Mounts: []MountConfig{
+							{
+								Name: "foo",
+								Type: "bind",
+								Dst:  "/bar",
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `mount name foo cannot have an empty value for src in container {Group: g1 Container:c1} config mounts`,
+	},
+	{
+		name: "Container Config Mount With Empty Dst",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+					Filesystem: ContainerFilesystemConfig{
+						Mounts: []MountConfig{
+							{
+								Name: "foo",
+								Type: "bind",
+								Src:  "/foo",
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `mount name foo cannot have an empty value for dst in container {Group: g1 Container:c1} config mounts`,
+	},
+	{
+		name: "Container Config Bind Mount With Options",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+					Filesystem: ContainerFilesystemConfig{
+						Mounts: []MountConfig{
+							{
+								Name:    "foo",
+								Type:    "bind",
+								Src:     "/foo",
+								Dst:     "/bar",
+								Options: "dummy-option1=val1,dummy-option2=val2",
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `bind mount name foo cannot specify options in container {Group: g1 Container:c1} config mounts`,
+	},
+	{
+		name: "Container Config Mount Def Reference Not Found",
+		config: HomelabConfig{
+			Global: GlobalConfig{
+				MountDefs: []MountConfig{
+					{
+						Name: "foo",
+						Type: "bind",
+						Src:  "/foo",
+						Dst:  "/bar",
+					},
+				},
+			},
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+					Filesystem: ContainerFilesystemConfig{
+						Mounts: []MountConfig{
+							{
+								Name: "foo2",
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `mount specified by just the name foo2 not found in defs in container {Group: g1 Container:c1} config mounts`,
+	},
+	{
+		name: "Container Config Published Port - Container Port Empty",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+					Network: ContainerNetworkConfig{
+						PublishedPorts: []PublishedPortConfig{
+							{
+								Protocol: "tcp",
+								HostIP:   "127.0.0.1",
+								HostPort: 5001,
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `published container port 0 cannot be non-positive in container {Group: g1 Container:c1} config`,
+	},
+	{
+		name: "Container Config Published Port - Container Port Negative",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+					Network: ContainerNetworkConfig{
+						PublishedPorts: []PublishedPortConfig{
+							{
+								ContainerPort: -1,
+								Protocol:      "tcp",
+								HostIP:        "127.0.0.1",
+								HostPort:      5001,
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `published container port -1 cannot be non-positive in container {Group: g1 Container:c1} config`,
+	},
+	{
+		name: "Container Config Published Port - Protocol Empty",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+					Network: ContainerNetworkConfig{
+						PublishedPorts: []PublishedPortConfig{
+							{
+								ContainerPort: 10001,
+								HostIP:        "127.0.0.1",
+								HostPort:      5001,
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `published container port 10001 specifies an invalid protocol  in container {Group: g1 Container:c1} config`,
+	},
+	{
+		name: "Container Config Published Port - Protocol Invalid",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+					Network: ContainerNetworkConfig{
+						PublishedPorts: []PublishedPortConfig{
+							{
+								ContainerPort: 10001,
+								Protocol:      "garbage",
+								HostIP:        "127.0.0.1",
+								HostPort:      5001,
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `published container port 10001 specifies an invalid protocol garbage in container {Group: g1 Container:c1} config`,
+	},
+	{
+		name: "Container Config Published Port - Host IP Empty",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+					Network: ContainerNetworkConfig{
+						PublishedPorts: []PublishedPortConfig{
+							{
+								ContainerPort: 10001,
+								Protocol:      "tcp",
+								HostPort:      5001,
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `published host IP cannot be empty for container port 10001 in container {Group: g1 Container:c1} config`,
+	},
+	{
+		name: "Container Config Published Port - Host IP Invalid",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+					Network: ContainerNetworkConfig{
+						PublishedPorts: []PublishedPortConfig{
+							{
+								ContainerPort: 10001,
+								Protocol:      "tcp",
+								HostIP:        "abc.def.ghi.jkl",
+								HostPort:      5001,
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `published host IP abc\.def\.ghi\.jkl for container port 10001 is invalid in container {Group: g1 Container:c1} config, reason: ParseAddr\("abc\.def\.ghi\.jkl"\): unexpected character \(at "abc\.def\.ghi\.jkl"\)`,
+	},
+	{
+		name: "Container Config Published Port - Host Port Empty",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+					Network: ContainerNetworkConfig{
+						PublishedPorts: []PublishedPortConfig{
+							{
+								ContainerPort: 10001,
+								Protocol:      "tcp",
+								HostIP:        "127.0.0.1",
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `published host port 0 cannot be non-positive in container {Group: g1 Container:c1} config`,
+	},
+	{
+		name: "Container Config Published Port - Host Port Negative",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+					Network: ContainerNetworkConfig{
+						PublishedPorts: []PublishedPortConfig{
+							{
+								ContainerPort: 10001,
+								Protocol:      "tcp",
+								HostIP:        "127.0.0.1",
+								HostPort:      -1,
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `published host port -1 cannot be non-positive in container {Group: g1 Container:c1} config`,
+	},
+	{
+		name: "Empty Container Config Sysctl Key",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+					Security: ContainerSecurityConfig{
+						Sysctls: []SysctlConfig{
+							{
+								Value: "foo-bar",
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `empty sysctl key in container {Group: g1 Container:c1} config`,
+	},
+	{
+		name: "Duplicate Container Config Sysctl Key",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+					Security: ContainerSecurityConfig{
+						Sysctls: []SysctlConfig{
+							{
+								Key:   "FOO",
+								Value: "foo-bar",
+							},
+							{
+								Key:   "FOO2",
+								Value: "foo-bar-2",
+							},
+							{
+								Key:   "FOO",
+								Value: "foo-bar-3",
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `sysctl key FOO specified more than once in container {Group: g1 Container:c1} config`,
+	},
+	{
+		name: "Container Config Empty Sysctl Value",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+					Security: ContainerSecurityConfig{
+						Sysctls: []SysctlConfig{
+							{
+								Key: "FOO",
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `empty sysctl value for sysctl FOO in container {Group: g1 Container:c1} config`,
+	},
+	{
+		name: "Container Health Config - Negative Retries",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+					Health: ContainerHealthConfig{
+						Retries: -1,
+					},
+				},
+			},
+		},
+		want: `health check retries -1 cannot be negative in container {Group: g1 Container:c1} config`,
+	},
+	{
+		name: "Container Health Config - Invalid Interval",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+					Health: ContainerHealthConfig{
+						Interval: "garbage",
+					},
+				},
+			},
+		},
+		want: `health check interval garbage is invalid in container {Group: g1 Container:c1} config, reason: time: invalid duration "garbage"`,
+	},
+	{
+		name: "Container Health Config - Invalid Timeout",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+					Health: ContainerHealthConfig{
+						Timeout: "garbage",
+					},
+				},
+			},
+		},
+		want: `health check timeout garbage is invalid in container {Group: g1 Container:c1} config, reason: time: invalid duration "garbage"`,
+	},
+	{
+		name: "Container Health Config - Invalid StartPeriod",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+					Health: ContainerHealthConfig{
+						StartPeriod: "garbage",
+					},
+				},
+			},
+		},
+		want: `health check start period garbage is invalid in container {Group: g1 Container:c1} config, reason: time: invalid duration "garbage"`,
+	},
+	{
+		name: "Container Health Config - Invalid StartInterval",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+					Health: ContainerHealthConfig{
+						StartInterval: "garbage",
+					},
+				},
+			},
+		},
+		want: `health check start interval garbage is invalid in container {Group: g1 Container:c1} config, reason: time: invalid duration "garbage"`,
+	},
+	{
+		name: "Container ShmSize Invalid Unit",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+					Runtime: ContainerRuntimeConfig{
+						ShmSize: "1foobar",
+					},
+				},
+			},
+		},
+		want: `invalid shmSize 1foobar in container {Group: g1 Container:c1} config, reason: invalid suffix: 'foobar'`,
+	},
+	{
+		name: "Container ShmSize Invalid Value",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+					Runtime: ContainerRuntimeConfig{
+						ShmSize: "garbage",
+					},
+				},
+			},
+		},
+		want: `invalid shmSize garbage in container {Group: g1 Container:c1} config, reason: invalid size: 'garbage'`,
+	},
+	{
+		name: "Empty Container Env Var",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+					Runtime: ContainerRuntimeConfig{
+						Env: []ContainerEnv{
+							{
+								Value: "foo-bar",
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `empty env var in container {Group: g1 Container:c1} config`,
+	},
+	{
+		name: "Duplicate Container Env Var",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+					Runtime: ContainerRuntimeConfig{
+						Env: []ContainerEnv{
+							{
+								Var:   "FOO",
+								Value: "foo-bar",
+							},
+							{
+								Var:   "FOO2",
+								Value: "foo-bar-2",
+							},
+							{
+								Var:   "FOO",
+								Value: "foo-bar-3",
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `env var FOO specified more than once in container {Group: g1 Container:c1} config`,
+	},
+	{
+		name: "Container Env Var Without Value And ValueCommand",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+					Runtime: ContainerRuntimeConfig{
+						Env: []ContainerEnv{
+							{
+								Var: "FOO",
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `neither value nor valueCommand specified for env var FOO in container {Group: g1 Container:c1} config`,
+	},
+	{
+		name: "Container Env Var With Both Value And ValueCommand",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+					Runtime: ContainerRuntimeConfig{
+						Env: []ContainerEnv{
+							{
+								Var:          "FOO",
+								Value:        "my-foo-bar",
+								ValueCommand: "/foo/bar/baz",
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `exactly one of value or valueCommand must be specified for env var FOO in container {Group: g1 Container:c1} config`,
+	},
 }
 
 func TestValidateConfigErrors(t *testing.T) {
@@ -2521,7 +4288,7 @@ func TestValidateConfigErrors(t *testing.T) {
 				return
 			}
 
-			match, err := regexp.MatchString(tc.want, gotErr.Error())
+			match, err := regexp.MatchString(fmt.Sprintf("^%s$", tc.want), gotErr.Error())
 			if err != nil {
 				t.Errorf(
 					"HomelabConfig.validate()\nTest Case: %q\nFailure: unexpected exception while matching against gotErr error string\nReason: error = %v", tc.name, err)

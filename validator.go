@@ -3,6 +3,9 @@ package main
 import (
 	"fmt"
 	"net/netip"
+	"time"
+
+	"github.com/docker/go-units"
 )
 
 func validateGlobalConfig(config *GlobalConfig) error {
@@ -111,7 +114,7 @@ func validateMountsConfig(config, commonConfig, globalDefs []MountConfig, locati
 			// This is a mount with just the name. Match this against the
 			// global mount defs.
 			if !globalMountDefs[m.Name] {
-				return fmt.Errorf("mount specified by just the name %s not found in defs", m.Name)
+				return fmt.Errorf("mount specified by just the name %s not found in defs in %s", m.Name, location)
 			}
 			// No further validation needed for a mount referencing a def.
 			return nil
@@ -127,7 +130,82 @@ func validateMountsConfig(config, commonConfig, globalDefs []MountConfig, locati
 			return fmt.Errorf("mount name %s cannot have an empty value for dst in %s", m.Name, location)
 		}
 		if len(m.Options) > 0 {
-			return fmt.Errorf("mount name %s specifies options in %s, that are not supported when mount type is bind", m.Name, location)
+			return fmt.Errorf("bind mount name %s cannot specify options in %s", m.Name, location)
+		}
+	}
+	return nil
+}
+
+func validateDevicesConfig(devices []DeviceConfig, location string) error {
+	for _, d := range devices {
+		if len(d.Src) == 0 {
+			return fmt.Errorf("device src cannot be empty in %s", location)
+		}
+	}
+	return nil
+}
+
+func validatePublishedPortsConfig(ports []PublishedPortConfig, location string) error {
+	for _, p := range ports {
+		if p.ContainerPort <= 0 {
+			return fmt.Errorf("published container port %d cannot be non-positive in %s", p.ContainerPort, location)
+		}
+		if p.Protocol != "tcp" && p.Protocol != "udp" {
+			return fmt.Errorf("published container port %d specifies an invalid protocol %s in %s", p.ContainerPort, p.Protocol, location)
+		}
+		if len(p.HostIP) == 0 {
+			return fmt.Errorf("published host IP cannot be empty for container port %d in %s", p.ContainerPort, location)
+		}
+		if _, err := netip.ParseAddr(p.HostIP); err != nil {
+			return fmt.Errorf("published host IP %s for container port %d is invalid in %s, reason: %w", p.HostIP, p.ContainerPort, location, err)
+		}
+		if p.HostPort <= 0 {
+			return fmt.Errorf("published host port %d cannot be non-positive in %s", p.HostPort, location)
+		}
+	}
+	return nil
+}
+
+func validateSysctlsConfig(sysctls []SysctlConfig, location string) error {
+	keys := make(map[string]bool)
+	for _, s := range sysctls {
+		if len(s.Key) == 0 {
+			return fmt.Errorf("empty sysctl key in %s", location)
+		}
+		if keys[s.Key] {
+			return fmt.Errorf("sysctl key %s specified more than once in %s", s.Key, location)
+		}
+		keys[s.Key] = true
+
+		if len(s.Value) == 0 {
+			return fmt.Errorf("empty sysctl value for sysctl %s in %s", s.Key, location)
+		}
+	}
+	return nil
+}
+
+func validateHealthConfig(config *ContainerHealthConfig, location string) error {
+	if config.Retries < 0 {
+		return fmt.Errorf("health check retries %d cannot be negative in %s", config.Retries, location)
+	}
+	if len(config.Interval) > 0 {
+		if _, err := time.ParseDuration(config.Interval); err != nil {
+			return fmt.Errorf("health check interval %s is invalid in %s, reason: %w", config.Interval, location, err)
+		}
+	}
+	if len(config.Timeout) > 0 {
+		if _, err := time.ParseDuration(config.Timeout); err != nil {
+			return fmt.Errorf("health check timeout %s is invalid in %s, reason: %w", config.Timeout, location, err)
+		}
+	}
+	if len(config.StartPeriod) > 0 {
+		if _, err := time.ParseDuration(config.StartPeriod); err != nil {
+			return fmt.Errorf("health check start period %s is invalid in %s, reason: %w", config.StartPeriod, location, err)
+		}
+	}
+	if len(config.StartInterval) > 0 {
+		if _, err := time.ParseDuration(config.StartInterval); err != nil {
+			return fmt.Errorf("health check start interval %s is invalid in %s, reason: %w", config.StartInterval, location, err)
 		}
 	}
 	return nil
@@ -135,7 +213,7 @@ func validateMountsConfig(config, commonConfig, globalDefs []MountConfig, locati
 
 func validateGlobalContainerConfig(config *GlobalContainerConfig, globalMountDefs []MountConfig) error {
 	if config.StopTimeout < 0 {
-		return fmt.Errorf("container stop timeout cannot be negative (%d) in global container config", config.StopTimeout)
+		return fmt.Errorf("container stop timeout %d cannot be negative in global container config", config.StopTimeout)
 	}
 	if err := validateContainerRestartPolicy(&config.RestartPolicy, "global container config"); err != nil {
 		return err
@@ -154,7 +232,7 @@ func validateGlobalContainerConfig(config *GlobalContainerConfig, globalMountDef
 
 func validateContainerRestartPolicy(config *ContainerRestartPolicyConfig, location string) error {
 	if config.Mode != "on-failure" && config.MaxRetryCount != 0 {
-		return fmt.Errorf("restart policy max retry count can be set in %s only when the mode is on-failure", location)
+		return fmt.Errorf("restart policy max retry count can be set only when the mode is on-failure in %s", location)
 	}
 	if len(config.Mode) == 0 {
 		return nil
@@ -163,7 +241,7 @@ func validateContainerRestartPolicy(config *ContainerRestartPolicyConfig, locati
 		return fmt.Errorf("invalid restart policy mode %s in %s, valid values are %s", config.Mode, location, restartPolicyModeValidValues())
 	}
 	if config.MaxRetryCount < 0 {
-		return fmt.Errorf("restart policy max retry count (%d) in %s cannot be negative", config.MaxRetryCount, location)
+		return fmt.Errorf("restart policy max retry count %d cannot be negative in %s", config.MaxRetryCount, location)
 	}
 	return nil
 }
@@ -322,21 +400,87 @@ func validateGroupsConfig(groups []ContainerGroupConfig) error {
 	return nil
 }
 
-func validateContainersConfig(containers []ContainerConfig) error {
-	// TODO: Perform the following (and more) validations:
-	// Container configs:
-	//     a. Parent group name is a valid group defined under group config.
-	//     b. No duplicate container names within the same group.
-	//     c. Order defined for all the containers.
-	//     d. Image defined for all the containers.
-	//     e. Validate mandatory properties of every device config.
-	//     f. Validate manadatory properties of every container config mount.
-	//     g. Mount pure name references are valid global config mount references.
-	//     h. Validate manadatory properties of every container config env.
-	//     i. Every container config env specifies exactly one of value or
-	//        valueCommand, but not both.
-	//     j. Validate mandatory properties of every published port config.
-	//     k. Validate mandatory properties of every label config.
+func validateContainersConfig(containersConfig []ContainerConfig, groupsConfig []ContainerGroupConfig, globalConfig *GlobalConfig) error {
+	groups := make(map[string]bool)
+	for _, g := range groupsConfig {
+		groups[g.Name] = true
+	}
+
+	containers := make(map[ContainerReference]bool)
+	for _, ct := range containersConfig {
+		if !groups[ct.Info.Group] {
+			return fmt.Errorf("group definition missing in groups config for the container {Group:%s Container:%s} in the containers config", ct.Info.Group, ct.Info.Container)
+		}
+		if containers[ct.Info] {
+			return fmt.Errorf("container {Group:%s Container:%s} defined more than once in the containers config", ct.Info.Group, ct.Info.Container)
+		}
+		containers[ct.Info] = true
+
+		loc := fmt.Sprintf("container {Group: %s Container:%s} config", ct.Info.Group, ct.Info.Container)
+		if err := validateConfigEnv(ct.Config.Env, loc); err != nil {
+			return err
+		}
+
+		if len(ct.Image.Image) == 0 {
+			return fmt.Errorf("image cannot be empty in %s", loc)
+		}
+		if ct.Image.SkipImagePull {
+			if ct.Image.IgnoreImagePullFailures {
+				return fmt.Errorf("ignoreImagePullFailures cannot be true when skipImagePull is true in %s", loc)
+			}
+			if ct.Image.PullImageBeforeStop {
+				return fmt.Errorf("pullImageBeforeStop cannot be true when skipImagePull is true in %s", loc)
+			}
+		}
+
+		if err := validateLabelsConfig(ct.Metadata.Labels, loc); err != nil {
+			return err
+		}
+
+		if ct.Lifecycle.Order <= 0 {
+			return fmt.Errorf("container order %d cannot be non-positive in %s", ct.Lifecycle.Order, loc)
+		}
+		if err := validateContainerRestartPolicy(&ct.Lifecycle.RestartPolicy, loc); err != nil {
+			return err
+		}
+		if ct.Lifecycle.StopTimeout < 0 {
+			return fmt.Errorf("container stop timeout %d cannot be negative in %s", ct.Lifecycle.StopTimeout, loc)
+		}
+
+		if len(ct.User.PrimaryGroup) > 0 && len(ct.User.User) == 0 {
+			return fmt.Errorf("container user primary group cannot be set without setting the user in %s", loc)
+		}
+
+		if err := validateDevicesConfig(ct.Filesystem.Devices, loc); err != nil {
+			return err
+		}
+
+		if err := validateMountsConfig(ct.Filesystem.Mounts, globalConfig.Container.Mounts, globalConfig.MountDefs, fmt.Sprintf("%s mounts", loc)); err != nil {
+			return err
+		}
+
+		if err := validatePublishedPortsConfig(ct.Network.PublishedPorts, loc); err != nil {
+			return err
+		}
+
+		if err := validateSysctlsConfig(ct.Security.Sysctls, loc); err != nil {
+			return err
+		}
+
+		if err := validateHealthConfig(&ct.Health, loc); err != nil {
+			return err
+		}
+
+		if len(ct.Runtime.ShmSize) > 0 {
+			if _, err := units.RAMInBytes(ct.Runtime.ShmSize); err != nil {
+				return fmt.Errorf("invalid shmSize %s in %s, reason: %w", ct.Runtime.ShmSize, loc, err)
+			}
+		}
+		if err := validateContainerEnv(ct.Runtime.Env, loc); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
