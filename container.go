@@ -88,7 +88,7 @@ func newContainer(group *containerGroup, config *ContainerConfig) *container {
 }
 
 func (c *container) isAllowedOnCurrentHost() bool {
-	return c.group.deployment.host.allowedContainers[c.name()]
+	return c.group.deployment.allowedContainers[c.name()]
 }
 
 func (c *container) start(ctx context.Context, docker *dockerClient) error {

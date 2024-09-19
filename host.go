@@ -16,8 +16,6 @@ type hostInfo struct {
 	os                    string
 	arch                  string
 	dockerPlatform        string
-	allowedContainers     stringSet
-	config                *HostConfig
 }
 
 type stringSet map[string]bool
@@ -28,7 +26,7 @@ const (
 	archArm64 = "arm64"
 )
 
-func newHostInfo(config *HomelabConfig) *hostInfo {
+func newHostInfo() *hostInfo {
 	res := hostInfo{
 		humanFriendlyHostName: systemHostName(),
 		ip:                    interfaceIP(),
@@ -38,12 +36,10 @@ func newHostInfo(config *HomelabConfig) *hostInfo {
 		dockerPlatform:        archToDockerPlatform(runtime.GOARCH),
 	}
 	res.hostName = strings.ToLower(res.humanFriendlyHostName)
-	res.config, res.allowedContainers = getHostConfigAndContainers(config, res.hostName)
 
 	log.Debugf("Host name: %s", res.hostName)
 	log.Debugf("Human Friendly Host name: %s", res.humanFriendlyHostName)
 	log.Debugf("Host IP: %s", res.ip)
-	log.Debugf("Allowed Containers: %v", res.allowedContainers)
 	log.Debugf("Num CPUs = %d", res.numCPUs)
 	log.Debugf("OS = %s", res.os)
 	log.Debugf("Arch = %s", res.arch)
@@ -86,19 +82,4 @@ func archToDockerPlatform(arch string) string {
 	default:
 		return fmt.Sprintf("unsupported-docker-arch-%s", arch)
 	}
-}
-
-func getHostConfigAndContainers(config *HomelabConfig, hostName string) (*HostConfig, stringSet) {
-	var hc *HostConfig
-	allowed := make(stringSet)
-	for _, h := range config.Hosts {
-		if h.Name == hostName {
-			hc = &h
-			for _, c := range h.AllowedContainers {
-				allowed[containerName(c.Group, c.Container)] = true
-			}
-			break
-		}
-	}
-	return hc, allowed
 }

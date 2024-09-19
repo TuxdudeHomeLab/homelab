@@ -5,10 +5,11 @@ import (
 )
 
 type deployment struct {
-	config   *HomelabConfig
-	groups   containerGroupMap
-	networks networkMap
-	host     *hostInfo
+	config            *HomelabConfig
+	groups            containerGroupMap
+	networks          networkMap
+	host              *hostInfo
+	allowedContainers stringSet
 }
 
 func buildDeployment(configsPath string) (*deployment, error) {
@@ -33,6 +34,7 @@ func newDeployment(config *HomelabConfig) *deployment {
 	d.populateNetworks()
 	d.populateGroups()
 	d.populateHostInfo()
+	d.populateAllowedContainers()
 	return &d
 }
 
@@ -59,7 +61,19 @@ func (d *deployment) populateGroups() {
 }
 
 func (d *deployment) populateHostInfo() {
-	d.host = newHostInfo(d.config)
+	d.host = newHostInfo()
+}
+
+func (d *deployment) populateAllowedContainers() {
+	d.allowedContainers = make(stringSet)
+	for _, h := range d.config.Hosts {
+		if h.Name == d.host.hostName {
+			for _, c := range h.AllowedContainers {
+				d.allowedContainers[containerName(c.Group, c.Container)] = true
+			}
+			break
+		}
+	}
 }
 
 func (d *deployment) queryAllContainers() containerMap {
