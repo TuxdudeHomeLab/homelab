@@ -88,7 +88,7 @@ func execStartCmd(cmd *cobra.Command, args []string, options *startCmdOptions, g
 	for _, c := range res {
 		// We ignore the errors to keep moving forward even if one or more
 		// of the containers fail to start.
-		err := c.start(ctx, dockerClient)
+		err := c.start(ctx, dockerClient, dep.host.humanFriendlyHostName)
 		if err != nil {
 			errList = append(errList, err)
 		}

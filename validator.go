@@ -356,14 +356,15 @@ func validateIPAMConfig(config *IPAMConfig) (networkMap, error) {
 	return networks, nil
 }
 
-func validateHostsConfig(hosts []HostConfig) error {
+func validateHostsConfig(hosts []HostConfig, currentHost *hostInfo) (stringSet, error) {
 	hostNames := make(map[string]bool)
+	allowedContainers := stringSet{}
 	for _, h := range hosts {
 		if len(h.Name) == 0 {
-			return fmt.Errorf("host name cannot be empty in the hosts config")
+			return nil, fmt.Errorf("host name cannot be empty in the hosts config")
 		}
 		if hostNames[h.Name] {
-			return fmt.Errorf("host %s defined more than once in the hosts config", h.Name)
+			return nil, fmt.Errorf("host %s defined more than once in the hosts config", h.Name)
 		}
 		hostNames[h.Name] = true
 
@@ -371,15 +372,19 @@ func validateHostsConfig(hosts []HostConfig) error {
 		for _, ct := range h.AllowedContainers {
 			err := validateContainerReference(&ct)
 			if err != nil {
-				return fmt.Errorf("allowed container config within host %s has invalid container reference, reason: %w", h.Name, err)
+				return nil, fmt.Errorf("allowed container config within host %s has invalid container reference, reason: %w", h.Name, err)
 			}
 			if containers[ct] {
-				return fmt.Errorf("container {Group:%s Container:%s} defined more than once in the hosts config for host %s", ct.Group, ct.Container, h.Name)
+				return nil, fmt.Errorf("container {Group:%s Container:%s} defined more than once in the hosts config for host %s", ct.Group, ct.Container, h.Name)
 			}
 			containers[ct] = true
+			if h.Name == currentHost.hostName {
+				// TODO: Make ContainerReference the key instead.
+				allowedContainers[containerName(ct.Group, ct.Container)] = true
+			}
 		}
 	}
-	return nil
+	return allowedContainers, nil
 }
 
 func validateGroupsConfig(groups []ContainerGroupConfig) (containerGroupMap, error) {
@@ -395,28 +400,24 @@ func validateGroupsConfig(groups []ContainerGroupConfig) (containerGroupMap, err
 			return nil, fmt.Errorf("group %s cannot have a non-positive order %d", g.Name, g.Order)
 		}
 
-		containerGroups[g.Name] = &containerGroup{
-			config: &g,
-		}
+		containerGroups[g.Name] = newContainerGroup(&g)
 	}
 	return containerGroups, nil
 }
 
-func validateContainersConfig(containersConfig []ContainerConfig, groupsConfig []ContainerGroupConfig, globalConfig *GlobalConfig) error {
-	groups := make(map[string]bool)
-	for _, g := range groupsConfig {
-		groups[g.Name] = true
-	}
-
-	containers := make(map[ContainerReference]bool)
+func validateContainersConfig(containersConfig []ContainerConfig, groups containerGroupMap, globalConfig *GlobalConfig, networks networkMap, allowedContainers stringSet) error {
 	for _, ct := range containersConfig {
-		if !groups[ct.Info.Group] {
+		g, ok := groups[ct.Info.Group]
+		if !ok {
 			return fmt.Errorf("group definition missing in groups config for the container {Group:%s Container:%s} in the containers config", ct.Info.Group, ct.Info.Container)
 		}
-		if containers[ct.Info] {
+		// TODO: Make ContainerReference the key instead.
+		ctName := containerName(ct.Info.Group, ct.Info.Container)
+		if _, ok := g.containers[ctName]; ok {
 			return fmt.Errorf("container {Group:%s Container:%s} defined more than once in the containers config", ct.Info.Group, ct.Info.Container)
 		}
-		containers[ct.Info] = true
+		// TODO: Make ContainerReference the key instead.
+		g.addContainer(&ct, globalConfig, networks, allowedContainers[ctName])
 
 		loc := fmt.Sprintf("container {Group: %s Container:%s} config", ct.Info.Group, ct.Info.Container)
 		if err := validateConfigEnv(ct.Config.Env, loc); err != nil {

@@ -47,7 +47,7 @@ func buildDeploymentFromConfig(config *HomelabConfig, host *hostInfo) (*deployme
 		return nil, err
 	}
 
-	err = validateHostsConfig(config.Hosts)
+	d.allowedContainers, err = validateHostsConfig(config.Hosts, host)
 	if err != nil {
 		return nil, err
 	}
@@ -59,41 +59,17 @@ func buildDeploymentFromConfig(config *HomelabConfig, host *hostInfo) (*deployme
 		return nil, err
 	}
 
-	_, err = validateGroupsConfig(config.Groups)
+	d.groups, err = validateGroupsConfig(config.Groups)
 	if err != nil {
 		return nil, err
 	}
 
-	err = validateContainersConfig(config.Containers, config.Groups, &config.Global)
+	err = validateContainersConfig(config.Containers, d.groups, &config.Global, d.networks, d.allowedContainers)
 	if err != nil {
 		return nil, err
 	}
-
-	d.populateGroups()
-	d.populateAllowedContainers()
 
 	return &d, nil
-}
-
-func (d *deployment) populateGroups() {
-	groups := make(containerGroupMap)
-	for _, g := range d.config.Groups {
-		cg := newContainerGroupDeprecated(d, &g, &d.config.Containers)
-		groups[cg.name()] = cg
-	}
-	d.groups = groups
-}
-
-func (d *deployment) populateAllowedContainers() {
-	d.allowedContainers = make(stringSet)
-	for _, h := range d.config.Hosts {
-		if h.Name == d.host.hostName {
-			for _, c := range h.AllowedContainers {
-				d.allowedContainers[containerName(c.Group, c.Container)] = true
-			}
-			break
-		}
-	}
 }
 
 func (d *deployment) queryAllContainers() containerMap {

@@ -18,10 +18,11 @@ const (
 )
 
 type container struct {
-	config       *ContainerConfig
-	globalConfig *GlobalConfig
-	group        *containerGroup
-	ips          networkContainerIPList
+	config        *ContainerConfig
+	globalConfig  *GlobalConfig
+	group         *containerGroup
+	ips           networkContainerIPList
+	allowedOnHost bool
 }
 
 type containerIP struct {
@@ -33,17 +34,18 @@ type containerMap map[string]*container
 type containerList []*container
 type networkContainerIPList []*containerIP
 
-func newContainerDeprecated(group *containerGroup, config *ContainerConfig) *container {
+func newContainer(group *containerGroup, config *ContainerConfig, globalConfig *GlobalConfig, networks networkMap, allowedOnHost bool) *container {
 	ct := container{
-		config:       config,
-		globalConfig: &group.deployment.config.Global,
-		group:        group,
+		config:        config,
+		globalConfig:  globalConfig,
+		group:         group,
+		allowedOnHost: allowedOnHost,
 	}
 	cName := config.Info.Container
 	gName := group.name()
 
 	var ips networkContainerIPList
-	for _, n := range group.deployment.networks {
+	for _, n := range networks {
 		if n.mode == networkModeBridge {
 			for _, c := range n.bridgeModeConfig.Containers {
 				if c.Container.Group == gName && c.Container.Container == cName {
@@ -88,15 +90,15 @@ func newContainerDeprecated(group *containerGroup, config *ContainerConfig) *con
 }
 
 func (c *container) isAllowedOnCurrentHost() bool {
-	return c.group.deployment.allowedContainers[c.name()]
+	return c.allowedOnHost
 }
 
-func (c *container) start(ctx context.Context, docker *dockerClient) error {
+func (c *container) start(ctx context.Context, docker *dockerClient, humanFriendlyHostName string) error {
 	log.Debugf("Starting container %s ...", c.name())
 
 	// Validate the container is allowed to run on the current host.
 	if !c.isAllowedOnCurrentHost() {
-		log.Warnf("Container %s not allowed to run on host '%s'", c.name(), c.group.deployment.host.humanFriendlyHostName)
+		log.Warnf("Container %s not allowed to run on host '%s'", c.name(), humanFriendlyHostName)
 		return nil
 	}
 

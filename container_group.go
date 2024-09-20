@@ -4,28 +4,22 @@ import "fmt"
 
 type containerGroup struct {
 	config     *ContainerGroupConfig
-	deployment *deployment
 	containers containerMap
 }
 
 type containerGroupMap map[string]*containerGroup
 
-func newContainerGroupDeprecated(dep *deployment, groupConfig *ContainerGroupConfig, containerConfigs *[]ContainerConfig) *containerGroup {
-	g := containerGroup{
-		deployment: dep,
+func newContainerGroup(groupConfig *ContainerGroupConfig) *containerGroup {
+	return &containerGroup{
 		config:     groupConfig,
+		containers: containerMap{},
 	}
+}
 
-	containers := make(containerMap)
-	for _, c := range *containerConfigs {
-		if c.Info.Group == g.name() {
-			ct := newContainerDeprecated(&g, &c)
-			containers[ct.name()] = ct
-		}
-	}
-	g.containers = containers
-
-	return &g
+func (c *containerGroup) addContainer(config *ContainerConfig, globalConfig *GlobalConfig, networks networkMap, isAllowedOnCurrentHost bool) {
+	ct := newContainer(c, config, globalConfig, networks, isAllowedOnCurrentHost)
+	// TODO: Make ContainerReference the key instead.
+	c.containers[ct.name()] = ct
 }
 
 func (c *containerGroup) name() string {
