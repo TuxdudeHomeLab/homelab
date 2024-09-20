@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 )
 
 type deployment struct {
@@ -13,35 +14,66 @@ type deployment struct {
 }
 
 func buildDeployment(configsPath string) (*deployment, error) {
+	return buildDeploymentFromConfigsPath(configsPath, newHostInfo())
+}
+
+func buildDeploymentFromConfigsPath(configsPath string, host *hostInfo) (*deployment, error) {
 	config := HomelabConfig{}
 	err := config.parseConfigs(configsPath)
 	if err != nil {
 		return nil, err
 	}
-	return buildDeploymentFromConfig(&config)
+	return buildDeploymentFromConfig(&config, host)
 }
 
-func buildDeploymentFromConfig(config *HomelabConfig) (*deployment, error) {
-	host := newHostInfo()
-	err := validateConfig(config, host)
+func buildDeploymentFromReader(reader io.Reader, host *hostInfo) (*deployment, error) {
+	config := HomelabConfig{}
+	err := config.parse(reader)
 	if err != nil {
 		return nil, err
 	}
-
-	return newDeployment(config, host), nil
+	return buildDeploymentFromConfig(&config, host)
 }
 
-func newDeployment(config *HomelabConfig, host *hostInfo) *deployment {
+func buildDeploymentFromConfig(config *HomelabConfig, host *hostInfo) (*deployment, error) {
 	d := deployment{
 		config: config,
 		host:   host,
 	}
+	// env := newConfigEnv(host)
+
+	err := validateGlobalConfig(&config.Global)
+	if err != nil {
+		return nil, err
+	}
+
+	err = validateHostsConfig(config.Hosts)
+	if err != nil {
+		return nil, err
+	}
+
+	err = validateIPAMConfig(&config.IPAM)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = validateGroupsConfig(config.Groups)
+	if err != nil {
+		return nil, err
+	}
+
+	err = validateContainersConfig(config.Containers, config.Groups, &config.Global)
+	if err != nil {
+		return nil, err
+	}
+
 	// First build the networks as it will be looked up while building
 	// the container groups and containers within.
 	d.populateNetworks()
 	d.populateGroups()
 	d.populateAllowedContainers()
-	return &d
+
+	return &d, nil
 }
 
 func (d *deployment) populateNetworks() {
@@ -60,7 +92,7 @@ func (d *deployment) populateNetworks() {
 func (d *deployment) populateGroups() {
 	groups := make(containerGroupMap)
 	for _, g := range d.config.Groups {
-		cg := newContainerGroup(d, &g, &d.config.Containers)
+		cg := newContainerGroupDeprecated(d, &g, &d.config.Containers)
 		groups[cg.name()] = cg
 	}
 	d.groups = groups
@@ -117,35 +149,4 @@ func (d *deployment) queryContainer(group string, container string) *container {
 
 func (d *deployment) String() string {
 	return fmt.Sprintf("Deployment{Groups:%s, Networks:%s}", d.groups, d.networks)
-}
-
-func validateConfig(config *HomelabConfig, host *hostInfo) error {
-	// env := newConfigEnv(host)
-
-	err := validateGlobalConfig(&config.Global)
-	if err != nil {
-		return err
-	}
-
-	err = validateHostsConfig(config.Hosts)
-	if err != nil {
-		return err
-	}
-
-	err = validateIPAMConfig(&config.IPAM)
-	if err != nil {
-		return err
-	}
-
-	err = validateGroupsConfig(config.Groups)
-	if err != nil {
-		return err
-	}
-
-	err = validateContainersConfig(config.Containers, config.Groups, &config.Global)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

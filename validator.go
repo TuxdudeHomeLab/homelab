@@ -382,22 +382,24 @@ func validateHostsConfig(hosts []HostConfig) error {
 	return nil
 }
 
-func validateGroupsConfig(groups []ContainerGroupConfig) error {
-	groupNames := make(map[string]bool)
+func validateGroupsConfig(groups []ContainerGroupConfig) (containerGroupMap, error) {
+	containerGroups := containerGroupMap{}
 	for _, g := range groups {
 		if len(g.Name) == 0 {
-			return fmt.Errorf("group name cannot be empty in the groups config")
+			return nil, fmt.Errorf("group name cannot be empty in the groups config")
 		}
-		if groupNames[g.Name] {
-			return fmt.Errorf("group %s defined more than once in the groups config", g.Name)
+		if _, ok := containerGroups[g.Name]; ok {
+			return nil, fmt.Errorf("group %s defined more than once in the groups config", g.Name)
 		}
 		if g.Order < 1 {
-			return fmt.Errorf("group %s cannot have a non-positive order %d", g.Name, g.Order)
+			return nil, fmt.Errorf("group %s cannot have a non-positive order %d", g.Name, g.Order)
 		}
 
-		groupNames[g.Name] = true
+		containerGroups[g.Name] = &containerGroup{
+			config: &g,
+		}
 	}
-	return nil
+	return containerGroups, nil
 }
 
 func validateContainersConfig(containersConfig []ContainerConfig, groupsConfig []ContainerGroupConfig, globalConfig *GlobalConfig) error {

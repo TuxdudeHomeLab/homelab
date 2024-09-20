@@ -33,7 +33,7 @@ type containerMap map[string]*container
 type containerList []*container
 type networkContainerIPList []*containerIP
 
-func newContainer(group *containerGroup, config *ContainerConfig) *container {
+func newContainerDeprecated(group *containerGroup, config *ContainerConfig) *container {
 	ct := container{
 		config:       config,
 		globalConfig: &group.deployment.config.Global,

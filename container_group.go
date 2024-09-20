@@ -10,7 +10,7 @@ type containerGroup struct {
 
 type containerGroupMap map[string]*containerGroup
 
-func newContainerGroup(dep *deployment, groupConfig *ContainerGroupConfig, containerConfigs *[]ContainerConfig) *containerGroup {
+func newContainerGroupDeprecated(dep *deployment, groupConfig *ContainerGroupConfig, containerConfigs *[]ContainerConfig) *containerGroup {
 	g := containerGroup{
 		deployment: dep,
 		config:     groupConfig,
@@ -19,7 +19,7 @@ func newContainerGroup(dep *deployment, groupConfig *ContainerGroupConfig, conta
 	containers := make(containerMap)
 	for _, c := range *containerConfigs {
 		if c.Info.Group == g.name() {
-			ct := newContainer(&g, &c)
+			ct := newContainerDeprecated(&g, &c)
 			containers[ct.name()] = ct
 		}
 	}

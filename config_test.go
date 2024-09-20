@@ -17,7 +17,7 @@ var (
 var parseAndValidateConfigUsingReaderTests = []struct {
 	name   string
 	config string
-	want   HomelabConfig
+	want   *HomelabConfig
 }{
 	{
 		name: "Valid extensive config",
@@ -260,7 +260,7 @@ containers:
         - foo
         - bar
         - baz`,
-		want: HomelabConfig{
+		want: &HomelabConfig{
 			Global: GlobalConfig{
 				Env: []ConfigEnv{
 					{
@@ -667,7 +667,7 @@ groups:
     order: 3
   - name: group3
     order: 2`,
-		want: HomelabConfig{
+		want: &HomelabConfig{
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "group1",
@@ -693,24 +693,17 @@ func TestParseConfigUsingReader(t *testing.T) {
 			t.Parallel()
 
 			input := strings.NewReader(tc.config)
-			got := HomelabConfig{}
-			if gotErr := got.parse(input); nil != gotErr {
+			got, gotErr := buildDeploymentFromReader(input, fakeHostInfo)
+			if gotErr != nil {
 				t.Errorf(
-					"HomelabConfig.parse()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v",
+					"buildDeploymentFromReader()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v",
 					tc.name, gotErr)
 				return
 			}
 
-			if diff := cmp.Diff(tc.want, got); diff != "" {
+			if diff := cmp.Diff(tc.want, got.config); diff != "" {
 				t.Errorf(
-					"HomelabConfig.parse()\nTest Case: %q\nFailure: got did not match the want config\nDiff(-want +got): %s", tc.name, diff)
-			}
-
-			if gotErr := validateConfig(&got, fakeHostInfo); nil != gotErr {
-				t.Errorf(
-					"HomelabConfig.validate()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v",
-					tc.name, gotErr)
-				return
+					"buildDeploymentFromReader()\nTest Case: %q\nFailure: got did not match the want config\nDiff(-want +got): %s", tc.name, diff)
 			}
 		})
 	}
@@ -719,12 +712,12 @@ func TestParseConfigUsingReader(t *testing.T) {
 var validParseAndValidateConfigsFromPathTests = []struct {
 	name        string
 	configsPath string
-	want        HomelabConfig
+	want        *HomelabConfig
 }{
 	{
 		name:        "Valid multi file config",
 		configsPath: "parse-configs-valid",
-		want: HomelabConfig{
+		want: &HomelabConfig{
 			Global: GlobalConfig{
 				Env: []ConfigEnv{
 					{
@@ -936,24 +929,17 @@ func TestParseAndValidateConfigsFromPath(t *testing.T) {
 			t.Parallel()
 
 			p := fmt.Sprintf("%s/testdata/%s", pwd(), tc.configsPath)
-			got := HomelabConfig{}
-			if gotErr := got.parseConfigs(p); nil != gotErr {
+			got, gotErr := buildDeploymentFromConfigsPath(p, fakeHostInfo)
+			if gotErr != nil {
 				t.Errorf(
-					"HomelabConfig.parseConfigs()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v",
+					"buildDeploymentFromConfigsPath()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v",
 					tc.name, gotErr)
 				return
 			}
 
-			if diff := cmp.Diff(tc.want, got); diff != "" {
+			if diff := cmp.Diff(tc.want, got.config); diff != "" {
 				t.Errorf(
-					"HomelabConfig.parseConfigs()\nTest Case: %q\nFailure: got did not match the want config\nDiff(-want +got): %s", tc.name, diff)
-			}
-
-			if gotErr := validateConfig(&got, fakeHostInfo); nil != gotErr {
-				t.Errorf(
-					"HomelabConfig.validate()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v",
-					tc.name, gotErr)
-				return
+					"buildDeploymentFromConfigsPath()\nTest Case: %q\nFailure: got did not match the want config\nDiff(-want +got): %s", tc.name, diff)
 			}
 		})
 	}
@@ -1084,12 +1070,15 @@ func TestValidateConfig(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			if gotErr := validateConfig(&tc.config, fakeHostInfo); nil != gotErr {
+			_, gotErr := buildDeploymentFromConfig(&tc.config, fakeHostInfo)
+			if gotErr != nil {
 				t.Errorf(
-					"HomelabConfig.validate()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v",
+					"buildDeploymentFromConfig()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v",
 					tc.name, gotErr)
 				return
 			}
+
+			// TODO: Validate the built deployment.
 		})
 	}
 }
@@ -4285,7 +4274,7 @@ func TestValidateConfigErrors(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			gotErr := validateConfig(&tc.config, fakeHostInfo)
+			_, gotErr := buildDeploymentFromConfig(&tc.config, fakeHostInfo)
 			if gotErr == nil {
 				t.Errorf(
 					"HomelabConfig.validate()\nTest Case: %q\nFailure: gotErr == nil\nReason: want = %q",
