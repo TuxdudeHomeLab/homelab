@@ -6,7 +6,6 @@ import (
 )
 
 type network struct {
-	deployment          *deployment
 	mode                networkMode
 	bridgeModeConfig    *BridgeModeNetworkConfig
 	containerModeConfig *ContainerModeNetworkConfig
@@ -22,18 +21,16 @@ const (
 
 type networkMode uint8
 
-func newBridgeModeNetwork(dep *deployment, config *BridgeModeNetworkConfig) *network {
+func newBridgeModeNetwork(config *BridgeModeNetworkConfig) *network {
 	n := network{
-		deployment:       dep,
 		mode:             networkModeBridge,
 		bridgeModeConfig: config,
 	}
 	return &n
 }
 
-func newContainerModeNetwork(dep *deployment, config *ContainerModeNetworkConfig) *network {
+func newContainerModeNetwork(config *ContainerModeNetworkConfig) *network {
 	n := network{
-		deployment:          dep,
 		mode:                networkModeContainer,
 		containerModeConfig: config,
 	}

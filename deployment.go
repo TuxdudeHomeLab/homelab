@@ -52,7 +52,9 @@ func buildDeploymentFromConfig(config *HomelabConfig, host *hostInfo) (*deployme
 		return nil, err
 	}
 
-	err = validateIPAMConfig(&config.IPAM)
+	// First build the networks as it will be looked up while building
+	// the container groups and containers within.
+	d.networks, err = validateIPAMConfig(&config.IPAM)
 	if err != nil {
 		return nil, err
 	}
@@ -67,26 +69,10 @@ func buildDeploymentFromConfig(config *HomelabConfig, host *hostInfo) (*deployme
 		return nil, err
 	}
 
-	// First build the networks as it will be looked up while building
-	// the container groups and containers within.
-	d.populateNetworks()
 	d.populateGroups()
 	d.populateAllowedContainers()
 
 	return &d, nil
-}
-
-func (d *deployment) populateNetworks() {
-	networks := make(networkMap)
-	for _, n := range d.config.IPAM.Networks.BridgeModeNetworks {
-		nt := newBridgeModeNetwork(d, &n)
-		networks[nt.name()] = nt
-	}
-	for _, n := range d.config.IPAM.Networks.ContainerModeNetworks {
-		nt := newContainerModeNetwork(d, &n)
-		networks[nt.name()] = nt
-	}
-	d.networks = networks
 }
 
 func (d *deployment) populateGroups() {
