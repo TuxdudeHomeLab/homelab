@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net"
+	"net/netip"
 	"os"
 	"runtime"
 	"strings"
@@ -11,7 +12,7 @@ import (
 type hostInfo struct {
 	hostName              string
 	humanFriendlyHostName string
-	ip                    net.IP
+	ip                    netip.Addr
 	numCPUs               int
 	os                    string
 	arch                  string
@@ -64,13 +65,18 @@ func systemHostName() string {
 	return res
 }
 
-func interfaceIP() net.IP {
+func interfaceIP() netip.Addr {
 	conn, err := net.Dial("udp", "10.1.1.1:1234")
 	if err != nil {
 		log.Fatalf("Unable to determine the current machine's IP, %v", err)
 	}
 	defer conn.Close()
-	return conn.LocalAddr().(*net.UDPAddr).IP
+
+	ip, ok := netip.AddrFromSlice(conn.LocalAddr().(*net.UDPAddr).IP)
+	if !ok {
+		log.Fatalf("Unable to convert host IP %s of net.IP type to netip.Addr type")
+	}
+	return ip
 }
 
 func archToDockerPlatform(arch string) string {

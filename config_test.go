@@ -9,6 +9,11 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
+var (
+	// TODO: Remove this after we start using fakeConfigEnv.
+	_ = fakeConfigEnv
+)
+
 var parseAndValidateConfigUsingReaderTests = []struct {
 	name   string
 	config string
@@ -701,7 +706,7 @@ func TestParseConfigUsingReader(t *testing.T) {
 					"HomelabConfig.parse()\nTest Case: %q\nFailure: got did not match the want config\nDiff(-want +got): %s", tc.name, diff)
 			}
 
-			if gotErr := got.validate(); nil != gotErr {
+			if gotErr := validateConfig(&got, fakeHostInfo); nil != gotErr {
 				t.Errorf(
 					"HomelabConfig.validate()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v",
 					tc.name, gotErr)
@@ -944,7 +949,7 @@ func TestParseAndValidateConfigsFromPath(t *testing.T) {
 					"HomelabConfig.parseConfigs()\nTest Case: %q\nFailure: got did not match the want config\nDiff(-want +got): %s", tc.name, diff)
 			}
 
-			if gotErr := got.validate(); nil != gotErr {
+			if gotErr := validateConfig(&got, fakeHostInfo); nil != gotErr {
 				t.Errorf(
 					"HomelabConfig.validate()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v",
 					tc.name, gotErr)
@@ -1079,7 +1084,7 @@ func TestValidateConfig(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			if gotErr := tc.config.validate(); nil != gotErr {
+			if gotErr := validateConfig(&tc.config, fakeHostInfo); nil != gotErr {
 				t.Errorf(
 					"HomelabConfig.validate()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v",
 					tc.name, gotErr)
@@ -4280,7 +4285,7 @@ func TestValidateConfigErrors(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			gotErr := tc.config.validate()
+			gotErr := validateConfig(&tc.config, fakeHostInfo)
 			if gotErr == nil {
 				t.Errorf(
 					"HomelabConfig.validate()\nTest Case: %q\nFailure: gotErr == nil\nReason: want = %q",

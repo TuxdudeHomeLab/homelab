@@ -13,27 +13,33 @@ type deployment struct {
 }
 
 func buildDeployment(configsPath string) (*deployment, error) {
-	c := HomelabConfig{}
-	err := c.parseConfigs(configsPath)
+	config := HomelabConfig{}
+	err := config.parseConfigs(configsPath)
 	if err != nil {
 		return nil, err
 	}
-
-	err = c.validate()
-	if err != nil {
-		return nil, err
-	}
-
-	return newDeployment(&c), nil
+	return buildDeploymentFromConfig(&config)
 }
 
-func newDeployment(config *HomelabConfig) *deployment {
-	d := deployment{config: config}
+func buildDeploymentFromConfig(config *HomelabConfig) (*deployment, error) {
+	host := newHostInfo()
+	err := validateConfig(config, host)
+	if err != nil {
+		return nil, err
+	}
+
+	return newDeployment(config, host), nil
+}
+
+func newDeployment(config *HomelabConfig, host *hostInfo) *deployment {
+	d := deployment{
+		config: config,
+		host:   host,
+	}
 	// First build the networks as it will be looked up while building
 	// the container groups and containers within.
 	d.populateNetworks()
 	d.populateGroups()
-	d.populateHostInfo()
 	d.populateAllowedContainers()
 	return &d
 }
@@ -58,10 +64,6 @@ func (d *deployment) populateGroups() {
 		groups[cg.name()] = cg
 	}
 	d.groups = groups
-}
-
-func (d *deployment) populateHostInfo() {
-	d.host = newHostInfo()
 }
 
 func (d *deployment) populateAllowedContainers() {
@@ -115,4 +117,35 @@ func (d *deployment) queryContainer(group string, container string) *container {
 
 func (d *deployment) String() string {
 	return fmt.Sprintf("Deployment{Groups:%s, Networks:%s}", d.groups, d.networks)
+}
+
+func validateConfig(config *HomelabConfig, host *hostInfo) error {
+	// env := newConfigEnv(host)
+
+	err := validateGlobalConfig(&config.Global)
+	if err != nil {
+		return err
+	}
+
+	err = validateHostsConfig(config.Hosts)
+	if err != nil {
+		return err
+	}
+
+	err = validateIPAMConfig(&config.IPAM)
+	if err != nil {
+		return err
+	}
+
+	err = validateGroupsConfig(config.Groups)
+	if err != nil {
+		return err
+	}
+
+	err = validateContainersConfig(config.Containers, config.Groups, &config.Global)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -326,32 +326,3 @@ func (h *HomelabConfig) parseConfigs(configsPath string) error {
 
 	return h.parse(m)
 }
-
-func (h *HomelabConfig) validate() error {
-	err := validateGlobalConfig(&h.Global)
-	if err != nil {
-		return err
-	}
-
-	err = validateHostsConfig(h.Hosts)
-	if err != nil {
-		return err
-	}
-
-	err = validateIPAMConfig(&h.IPAM)
-	if err != nil {
-		return err
-	}
-
-	err = validateGroupsConfig(h.Groups)
-	if err != nil {
-		return err
-	}
-
-	err = validateContainersConfig(h.Containers, h.Groups, &h.Global)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
