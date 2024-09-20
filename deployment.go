@@ -10,8 +10,10 @@ type deployment struct {
 	groups            containerGroupMap
 	networks          networkMap
 	host              *hostInfo
-	allowedContainers stringSet
+	allowedContainers containerReferenceSet
 }
+
+type containerReferenceSet map[ContainerReference]bool
 
 func buildDeployment(configsPath string) (*deployment, error) {
 	return buildDeploymentFromConfigsPath(configsPath, newHostInfo())
@@ -75,8 +77,8 @@ func buildDeploymentFromConfig(config *HomelabConfig, host *hostInfo) (*deployme
 func (d *deployment) queryAllContainers() containerMap {
 	result := make(containerMap)
 	for _, g := range d.groups {
-		for _, c := range g.containers {
-			result[c.name()] = c
+		for cref, c := range g.containers {
+			result[cref] = c
 		}
 	}
 	return result
@@ -86,8 +88,8 @@ func (d *deployment) queryAllContainersInGroup(group string) containerMap {
 	result := make(containerMap)
 	for _, g := range d.groups {
 		if g.name() == group {
-			for _, c := range g.containers {
-				result[c.name()] = c
+			for cref, c := range g.containers {
+				result[cref] = c
 			}
 			break
 		}

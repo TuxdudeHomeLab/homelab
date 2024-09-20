@@ -22,7 +22,7 @@ func prettyPrintJSON(x interface{}) string {
 	return string(p)
 }
 
-func stringifyMap[V any](m map[string]V) string {
+func stringifyMap[K comparable, V any](m map[K]V) string {
 	var sb strings.Builder
 	sb.WriteString("[")
 	first := true

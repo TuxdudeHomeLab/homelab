@@ -19,7 +19,7 @@ func newContainerGroup(groupConfig *ContainerGroupConfig) *containerGroup {
 func (c *containerGroup) addContainer(config *ContainerConfig, globalConfig *GlobalConfig, networks networkMap, isAllowedOnCurrentHost bool) {
 	ct := newContainer(c, config, globalConfig, networks, isAllowedOnCurrentHost)
 	// TODO: Make ContainerReference the key instead.
-	c.containers[ct.name()] = ct
+	c.containers[config.Info] = ct
 }
 
 func (c *containerGroup) name() string {

@@ -30,7 +30,7 @@ type containerIP struct {
 	ip      string
 }
 
-type containerMap map[string]*container
+type containerMap map[ContainerReference]*container
 type containerList []*container
 type networkContainerIPList []*containerIP
 

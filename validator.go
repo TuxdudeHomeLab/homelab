@@ -25,7 +25,7 @@ func validateGlobalConfig(config *GlobalConfig) error {
 }
 
 func validateConfigEnv(config []ConfigEnv, location string) error {
-	envs := make(map[string]bool)
+	envs := stringSet{}
 	for _, e := range config {
 		if len(e.Var) == 0 {
 			return fmt.Errorf("empty env var in %s", location)
@@ -46,7 +46,7 @@ func validateConfigEnv(config []ConfigEnv, location string) error {
 }
 
 func validateContainerEnv(config []ContainerEnv, location string) error {
-	envs := make(map[string]bool)
+	envs := stringSet{}
 	for _, e := range config {
 		if len(e.Var) == 0 {
 			return fmt.Errorf("empty env var in %s", location)
@@ -67,7 +67,7 @@ func validateContainerEnv(config []ContainerEnv, location string) error {
 }
 
 func validateLabelsConfig(config []LabelConfig, location string) error {
-	labels := make(map[string]bool)
+	labels := stringSet{}
 	for _, l := range config {
 		if len(l.Name) == 0 {
 			return fmt.Errorf("empty label name in %s", location)
@@ -87,7 +87,7 @@ func validateLabelsConfig(config []LabelConfig, location string) error {
 func validateMountsConfig(config, commonConfig, globalDefs []MountConfig, location string) error {
 	// First build a map of the mounts from the globalDefs (which should
 	// already have been validated).
-	globalMountDefs := make(map[string]bool)
+	globalMountDefs := stringSet{}
 	for _, m := range globalDefs {
 		globalMountDefs[m.Name] = true
 	}
@@ -95,7 +95,7 @@ func validateMountsConfig(config, commonConfig, globalDefs []MountConfig, locati
 	// Build a map of the mounts from the commonConfig next which acts
 	// as the first set of mounts to apply. These should also have been
 	// validated prior and hence we don't validate them here again.
-	mounts := make(map[string]bool)
+	mounts := stringSet{}
 	for _, m := range commonConfig {
 		mounts[m.Name] = true
 	}
@@ -167,7 +167,7 @@ func validatePublishedPortsConfig(ports []PublishedPortConfig, location string) 
 }
 
 func validateSysctlsConfig(sysctls []SysctlConfig, location string) error {
-	keys := make(map[string]bool)
+	keys := stringSet{}
 	for _, s := range sysctls {
 		if len(s.Key) == 0 {
 			return fmt.Errorf("empty sysctl key in %s", location)
@@ -248,7 +248,7 @@ func validateContainerRestartPolicy(config *ContainerRestartPolicyConfig, locati
 
 func validateIPAMConfig(config *IPAMConfig) (networkMap, error) {
 	networks := networkMap{}
-	hostInterfaces := make(map[string]bool)
+	hostInterfaces := stringSet{}
 	bridgeModeNetworks := config.Networks.BridgeModeNetworks
 	prefixes := make(map[netip.Prefix]string)
 	for _, n := range bridgeModeNetworks {
@@ -356,9 +356,9 @@ func validateIPAMConfig(config *IPAMConfig) (networkMap, error) {
 	return networks, nil
 }
 
-func validateHostsConfig(hosts []HostConfig, currentHost *hostInfo) (stringSet, error) {
-	hostNames := make(map[string]bool)
-	allowedContainers := stringSet{}
+func validateHostsConfig(hosts []HostConfig, currentHost *hostInfo) (containerReferenceSet, error) {
+	hostNames := stringSet{}
+	allowedContainers := containerReferenceSet{}
 	for _, h := range hosts {
 		if len(h.Name) == 0 {
 			return nil, fmt.Errorf("host name cannot be empty in the hosts config")
@@ -379,8 +379,7 @@ func validateHostsConfig(hosts []HostConfig, currentHost *hostInfo) (stringSet, 
 			}
 			containers[ct] = true
 			if h.Name == currentHost.hostName {
-				// TODO: Make ContainerReference the key instead.
-				allowedContainers[containerName(ct.Group, ct.Container)] = true
+				allowedContainers[ct] = true
 			}
 		}
 	}
@@ -405,19 +404,16 @@ func validateGroupsConfig(groups []ContainerGroupConfig) (containerGroupMap, err
 	return containerGroups, nil
 }
 
-func validateContainersConfig(containersConfig []ContainerConfig, groups containerGroupMap, globalConfig *GlobalConfig, networks networkMap, allowedContainers stringSet) error {
+func validateContainersConfig(containersConfig []ContainerConfig, groups containerGroupMap, globalConfig *GlobalConfig, networks networkMap, allowedContainers containerReferenceSet) error {
 	for _, ct := range containersConfig {
 		g, ok := groups[ct.Info.Group]
 		if !ok {
 			return fmt.Errorf("group definition missing in groups config for the container {Group:%s Container:%s} in the containers config", ct.Info.Group, ct.Info.Container)
 		}
-		// TODO: Make ContainerReference the key instead.
-		ctName := containerName(ct.Info.Group, ct.Info.Container)
-		if _, ok := g.containers[ctName]; ok {
+		if _, ok := g.containers[ct.Info]; ok {
 			return fmt.Errorf("container {Group:%s Container:%s} defined more than once in the containers config", ct.Info.Group, ct.Info.Container)
 		}
-		// TODO: Make ContainerReference the key instead.
-		g.addContainer(&ct, globalConfig, networks, allowedContainers[ctName])
+		g.addContainer(&ct, globalConfig, networks, allowedContainers[ct.Info])
 
 		loc := fmt.Sprintf("container {Group: %s Container:%s} config", ct.Info.Group, ct.Info.Container)
 		if err := validateConfigEnv(ct.Config.Env, loc); err != nil {
