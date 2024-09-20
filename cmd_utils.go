@@ -6,7 +6,7 @@ func queryContainers(dep *deployment, allGroups bool, group, container string) c
 	} else if group != "" && container == "" {
 		return containerMapToList(dep.queryAllContainersInGroup(group))
 	} else if group != "" {
-		c := dep.queryContainer(group, container)
+		c := dep.queryContainer(&ContainerReference{Group: group, Container: container})
 		if c != nil {
 			return containerList{c}
 		}

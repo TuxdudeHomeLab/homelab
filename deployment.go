@@ -56,7 +56,8 @@ func buildDeploymentFromConfig(config *HomelabConfig, host *hostInfo) (*deployme
 
 	// First build the networks as it will be looked up while building
 	// the container groups and containers within.
-	d.networks, err = validateIPAMConfig(&config.IPAM)
+	var containerRefIPs map[ContainerReference]networkContainerIPList
+	d.networks, containerRefIPs, err = validateIPAMConfig(&config.IPAM)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +67,7 @@ func buildDeploymentFromConfig(config *HomelabConfig, host *hostInfo) (*deployme
 		return nil, err
 	}
 
-	err = validateContainersConfig(config.Containers, d.groups, &config.Global, d.networks, d.allowedContainers)
+	err = validateContainersConfig(config.Containers, d.groups, &config.Global, containerRefIPs, d.allowedContainers)
 	if err != nil {
 		return nil, err
 	}
@@ -97,10 +98,10 @@ func (d *deployment) queryAllContainersInGroup(group string) containerMap {
 	return result
 }
 
-func (d *deployment) queryContainer(group string, container string) *container {
-	cn := containerName(group, container)
+func (d *deployment) queryContainer(ct *ContainerReference) *container {
+	cn := containerName(ct)
 	for _, g := range d.groups {
-		if g.name() == group {
+		if g.name() == ct.Group {
 			for _, c := range g.containers {
 				if c.name() == cn {
 					return c

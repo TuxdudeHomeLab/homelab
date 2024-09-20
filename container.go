@@ -34,59 +34,14 @@ type containerMap map[ContainerReference]*container
 type containerList []*container
 type networkContainerIPList []*containerIP
 
-func newContainer(group *containerGroup, config *ContainerConfig, globalConfig *GlobalConfig, networks networkMap, allowedOnHost bool) *container {
-	ct := container{
+func newContainer(group *containerGroup, config *ContainerConfig, globalConfig *GlobalConfig, ips networkContainerIPList, allowedOnHost bool) *container {
+	return &container{
 		config:        config,
 		globalConfig:  globalConfig,
 		group:         group,
+		ips:           ips,
 		allowedOnHost: allowedOnHost,
 	}
-	cName := config.Info.Container
-	gName := group.name()
-
-	var ips networkContainerIPList
-	for _, n := range networks {
-		if n.mode == networkModeBridge {
-			for _, c := range n.bridgeModeConfig.Containers {
-				if c.Container.Group == gName && c.Container.Container == cName {
-					ips = append(ips, newBridgeModeContainerIP(n, c.IP))
-					break
-				}
-			}
-		} else if n.mode == networkModeContainer {
-			for _, c := range n.containerModeConfig.Containers {
-				if c.Group == gName && c.Container == cName {
-					ips = append(ips, newContainerModeContainerIP(n))
-					break
-				}
-			}
-		}
-	}
-
-	// Sort the networks by priority (i.e. lowest priority is the primary
-	// network interface for the container).
-	sort.Slice(ips, func(i, j int) bool {
-		n1 := ips[i].network
-		n2 := ips[j].network
-
-		if n1.mode != n2.mode {
-			log.Fatalf("Container %s has networks of different types which is unsupported", ct.name())
-		}
-		if n1.mode == networkModeBridge {
-			if n1.bridgeModeConfig.Priority == n2.bridgeModeConfig.Priority {
-				log.Fatalf("Container %s is connected to two bridge mode networks of same priority %d which is unsupported", ct.name(), n1.bridgeModeConfig.Priority)
-			}
-			return n1.bridgeModeConfig.Priority < n2.bridgeModeConfig.Priority
-		} else {
-			if n1.containerModeConfig.Priority == n2.containerModeConfig.Priority {
-				log.Fatalf("Container %s is connected to two container mode networks of same priority %d which is unsupported", ct.name(), n1.containerModeConfig.Priority)
-			}
-			return n1.containerModeConfig.Priority < n2.containerModeConfig.Priority
-		}
-	})
-
-	ct.ips = ips
-	return &ct
 }
 
 func (c *container) isAllowedOnCurrentHost() bool {
@@ -281,7 +236,7 @@ func (c *container) generateDockerConfigs() (*dcontainer.Config, *dcontainer.Hos
 }
 
 func (c *container) name() string {
-	return containerName(c.group.name(), c.config.Info.Container)
+	return containerName(&c.config.Info)
 }
 
 func (c *container) hostName() string {
@@ -518,16 +473,8 @@ func (c containerMap) String() string {
 	return stringifyMap(c)
 }
 
-func newBridgeModeContainerIP(network *network, ip string) *containerIP {
-	return &containerIP{network: network, ip: ip}
-}
-
-func newContainerModeContainerIP(network *network) *containerIP {
-	return &containerIP{network: network}
-}
-
-func containerName(group string, container string) string {
-	return fmt.Sprintf("%s-%s", group, container)
+func containerName(ct *ContainerReference) string {
+	return fmt.Sprintf("%s-%s", ct.Group, ct.Container)
 }
 
 func containerMapToList(cm containerMap) containerList {

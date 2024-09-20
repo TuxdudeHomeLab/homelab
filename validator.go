@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/netip"
+	"sort"
 	"time"
 
 	"github.com/docker/go-units"
@@ -246,51 +247,53 @@ func validateContainerRestartPolicy(config *ContainerRestartPolicyConfig, locati
 	return nil
 }
 
-func validateIPAMConfig(config *IPAMConfig) (networkMap, error) {
+func validateIPAMConfig(config *IPAMConfig) (networkMap, map[ContainerReference]networkContainerIPList, error) {
 	networks := networkMap{}
 	hostInterfaces := stringSet{}
 	bridgeModeNetworks := config.Networks.BridgeModeNetworks
 	prefixes := make(map[netip.Prefix]string)
+	containerRefIPs := make(map[ContainerReference]networkContainerIPList)
 	for _, n := range bridgeModeNetworks {
 		if len(n.Name) == 0 {
-			return nil, fmt.Errorf("network name cannot be empty")
+			return nil, nil, fmt.Errorf("network name cannot be empty")
 		}
 		if _, ok := networks[n.Name]; ok {
-			return nil, fmt.Errorf("network %s defined more than once in the IPAM config", n.Name)
+			return nil, nil, fmt.Errorf("network %s defined more than once in the IPAM config", n.Name)
 		}
 
 		if len(n.HostInterfaceName) == 0 {
-			return nil, fmt.Errorf("host interface name of network %s cannot be empty", n.Name)
+			return nil, nil, fmt.Errorf("host interface name of network %s cannot be empty", n.Name)
 		}
 		if hostInterfaces[n.HostInterfaceName] {
-			return nil, fmt.Errorf("host interface name %s of network %s is already used by another network in the IPAM config", n.HostInterfaceName, n.Name)
+			return nil, nil, fmt.Errorf("host interface name %s of network %s is already used by another network in the IPAM config", n.HostInterfaceName, n.Name)
 		}
 		if n.Priority <= 0 {
-			return nil, fmt.Errorf("network %s cannot have a non-positive priority %d", n.Name, n.Priority)
+			return nil, nil, fmt.Errorf("network %s cannot have a non-positive priority %d", n.Name, n.Priority)
 		}
 
-		networks[n.Name] = newBridgeModeNetwork(&n)
+		bmn := newBridgeModeNetwork(&n)
+		networks[n.Name] = bmn
 		hostInterfaces[n.HostInterfaceName] = true
 		prefix, err := netip.ParsePrefix(n.CIDR)
 		if err != nil {
-			return nil, fmt.Errorf("CIDR %s of network %s is invalid, reason: %w", n.CIDR, n.Name, err)
+			return nil, nil, fmt.Errorf("CIDR %s of network %s is invalid, reason: %w", n.CIDR, n.Name, err)
 		}
 		netAddr := prefix.Addr()
 		if !netAddr.Is4() {
-			return nil, fmt.Errorf("CIDR %s of network %s is not an IPv4 subnet CIDR", n.CIDR, n.Name)
+			return nil, nil, fmt.Errorf("CIDR %s of network %s is not an IPv4 subnet CIDR", n.CIDR, n.Name)
 		}
 		if masked := prefix.Masked(); masked.Addr() != netAddr {
-			return nil, fmt.Errorf("CIDR %s of network %s is not the same as the network address %s", n.CIDR, n.Name, masked)
+			return nil, nil, fmt.Errorf("CIDR %s of network %s is not the same as the network address %s", n.CIDR, n.Name, masked)
 		}
 		if prefixLen := prefix.Bits(); prefixLen > 30 {
-			return nil, fmt.Errorf("CIDR %s of network %s (prefix length: %d) cannot have a prefix length more than 30 which makes the network unusable for container IP address allocations", n.CIDR, n.Name, prefixLen)
+			return nil, nil, fmt.Errorf("CIDR %s of network %s (prefix length: %d) cannot have a prefix length more than 30 which makes the network unusable for container IP address allocations", n.CIDR, n.Name, prefixLen)
 		}
 		if !netAddr.IsPrivate() {
-			return nil, fmt.Errorf("CIDR %s of network %s is not within the RFC1918 private address space", n.CIDR, n.Name)
+			return nil, nil, fmt.Errorf("CIDR %s of network %s is not within the RFC1918 private address space", n.CIDR, n.Name)
 		}
 		for pre, preNet := range prefixes {
 			if prefix.Overlaps(pre) {
-				return nil, fmt.Errorf("CIDR %s of network %s overlaps with CIDR %s of network %s", n.CIDR, n.Name, pre, preNet)
+				return nil, nil, fmt.Errorf("CIDR %s of network %s overlaps with CIDR %s of network %s", n.CIDR, n.Name, pre, preNet)
 			}
 		}
 		prefixes[prefix] = n.Name
@@ -302,58 +305,86 @@ func validateIPAMConfig(config *IPAMConfig) (networkMap, error) {
 			ip := cip.IP
 			ct := cip.Container
 			if err := validateContainerReference(&ct); err != nil {
-				return nil, fmt.Errorf("container IP config within network %s has invalid container reference, reason: %w", n.Name, err)
+				return nil, nil, fmt.Errorf("container IP config within network %s has invalid container reference, reason: %w", n.Name, err)
 			}
 
 			caddr, err := netip.ParseAddr(ip)
 			if err != nil {
-				return nil, fmt.Errorf("container {Group:%s Container:%s} endpoint in network %s has invalid IP %s, reason: %w", ct.Group, ct.Container, n.Name, ip, err)
+				return nil, nil, fmt.Errorf("container {Group:%s Container:%s} endpoint in network %s has invalid IP %s, reason: %w", ct.Group, ct.Container, n.Name, ip, err)
 			}
 			if !prefix.Contains(caddr) {
-				return nil, fmt.Errorf("container {Group:%s Container:%s} endpoint in network %s cannot have an IP %s that does not belong to the network CIDR %s", ct.Group, ct.Container, n.Name, ip, prefix)
+				return nil, nil, fmt.Errorf("container {Group:%s Container:%s} endpoint in network %s cannot have an IP %s that does not belong to the network CIDR %s", ct.Group, ct.Container, n.Name, ip, prefix)
 			}
 			if caddr.Compare(netAddr) == 0 {
-				return nil, fmt.Errorf("container {Group:%s Container:%s} endpoint in network %s cannot have an IP %s matching the network address %s", ct.Group, ct.Container, n.Name, ip, netAddr)
+				return nil, nil, fmt.Errorf("container {Group:%s Container:%s} endpoint in network %s cannot have an IP %s matching the network address %s", ct.Group, ct.Container, n.Name, ip, netAddr)
 			}
 			if caddr.Compare(gatewayAddr) == 0 {
-				return nil, fmt.Errorf("container {Group:%s Container:%s} endpoint in network %s cannot have an IP %s matching the gateway address %s", ct.Group, ct.Container, n.Name, ip, gatewayAddr)
+				return nil, nil, fmt.Errorf("container {Group:%s Container:%s} endpoint in network %s cannot have an IP %s matching the gateway address %s", ct.Group, ct.Container, n.Name, ip, gatewayAddr)
 			}
 			if containers[ct] {
-				return nil, fmt.Errorf("container {Group:%s Container:%s} cannot have multiple endpoints in network %s", ct.Group, ct.Container, n.Name)
+				return nil, nil, fmt.Errorf("container {Group:%s Container:%s} cannot have multiple endpoints in network %s", ct.Group, ct.Container, n.Name)
 			}
 			if containerIPs[caddr] {
-				return nil, fmt.Errorf("IP %s of container {Group:%s Container:%s} is already in use by another container in network %s", ip, ct.Group, ct.Container, n.Name)
+				return nil, nil, fmt.Errorf("IP %s of container {Group:%s Container:%s} is already in use by another container in network %s", ip, ct.Group, ct.Container, n.Name)
 			}
 
 			containers[ct] = true
 			containerIPs[caddr] = true
+			containerRefIPs[ct] = append(containerRefIPs[ct], newBridgeModeContainerIP(bmn, ip))
 		}
 	}
 	containerModeNetworks := config.Networks.ContainerModeNetworks
 	for _, n := range containerModeNetworks {
 		if len(n.Name) == 0 {
-			return nil, fmt.Errorf("network name cannot be empty")
+			return nil, nil, fmt.Errorf("network name cannot be empty")
 		}
 		if _, ok := networks[n.Name]; ok {
-			return nil, fmt.Errorf("network %s defined more than once in the IPAM config", n.Name)
+			return nil, nil, fmt.Errorf("network %s defined more than once in the IPAM config", n.Name)
 		}
 		if n.Priority <= 0 {
-			return nil, fmt.Errorf("network %s cannot have a non-positive priority %d", n.Name, n.Priority)
+			return nil, nil, fmt.Errorf("network %s cannot have a non-positive priority %d", n.Name, n.Priority)
 		}
-		networks[n.Name] = newContainerModeNetwork(&n)
+		cmn := newContainerModeNetwork(&n)
+		networks[n.Name] = cmn
 
 		containers := make(map[ContainerReference]bool)
 		for _, ct := range n.Containers {
 			if err := validateContainerReference(&ct); err != nil {
-				return nil, fmt.Errorf("container IP config within network %s has invalid container reference, reason: %w", n.Name, err)
+				return nil, nil, fmt.Errorf("container IP config within network %s has invalid container reference, reason: %w", n.Name, err)
 			}
 			if containers[ct] {
-				return nil, fmt.Errorf("container {Group:%s Container:%s} is connected to multiple container mode network stacks", ct.Group, ct.Container)
+				return nil, nil, fmt.Errorf("container {Group:%s Container:%s} is connected to multiple container mode network stacks", ct.Group, ct.Container)
 			}
 			containers[ct] = true
+			containerRefIPs[ct] = append(containerRefIPs[ct], newContainerModeContainerIP(cmn))
 		}
 	}
-	return networks, nil
+
+	for ct, ips := range containerRefIPs {
+		// Sort the networks by priority (i.e. lowest priority is the primary
+		// network interface for the container).
+		sort.Slice(ips, func(i, j int) bool {
+			n1 := ips[i].network
+			n2 := ips[j].network
+
+			if n1.mode != n2.mode {
+				log.Fatalf("Container %s has networks of different types which is unsupported", ct)
+			}
+			if n1.mode == networkModeBridge {
+				if n1.bridgeModeConfig.Priority == n2.bridgeModeConfig.Priority {
+					log.Fatalf("Container %s is connected to two bridge mode networks of same priority %d which is unsupported", ct, n1.bridgeModeConfig.Priority)
+				}
+				return n1.bridgeModeConfig.Priority < n2.bridgeModeConfig.Priority
+			} else {
+				if n1.containerModeConfig.Priority == n2.containerModeConfig.Priority {
+					log.Fatalf("Container %s is connected to two container mode networks of same priority %d which is unsupported", ct, n1.containerModeConfig.Priority)
+				}
+				return n1.containerModeConfig.Priority < n2.containerModeConfig.Priority
+			}
+		})
+	}
+
+	return networks, containerRefIPs, nil
 }
 
 func validateHostsConfig(hosts []HostConfig, currentHost *hostInfo) (containerReferenceSet, error) {
@@ -404,7 +435,7 @@ func validateGroupsConfig(groups []ContainerGroupConfig) (containerGroupMap, err
 	return containerGroups, nil
 }
 
-func validateContainersConfig(containersConfig []ContainerConfig, groups containerGroupMap, globalConfig *GlobalConfig, networks networkMap, allowedContainers containerReferenceSet) error {
+func validateContainersConfig(containersConfig []ContainerConfig, groups containerGroupMap, globalConfig *GlobalConfig, containerRefIPs map[ContainerReference]networkContainerIPList, allowedContainers containerReferenceSet) error {
 	for _, ct := range containersConfig {
 		g, ok := groups[ct.Info.Group]
 		if !ok {
@@ -413,7 +444,7 @@ func validateContainersConfig(containersConfig []ContainerConfig, groups contain
 		if _, ok := g.containers[ct.Info]; ok {
 			return fmt.Errorf("container {Group:%s Container:%s} defined more than once in the containers config", ct.Info.Group, ct.Info.Container)
 		}
-		g.addContainer(&ct, globalConfig, networks, allowedContainers[ct.Info])
+		g.addContainer(&ct, globalConfig, containerRefIPs[ct.Info], allowedContainers[ct.Info])
 
 		loc := fmt.Sprintf("container {Group: %s Container:%s} config", ct.Info.Group, ct.Info.Container)
 		if err := validateConfigEnv(ct.Config.Env, loc); err != nil {
@@ -491,4 +522,12 @@ func validateContainerReference(ref *ContainerReference) error {
 		return fmt.Errorf("container reference cannot have an empty container name")
 	}
 	return nil
+}
+
+func newBridgeModeContainerIP(network *network, ip string) *containerIP {
+	return &containerIP{network: network, ip: ip}
+}
+
+func newContainerModeContainerIP(network *network) *containerIP {
+	return &containerIP{network: network}
 }
