@@ -30,9 +30,17 @@ type containerIP struct {
 	ip      string
 }
 
-type containerMap map[ContainerReference]*container
-type containerList []*container
+type containerDockerConfigs struct {
+	ContainerConfig *dcontainer.Config
+	HostConfig      *dcontainer.HostConfig
+	NetworkConfig   *dnetwork.NetworkingConfig
+}
+
 type networkContainerIPList []*containerIP
+type containerList []*container
+type containerSet map[ContainerReference]bool
+type containerMap map[ContainerReference]*container
+type containerDockerConfigMap map[ContainerReference]*containerDockerConfigs
 
 func newContainer(group *containerGroup, config *ContainerConfig, globalConfig *GlobalConfig, ips networkContainerIPList, allowedOnHost bool) *container {
 	return &container{
@@ -196,7 +204,11 @@ func (c *container) startInternal(ctx context.Context, docker *dockerClient) err
 
 func (c *container) generateDockerConfigs() (*dcontainer.Config, *dcontainer.HostConfig, *dnetwork.NetworkingConfig, error) {
 	pMap, pSet := c.publishedPorts()
-	cConfig := dcontainer.Config{
+	return c.dockerContainerConfig(pSet), c.dockerHostConfig(pMap), c.dockerNetworkConfig(), nil
+}
+
+func (c *container) dockerContainerConfig(pSet nat.PortSet) *dcontainer.Config {
+	return &dcontainer.Config{
 		Hostname:        c.hostName(),
 		Domainname:      c.domainName(),
 		User:            c.userAndGroup(),
@@ -211,7 +223,10 @@ func (c *container) generateDockerConfigs() (*dcontainer.Config, *dcontainer.Hos
 		StopTimeout:     c.stopTimeout(),
 		Image:           c.imageReference(),
 	}
-	hConfig := dcontainer.HostConfig{
+}
+
+func (c *container) dockerHostConfig(pMap nat.PortMap) *dcontainer.HostConfig {
+	return &dcontainer.HostConfig{
 		Binds:          c.bindMounts(),
 		NetworkMode:    c.networkMode(),
 		PortBindings:   pMap,
@@ -229,10 +244,16 @@ func (c *container) generateDockerConfigs() (*dcontainer.Config, *dcontainer.Hos
 		ShmSize:        c.shmSize(),
 		Sysctls:        c.sysctls(),
 	}
-	nConfig := dnetwork.NetworkingConfig{
+}
+
+func (c *container) dockerNetworkConfig() *dnetwork.NetworkingConfig {
+	ne := c.primaryNetworkEndpoint()
+	if ne == nil {
+		return nil
+	}
+	return &dnetwork.NetworkingConfig{
 		EndpointsConfig: c.primaryNetworkEndpoint(),
 	}
-	return &cConfig, &hConfig, &nConfig, nil
 }
 
 func (c *container) name() string {
@@ -266,18 +287,27 @@ func (c *container) attachToTty() bool {
 
 func (c *container) envVars() []string {
 	env := make(map[string]string, 0)
+	envKeys := make([]string, 0)
 	// TODO: Substitute global config env variables in the value fields.
 	// TODO: Support invoking ValueCmd for evaluating the value.
 	for _, e := range c.globalConfig.Container.Env {
 		env[e.Var] = e.Value
+		envKeys = append(envKeys, e.Var)
 	}
 	for _, e := range c.config.Runtime.Env {
+		if _, ok := env[e.Var]; !ok {
+			envKeys = append(envKeys, e.Var)
+		}
 		env[e.Var] = e.Value
 	}
 
 	res := make([]string, 0)
-	for k, v := range env {
-		res = append(res, fmt.Sprintf("%s=%s", k, v))
+	for _, k := range envKeys {
+		res = append(res, fmt.Sprintf("%s=%s", k, env[k]))
+	}
+
+	if len(res) == 0 {
+		return nil
 	}
 	return res
 }
@@ -298,6 +328,9 @@ func (c *container) labels() map[string]string {
 	res := make(map[string]string, 0)
 	for _, l := range c.config.Metadata.Labels {
 		res[l.Name] = l.Value
+	}
+	if len(res) == 0 {
+		return nil
 	}
 	return res
 }
@@ -321,8 +354,10 @@ func (c *container) imageReference() string {
 func (c *container) bindMounts() []string {
 	// TODO: Do this once for the entire deployment and reuse it.
 	bm := make(map[string]string, 0)
-	for _, v := range c.globalConfig.MountDefs {
-		bm[v.Name] = mountConfigToString(&v)
+	mountNames := make([]string, 0)
+	for _, md := range c.globalConfig.MountDefs {
+		bm[md.Name] = mountConfigToString(&md)
+		mountNames = append(mountNames, md.Name)
 	}
 
 	binds := make(map[string]string, 0)
@@ -334,6 +369,7 @@ func (c *container) bindMounts() []string {
 			binds[mount.Name] = val
 		} else {
 			binds[mount.Name] = mountConfigToString(&mount)
+			mountNames = append(mountNames, mount.Name)
 		}
 	}
 	// Get all the container specific mount configs and apply
@@ -344,25 +380,29 @@ func (c *container) bindMounts() []string {
 			binds[mount.Name] = val
 		} else {
 			binds[mount.Name] = mountConfigToString(&mount)
+			mountNames = append(mountNames, mount.Name)
 		}
 	}
 
 	// Convert the result to include only the bind mount strings.
 	res := make([]string, 0)
-	for _, val := range binds {
-		res = append(res, val)
+	for _, mount := range mountNames {
+		res = append(res, binds[mount])
+	}
+	if len(res) == 0 {
+		return nil
 	}
 	return res
 }
 
 func (c *container) networkMode() dcontainer.NetworkMode {
-	if len(c.ips) > 0 {
-		if c.ips[0].network.mode == networkModeContainer {
-			return dcontainer.NetworkMode(fmt.Sprintf("container:%s", c.ips[0].network))
-		}
-		return dcontainer.NetworkMode(c.ips[0].network.name())
+	if len(c.ips) == 0 {
+		return "none"
 	}
-	return "none"
+	if c.ips[0].network.mode == networkModeContainer {
+		return dcontainer.NetworkMode(fmt.Sprintf("container:%s", c.ips[0].network))
+	}
+	return dcontainer.NetworkMode(c.ips[0].network.name())
 }
 
 func (c *container) publishedPorts() (nat.PortMap, nat.PortSet) {
@@ -377,6 +417,9 @@ func (c *container) publishedPorts() (nat.PortMap, nat.PortSet) {
 			},
 		}
 		pSet[natPort] = struct{}{}
+	}
+	if len(pSet) == 0 {
+		return nil, nil
 	}
 	return pMap, pSet
 }
@@ -450,6 +493,9 @@ func (c *container) sysctls() map[string]string {
 	for _, s := range c.config.Security.Sysctls {
 		res[s.Key] = s.Value
 	}
+	if len(res) == 0 {
+		return nil
+	}
 	return res
 }
 
@@ -461,6 +507,9 @@ func (c *container) primaryNetworkEndpoint() map[string]*dnetwork.EndpointSettin
 				IPv4Address: c.ips[0].ip,
 			},
 		}
+	}
+	if len(res) == 0 {
+		return nil
 	}
 	return res
 }

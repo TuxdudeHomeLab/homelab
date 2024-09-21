@@ -6,14 +6,13 @@ import (
 )
 
 type deployment struct {
-	config            *HomelabConfig
-	groups            containerGroupMap
-	networks          networkMap
-	host              *hostInfo
-	allowedContainers containerReferenceSet
+	config                 *HomelabConfig
+	groups                 containerGroupMap
+	networks               networkMap
+	host                   *hostInfo
+	allowedContainers      containerSet
+	containerDockerConfigs containerDockerConfigMap
 }
-
-type containerReferenceSet map[ContainerReference]bool
 
 func buildDeployment(configsPath string) (*deployment, error) {
 	return buildDeploymentFromConfigsPath(configsPath, newHostInfo())
@@ -39,8 +38,9 @@ func buildDeploymentFromReader(reader io.Reader, host *hostInfo) (*deployment, e
 
 func buildDeploymentFromConfig(config *HomelabConfig, host *hostInfo) (*deployment, error) {
 	d := deployment{
-		config: config,
-		host:   host,
+		config:                 config,
+		host:                   host,
+		containerDockerConfigs: containerDockerConfigMap{},
 	}
 	// env := newConfigEnv(host)
 
@@ -70,6 +70,21 @@ func buildDeploymentFromConfig(config *HomelabConfig, host *hostInfo) (*deployme
 	err = validateContainersConfig(config.Containers, d.groups, &config.Global, containerRefIPs, d.allowedContainers)
 	if err != nil {
 		return nil, err
+	}
+
+	for _, g := range d.groups {
+		for _, ct := range g.containers {
+			cConfig, hConfig, nConfig, err := ct.generateDockerConfigs()
+			if err != nil {
+				log.Fatalf("Error generating docker configs for container %s, reason: %v", ct, err)
+			}
+			cdc := containerDockerConfigs{
+				ContainerConfig: cConfig,
+				HostConfig:      hConfig,
+				NetworkConfig:   nConfig,
+			}
+			d.containerDockerConfigs[ct.config.Info] = &cdc
+		}
 	}
 
 	return &d, nil

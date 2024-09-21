@@ -6,6 +6,9 @@ import (
 	"strings"
 	"testing"
 
+	dcontainer "github.com/docker/docker/api/types/container"
+	dnetwork "github.com/docker/docker/api/types/network"
+	"github.com/docker/go-connections/nat"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -15,9 +18,10 @@ var (
 )
 
 var parseAndValidateConfigUsingReaderTests = []struct {
-	name   string
-	config string
-	want   *HomelabConfig
+	name              string
+	config            string
+	want              *HomelabConfig
+	wantDockerConfigs containerDockerConfigMap
 }{
 	{
 		name: "Valid extensive config",
@@ -656,6 +660,116 @@ containers:
 				},
 			},
 		},
+		wantDockerConfigs: containerDockerConfigMap{
+			ContainerReference{
+				Group:     "group1",
+				Container: "ct1",
+			}: &containerDockerConfigs{
+				ContainerConfig: &dcontainer.Config{
+					Hostname:   "foobar",
+					Domainname: "somedomain",
+					User:       "$$CURRENT_USER$$:$$CURRENT_GROUP$$",
+					ExposedPorts: nat.PortSet{
+						"53/tcp": struct{}{},
+						"53/udp": struct{}{},
+					},
+					Tty: true,
+					Env: []string{
+						"MY_CONTAINER_ENV_VAR_1=MY_CONTAINER_ENV_VAR_1_VALUE",
+						"MY_CONTAINER_ENV_VAR_2=MY_CONTAINER_ENV_VAR_2_VALUE",
+						"MY_CONTAINER_ENV_VAR_3=",
+						"MY_ENV=MY_ENV_VALUE",
+						"MY_ENV_2=",
+						"MY_ENV_3=SomeHostName.$$HUMAN_FRIENDLY_HOST_NAME$$.SomeDomainName",
+					},
+					Cmd: []string{
+						"foo",
+						"bar",
+						"baz",
+					},
+					Image: "tuxdude/homelab-base:master",
+					Entrypoint: []string{
+						"my-custom-entrypoint",
+						"ep-arg1",
+						"ep-arg2",
+					},
+					Labels: map[string]string{
+						"my.ct1.label.name.1": "my.ct1.label.value.1",
+						"my.ct1.label.name.2": "my.ct1.label.value.2",
+					},
+					StopSignal:  "SIGHUP",
+					StopTimeout: newInt(10),
+				},
+				HostConfig: &dcontainer.HostConfig{
+					Binds: []string{
+						"/abc/def/ghi:/pqr/stu/vwx:ro",
+						"/abc1/def1:/pqr2/stu2/vwx2",
+						"/path/to/my/self/signed/cert/on/host:/path/to/my/self/signed/cert/on/container",
+						"/foo:/bar:ro",
+						"$$CONFIG_DIR$$/generated/config.yml:/data/blocky/config/config.yml:ro",
+						":/tmp/cache",
+					},
+					NetworkMode: "group1-bridge",
+					PortBindings: nat.PortMap{
+						"53/tcp": []nat.PortBinding{
+							{
+								HostIP:   "127.0.0.1",
+								HostPort: "53",
+							},
+						},
+						"53/udp": []nat.PortBinding{
+							{
+								HostIP:   "127.0.0.1",
+								HostPort: "53",
+							},
+						},
+					},
+					RestartPolicy: dcontainer.RestartPolicy{
+						Name: "always",
+					},
+					AutoRemove: true,
+					CapAdd: []string{
+						"SYS_RAWIO",
+						"SYS_ADMIN",
+					},
+					CapDrop: []string{
+						"NET_ADMIN",
+						"SYS_MODULE",
+					},
+					DNS: []string{
+						"1.1.1.1",
+						"1.0.0.1",
+					},
+					DNSOptions: []string{
+						"dns-option-1",
+						"dns-option-2",
+					},
+					DNSSearch: []string{
+						"dns-ct-search-1",
+						"dns-ct-search-2",
+					},
+					GroupAdd: []string{
+						"dialout",
+						"someRandomGroup",
+					},
+					Privileged:     true,
+					ReadonlyRootfs: true,
+					Sysctls: map[string]string{
+						"net.ipv4.conf.all.src_valid_mark": "1",
+						"net.ipv4.ip_forward":              "1",
+					},
+				},
+				NetworkConfig: &dnetwork.NetworkingConfig{
+					EndpointsConfig: map[string]*dnetwork.EndpointSettings{
+						"group1-bridge": {
+							IPAMConfig: &dnetwork.EndpointIPAMConfig{
+								IPv4Address: "172.18.18.11",
+							},
+						},
+					},
+				},
+			},
+		},
 	},
 	{
 		name: "Valid Groups Only config",
@@ -683,6 +797,7 @@ groups:
 				},
 			},
 		},
+		wantDockerConfigs: containerDockerConfigMap{},
 	},
 }
 
@@ -705,14 +820,20 @@ func TestParseConfigUsingReader(t *testing.T) {
 				t.Errorf(
 					"buildDeploymentFromReader()\nTest Case: %q\nFailure: got did not match the want config\nDiff(-want +got): %s", tc.name, diff)
 			}
+
+			if diff := cmp.Diff(tc.wantDockerConfigs, got.containerDockerConfigs); diff != "" {
+				t.Errorf(
+					"buildDeploymentFromReader()\nTest Case: %q\nFailure: docker configs got did not match the want config\nDiff(-want +got): %s", tc.name, diff)
+			}
 		})
 	}
 }
 
 var validParseAndValidateConfigsFromPathTests = []struct {
-	name        string
-	configsPath string
-	want        *HomelabConfig
+	name              string
+	configsPath       string
+	want              *HomelabConfig
+	wantDockerConfigs containerDockerConfigMap
 }{
 	{
 		name:        "Valid multi file config",
@@ -919,6 +1040,103 @@ var validParseAndValidateConfigsFromPathTests = []struct {
 				},
 			},
 		},
+		wantDockerConfigs: containerDockerConfigMap{
+			ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			}: &containerDockerConfigs{
+				ContainerConfig: &dcontainer.Config{
+					Domainname:  "somedomain",
+					Image:       "abc/xyz",
+					StopTimeout: newInt(5),
+				},
+				HostConfig: &dcontainer.HostConfig{
+					NetworkMode: "net1",
+					RestartPolicy: dcontainer.RestartPolicy{
+						Name:              "on-failure",
+						MaximumRetryCount: 5,
+					},
+				},
+				NetworkConfig: &dnetwork.NetworkingConfig{
+					EndpointsConfig: map[string]*dnetwork.EndpointSettings{
+						"net1": {
+							IPAMConfig: &dnetwork.EndpointIPAMConfig{
+								IPv4Address: "172.18.100.11",
+							},
+						},
+					},
+				},
+			},
+			ContainerReference{
+				Group:     "g1",
+				Container: "c2",
+			}: &containerDockerConfigs{
+				ContainerConfig: &dcontainer.Config{
+					Domainname:  "somedomain",
+					Image:       "abc/xyz2",
+					StopTimeout: newInt(5),
+				},
+				HostConfig: &dcontainer.HostConfig{
+					NetworkMode: "net1",
+					RestartPolicy: dcontainer.RestartPolicy{
+						Name:              "on-failure",
+						MaximumRetryCount: 5,
+					},
+				},
+				NetworkConfig: &dnetwork.NetworkingConfig{
+					EndpointsConfig: map[string]*dnetwork.EndpointSettings{
+						"net1": {
+							IPAMConfig: &dnetwork.EndpointIPAMConfig{
+								IPv4Address: "172.18.100.12",
+							},
+						},
+					},
+				},
+			},
+			ContainerReference{
+				Group:     "g2",
+				Container: "c3",
+			}: &containerDockerConfigs{
+				ContainerConfig: &dcontainer.Config{
+					Domainname:  "somedomain",
+					Image:       "abc/xyz3",
+					StopTimeout: newInt(5),
+				},
+				HostConfig: &dcontainer.HostConfig{
+					NetworkMode: "net2",
+					RestartPolicy: dcontainer.RestartPolicy{
+						Name:              "on-failure",
+						MaximumRetryCount: 5,
+					},
+				},
+				NetworkConfig: &dnetwork.NetworkingConfig{
+					EndpointsConfig: map[string]*dnetwork.EndpointSettings{
+						"net2": {
+							IPAMConfig: &dnetwork.EndpointIPAMConfig{
+								IPv4Address: "172.18.101.21",
+							},
+						},
+					},
+				},
+			},
+			ContainerReference{
+				Group:     "g3",
+				Container: "c4",
+			}: &containerDockerConfigs{
+				ContainerConfig: &dcontainer.Config{
+					Domainname:  "somedomain",
+					Image:       "abc/xyz4",
+					StopTimeout: newInt(5),
+				},
+				HostConfig: &dcontainer.HostConfig{
+					NetworkMode: "none",
+					RestartPolicy: dcontainer.RestartPolicy{
+						Name:              "on-failure",
+						MaximumRetryCount: 5,
+					},
+				},
+			},
+		},
 	},
 }
 
@@ -940,6 +1158,11 @@ func TestParseAndValidateConfigsFromPath(t *testing.T) {
 			if diff := cmp.Diff(tc.want, got.config); diff != "" {
 				t.Errorf(
 					"buildDeploymentFromConfigsPath()\nTest Case: %q\nFailure: got did not match the want config\nDiff(-want +got): %s", tc.name, diff)
+			}
+
+			if diff := cmp.Diff(tc.wantDockerConfigs, got.containerDockerConfigs); diff != "" {
+				t.Errorf(
+					"buildDeploymentFromConfigsPath()\nTest Case: %q\nFailure: docker configs got did not match the want config\nDiff(-want +got): %s", tc.name, diff)
 			}
 		})
 	}

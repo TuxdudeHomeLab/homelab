@@ -387,9 +387,9 @@ func validateIPAMConfig(config *IPAMConfig) (networkMap, map[ContainerReference]
 	return networks, containerRefIPs, nil
 }
 
-func validateHostsConfig(hosts []HostConfig, currentHost *hostInfo) (containerReferenceSet, error) {
+func validateHostsConfig(hosts []HostConfig, currentHost *hostInfo) (containerSet, error) {
 	hostNames := stringSet{}
-	allowedContainers := containerReferenceSet{}
+	allowedContainers := containerSet{}
 	for _, h := range hosts {
 		if len(h.Name) == 0 {
 			return nil, fmt.Errorf("host name cannot be empty in the hosts config")
@@ -435,7 +435,7 @@ func validateGroupsConfig(groups []ContainerGroupConfig) (containerGroupMap, err
 	return containerGroups, nil
 }
 
-func validateContainersConfig(containersConfig []ContainerConfig, groups containerGroupMap, globalConfig *GlobalConfig, containerRefIPs map[ContainerReference]networkContainerIPList, allowedContainers containerReferenceSet) error {
+func validateContainersConfig(containersConfig []ContainerConfig, groups containerGroupMap, globalConfig *GlobalConfig, containerRefIPs map[ContainerReference]networkContainerIPList, allowedContainers containerSet) error {
 	for _, ct := range containersConfig {
 		g, ok := groups[ct.Info.Group]
 		if !ok {
