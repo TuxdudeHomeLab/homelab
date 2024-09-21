@@ -20,6 +20,10 @@ import (
 	"github.com/moby/term"
 )
 
+var (
+	fakeDockerClient *dclient.Client
+)
+
 type dockerClient struct {
 	client      *dclient.Client
 	platform    string
@@ -107,8 +111,15 @@ func (c containerState) String() string {
 	}
 }
 
+func dockerAPIClient() (*dclient.Client, error) {
+	if fakeDockerClient != nil {
+		return fakeDockerClient, nil
+	}
+	return dclient.NewClientWithOpts(dclient.FromEnv, dclient.WithAPIVersionNegotiation())
+}
+
 func newDockerClient(platform, arch string) (*dockerClient, error) {
-	client, err := dclient.NewClientWithOpts(dclient.FromEnv, dclient.WithAPIVersionNegotiation())
+	client, err := dockerAPIClient()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create a new docker API client, reason: %w", err)
 	}
