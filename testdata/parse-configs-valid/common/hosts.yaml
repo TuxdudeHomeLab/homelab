@@ -1,5 +1,5 @@
 hosts:
-  - name: host1
+  - name: fakehost
     allowedContainers:
       - group: g1
         container: c1

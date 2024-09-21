@@ -129,7 +129,7 @@ ipam:
           - group: group3
             container: ct7
 hosts:
-  - name: host1
+  - name: fakehost
     allowedContainers:
       - group: group1
         container: ct1
@@ -446,7 +446,7 @@ containers:
 			},
 			Hosts: []HostConfig{
 				{
-					Name: "host1",
+					Name: fakeHostName,
 					AllowedContainers: []ContainerReference{
 						{
 							Group:     "group1",
@@ -950,7 +950,7 @@ var validParseAndValidateConfigsFromPathTests = []struct {
 			},
 			Hosts: []HostConfig{
 				{
-					Name: "host1",
+					Name: fakeHostName,
 					AllowedContainers: []ContainerReference{
 						{
 							Group:     "g1",
