@@ -11,7 +11,7 @@ require (
 	github.com/moby/term v0.5.0
 	github.com/opencontainers/image-spec v1.1.0
 	github.com/spf13/cobra v1.8.1
-	github.com/tuxdude/zzzlog v0.3.1
+	github.com/tuxdude/zzzlog v0.3.2
 	github.com/tuxdude/zzzlogi v0.2.0
 	golang.org/x/sys v0.25.0
 	gopkg.in/yaml.v3 v3.0.1
