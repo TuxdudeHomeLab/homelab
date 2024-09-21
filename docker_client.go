@@ -12,11 +12,11 @@ import (
 	dimage "github.com/docker/docker/api/types/image"
 	dnetwork "github.com/docker/docker/api/types/network"
 	dclient "github.com/docker/docker/client"
-	"github.com/docker/docker/pkg/jsonmessage"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+
 	"golang.org/x/sys/unix"
 
-	// "github.com/docker/docker/pkg/term"
+	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/moby/term"
 )
 
