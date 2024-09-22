@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	dclient "github.com/docker/docker/client"
 	"github.com/tuxdude/zzzlogi"
 )
 
@@ -17,10 +18,12 @@ const (
 )
 
 var (
-	loggerKey = ctxKeyLogger{}
+	loggerKey          = ctxKeyLogger{}
+	dockerAPIClientKey = ctxKeyDockerAPIClient{}
 )
 
 type ctxKeyLogger struct{}
+type ctxKeyDockerAPIClient struct{}
 
 func log(ctx context.Context) zzzlogi.Logger {
 	logger, ok := ctx.Value(loggerKey).(zzzlogi.Logger)
@@ -30,8 +33,19 @@ func log(ctx context.Context) zzzlogi.Logger {
 	return logger
 }
 
+func dockerAPIClientFromContext(ctx context.Context) (*dclient.Client, bool) {
+	client, ok := ctx.Value(dockerAPIClientKey).(*dclient.Client)
+	return client, ok
+}
+
 func withLogger(ctx context.Context, logger zzzlogi.Logger) context.Context {
 	return context.WithValue(ctx, loggerKey, logger)
+}
+
+// This is used purely by tests.
+// nolint:unused
+func withDockerAPIClient(ctx context.Context, client *dclient.Client) context.Context {
+	return context.WithValue(ctx, dockerAPIClientKey, client)
 }
 
 // Returns the JSON formatted string representation of the specified object.

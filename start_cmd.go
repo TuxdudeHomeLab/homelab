@@ -69,7 +69,7 @@ func execStartCmd(ctx context.Context, cmd *cobra.Command, args []string, option
 		return err
 	}
 
-	dockerClient, err := newDockerClient(dep.host.dockerPlatform, dep.host.arch)
+	dockerClient, err := newDockerClient(ctx, dep.host.dockerPlatform, dep.host.arch)
 	if err != nil {
 		return err
 	}
