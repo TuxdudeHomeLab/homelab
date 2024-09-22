@@ -126,7 +126,7 @@ func (c containerState) String() string {
 }
 
 func buildDockerAPIClient(ctx context.Context) (dockerAPIClient, error) {
-	if client, ok := dockerAPIClientFromContext(ctx); ok {
+	if client, found := dockerAPIClientFromContext(ctx); found {
 		return client, nil
 	}
 	return dclient.NewClientWithOpts(dclient.FromEnv, dclient.WithAPIVersionNegotiation())

@@ -21,6 +21,8 @@ var (
 	dockerAPIClientKey = ctxKeyDockerAPIClient{}
 )
 
+type stringSet map[string]struct{}
+
 type ctxKeyLogger struct{}
 type ctxKeyDockerAPIClient struct{}
 

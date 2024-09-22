@@ -32,10 +32,10 @@ func validateConfigEnv(config []ConfigEnv, location string) error {
 		if len(e.Var) == 0 {
 			return fmt.Errorf("empty env var in %s", location)
 		}
-		if envs[e.Var] {
+		if _, found := envs[e.Var]; found {
 			return fmt.Errorf("env var %s specified more than once in %s", e.Var, location)
 		}
-		envs[e.Var] = true
+		envs[e.Var] = struct{}{}
 
 		if len(e.Value) == 0 && len(e.ValueCommand) == 0 {
 			return fmt.Errorf("neither value nor valueCommand specified for env var %s in %s", e.Var, location)
@@ -53,10 +53,10 @@ func validateContainerEnv(config []ContainerEnv, location string) error {
 		if len(e.Var) == 0 {
 			return fmt.Errorf("empty env var in %s", location)
 		}
-		if envs[e.Var] {
+		if _, found := envs[e.Var]; found {
 			return fmt.Errorf("env var %s specified more than once in %s", e.Var, location)
 		}
-		envs[e.Var] = true
+		envs[e.Var] = struct{}{}
 
 		if len(e.Value) == 0 && len(e.ValueCommand) == 0 {
 			return fmt.Errorf("neither value nor valueCommand specified for env var %s in %s", e.Var, location)
@@ -74,10 +74,10 @@ func validateLabelsConfig(config []LabelConfig, location string) error {
 		if len(l.Name) == 0 {
 			return fmt.Errorf("empty label name in %s", location)
 		}
-		if labels[l.Name] {
+		if _, found := labels[l.Name]; found {
 			return fmt.Errorf("label name %s specified more than once in %s", l.Name, location)
 		}
-		labels[l.Name] = true
+		labels[l.Name] = struct{}{}
 
 		if len(l.Value) == 0 {
 			return fmt.Errorf("empty label value for label %s in %s", l.Name, location)
@@ -91,7 +91,7 @@ func validateMountsConfig(config, commonConfig, globalDefs []MountConfig, locati
 	// already have been validated).
 	globalMountDefs := stringSet{}
 	for _, m := range globalDefs {
-		globalMountDefs[m.Name] = true
+		globalMountDefs[m.Name] = struct{}{}
 	}
 
 	// Build a map of the mounts from the commonConfig next which acts
@@ -99,7 +99,7 @@ func validateMountsConfig(config, commonConfig, globalDefs []MountConfig, locati
 	// validated prior and hence we don't validate them here again.
 	mounts := stringSet{}
 	for _, m := range commonConfig {
-		mounts[m.Name] = true
+		mounts[m.Name] = struct{}{}
 	}
 
 	// Finally iterate and validate the mounts in the current level config.
@@ -107,15 +107,15 @@ func validateMountsConfig(config, commonConfig, globalDefs []MountConfig, locati
 		if len(m.Name) == 0 {
 			return fmt.Errorf("mount name cannot be empty in %s", location)
 		}
-		if mounts[m.Name] {
+		if _, found := mounts[m.Name]; found {
 			return fmt.Errorf("mount name %s defined more than once in %s", m.Name, location)
 		}
-		mounts[m.Name] = true
+		mounts[m.Name] = struct{}{}
 
 		if len(m.Type) == 0 && len(m.Src) == 0 && len(m.Dst) == 0 && !m.ReadOnly {
 			// This is a mount with just the name. Match this against the
 			// global mount defs.
-			if !globalMountDefs[m.Name] {
+			if _, found := globalMountDefs[m.Name]; !found {
 				return fmt.Errorf("mount specified by just the name %s not found in defs in %s", m.Name, location)
 			}
 			// No further validation needed for a mount referencing a def.
@@ -174,10 +174,10 @@ func validateSysctlsConfig(sysctls []SysctlConfig, location string) error {
 		if len(s.Key) == 0 {
 			return fmt.Errorf("empty sysctl key in %s", location)
 		}
-		if keys[s.Key] {
+		if _, found := keys[s.Key]; found {
 			return fmt.Errorf("sysctl key %s specified more than once in %s", s.Key, location)
 		}
-		keys[s.Key] = true
+		keys[s.Key] = struct{}{}
 
 		if len(s.Value) == 0 {
 			return fmt.Errorf("empty sysctl value for sysctl %s in %s", s.Key, location)
@@ -258,14 +258,14 @@ func validateIPAMConfig(ctx context.Context, config *IPAMConfig) (networkMap, ma
 		if len(n.Name) == 0 {
 			return nil, nil, fmt.Errorf("network name cannot be empty")
 		}
-		if _, ok := networks[n.Name]; ok {
+		if _, found := networks[n.Name]; found {
 			return nil, nil, fmt.Errorf("network %s defined more than once in the IPAM config", n.Name)
 		}
 
 		if len(n.HostInterfaceName) == 0 {
 			return nil, nil, fmt.Errorf("host interface name of network %s cannot be empty", n.Name)
 		}
-		if hostInterfaces[n.HostInterfaceName] {
+		if _, found := hostInterfaces[n.HostInterfaceName]; found {
 			return nil, nil, fmt.Errorf("host interface name %s of network %s is already used by another network in the IPAM config", n.HostInterfaceName, n.Name)
 		}
 		if n.Priority <= 0 {
@@ -274,7 +274,7 @@ func validateIPAMConfig(ctx context.Context, config *IPAMConfig) (networkMap, ma
 
 		bmn := newBridgeModeNetwork(&n)
 		networks[n.Name] = bmn
-		hostInterfaces[n.HostInterfaceName] = true
+		hostInterfaces[n.HostInterfaceName] = struct{}{}
 		prefix, err := netip.ParsePrefix(n.CIDR)
 		if err != nil {
 			return nil, nil, fmt.Errorf("CIDR %s of network %s is invalid, reason: %w", n.CIDR, n.Name, err)
@@ -339,7 +339,7 @@ func validateIPAMConfig(ctx context.Context, config *IPAMConfig) (networkMap, ma
 		if len(n.Name) == 0 {
 			return nil, nil, fmt.Errorf("network name cannot be empty")
 		}
-		if _, ok := networks[n.Name]; ok {
+		if _, found := networks[n.Name]; found {
 			return nil, nil, fmt.Errorf("network %s defined more than once in the IPAM config", n.Name)
 		}
 		if n.Priority <= 0 {
@@ -395,10 +395,10 @@ func validateHostsConfig(hosts []HostConfig, currentHost *hostInfo) (containerSe
 		if len(h.Name) == 0 {
 			return nil, fmt.Errorf("host name cannot be empty in the hosts config")
 		}
-		if hostNames[h.Name] {
+		if _, found := hostNames[h.Name]; found {
 			return nil, fmt.Errorf("host %s defined more than once in the hosts config", h.Name)
 		}
-		hostNames[h.Name] = true
+		hostNames[h.Name] = struct{}{}
 
 		containers := make(map[ContainerReference]bool)
 		for _, ct := range h.AllowedContainers {
@@ -424,7 +424,7 @@ func validateGroupsConfig(groups []ContainerGroupConfig) (containerGroupMap, err
 		if len(g.Name) == 0 {
 			return nil, fmt.Errorf("group name cannot be empty in the groups config")
 		}
-		if _, ok := containerGroups[g.Name]; ok {
+		if _, found := containerGroups[g.Name]; found {
 			return nil, fmt.Errorf("group %s defined more than once in the groups config", g.Name)
 		}
 		if g.Order < 1 {
@@ -438,11 +438,11 @@ func validateGroupsConfig(groups []ContainerGroupConfig) (containerGroupMap, err
 
 func validateContainersConfig(containersConfig []ContainerConfig, groups containerGroupMap, globalConfig *GlobalConfig, containerRefIPs map[ContainerReference]networkContainerIPList, allowedContainers containerSet) error {
 	for _, ct := range containersConfig {
-		g, ok := groups[ct.Info.Group]
-		if !ok {
+		g, found := groups[ct.Info.Group]
+		if !found {
 			return fmt.Errorf("group definition missing in groups config for the container {Group:%s Container:%s} in the containers config", ct.Info.Group, ct.Info.Container)
 		}
-		if _, ok := g.containers[ct.Info]; ok {
+		if _, found := g.containers[ct.Info]; found {
 			return fmt.Errorf("container {Group:%s Container:%s} defined more than once in the containers config", ct.Info.Group, ct.Info.Container)
 		}
 		g.addContainer(&ct, globalConfig, containerRefIPs[ct.Info], allowedContainers[ct.Info])

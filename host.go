@@ -20,8 +20,6 @@ type hostInfo struct {
 	dockerPlatform        string
 }
 
-type stringSet map[string]bool
-
 const (
 	osLinux   = "linux"
 	archAmd64 = "amd64"

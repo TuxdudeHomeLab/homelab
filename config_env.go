@@ -45,12 +45,12 @@ func (c *configEnv) override(ctx context.Context, override envMap, order []strin
 		res.envKeyOrder = append(res.envKeyOrder, k)
 	}
 	for _, k := range order {
-		newVal, ok := override[k]
-		if !ok {
+		newVal, found := override[k]
+		if !found {
 			log(ctx).Fatalf("Expected key %s not found in override map input", k)
 		}
 		sk := configEnvSearchKey(k)
-		if _, ok := res.env[sk]; !ok {
+		if _, found := res.env[sk]; !found {
 			res.envKeyOrder = append(res.envKeyOrder, k)
 		}
 		res.env[sk] = newVal

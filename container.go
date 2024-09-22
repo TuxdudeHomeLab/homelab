@@ -295,7 +295,7 @@ func (c *container) envVars() []string {
 		envKeys = append(envKeys, e.Var)
 	}
 	for _, e := range c.config.Runtime.Env {
-		if _, ok := env[e.Var]; !ok {
+		if _, found := env[e.Var]; !found {
 			envKeys = append(envKeys, e.Var)
 		}
 		env[e.Var] = e.Value
@@ -364,8 +364,8 @@ func (c *container) bindMounts() []string {
 	// Get all the global container config mounts.
 	// TODO: Do this once for the entire deployment and reuse it.
 	for _, mount := range c.globalConfig.Container.Mounts {
-		val, ok := bm[mount.Name]
-		if ok {
+		val, found := bm[mount.Name]
+		if found {
 			binds[mount.Name] = val
 		} else {
 			binds[mount.Name] = mountConfigToString(&mount)
@@ -375,8 +375,8 @@ func (c *container) bindMounts() []string {
 	// Get all the container specific mount configs and apply
 	// them as overrides for the global.
 	for _, mount := range c.config.Filesystem.Mounts {
-		val, ok := bm[mount.Name]
-		if ok {
+		val, found := bm[mount.Name]
+		if found {
 			binds[mount.Name] = val
 		} else {
 			binds[mount.Name] = mountConfigToString(&mount)
