@@ -11,20 +11,14 @@ import (
 )
 
 var executeHomelabCmdTests = []struct {
-	name    string
-	args    []string
-	preExec func()
-	want    string
+	name string
+	args []string
+	want string
 }{
 	{
 		name: "Homelab Command - Show Version",
 		args: []string{
 			"--version",
-		},
-		preExec: func() {
-			pkgVersion = "my-pkg-version"
-			pkgCommit = "my-pkg-commit"
-			pkgTimestamp = "my-pkg-timestamp"
 		},
 		want: `homelab version my-pkg-version \[Revision: my-pkg-commit @ my-pkg-timestamp\]`,
 	},
@@ -341,14 +335,12 @@ var executeHomelabCmdTests = []struct {
 }
 
 func TestExecHomelabCmd(t *testing.T) {
+	initPkgVersionInfoForTest()
 	for _, test := range executeHomelabCmdTests {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			if tc.preExec != nil {
-				tc.preExec()
-			}
 			_, out, gotErr := execHomelabCmdTest(tc.args...)
 			if gotErr != nil {
 				t.Errorf(
@@ -370,6 +362,12 @@ func TestExecHomelabCmd(t *testing.T) {
 			}
 		})
 	}
+}
+
+func initPkgVersionInfoForTest() {
+	pkgVersion = "my-pkg-version"
+	pkgCommit = "my-pkg-commit"
+	pkgTimestamp = "my-pkg-timestamp"
 }
 
 func execHomelabCmdTest(args ...string) (*cobra.Command, string, error) {
