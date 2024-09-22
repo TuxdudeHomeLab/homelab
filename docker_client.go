@@ -7,6 +7,7 @@ import (
 	"os"
 	"reflect"
 
+	dtypes "github.com/docker/docker/api/types"
 	dcontainer "github.com/docker/docker/api/types/container"
 	dfilters "github.com/docker/docker/api/types/filters"
 	dimage "github.com/docker/docker/api/types/image"
@@ -21,10 +22,28 @@ import (
 )
 
 type dockerClient struct {
-	client      *dclient.Client
+	client      dockerAPIClient
 	platform    string
 	ociPlatform ocispec.Platform
 	debug       bool
+}
+
+type dockerAPIClient interface {
+	Close() error
+
+	ContainerCreate(ctx context.Context, config *dcontainer.Config, hostConfig *dcontainer.HostConfig, networkingConfig *dnetwork.NetworkingConfig, platform *ocispec.Platform, containerName string) (dcontainer.CreateResponse, error)
+	ContainerInspect(ctx context.Context, containerID string) (dtypes.ContainerJSON, error)
+	ContainerKill(ctx context.Context, containerID, signal string) error
+	ContainerRemove(ctx context.Context, containerID string, options dcontainer.RemoveOptions) error
+	ContainerStart(ctx context.Context, containerID string, options dcontainer.StartOptions) error
+	ContainerStop(ctx context.Context, containerID string, options dcontainer.StopOptions) error
+
+	ImageList(ctx context.Context, options dimage.ListOptions) ([]dimage.Summary, error)
+	ImagePull(ctx context.Context, refStr string, options dimage.PullOptions) (io.ReadCloser, error)
+
+	NetworkConnect(ctx context.Context, networkID, containerID string, config *dnetwork.EndpointSettings) error
+	NetworkDisconnect(ctx context.Context, networkID, containerID string, force bool) error
+	NetworkList(ctx context.Context, options dnetwork.ListOptions) ([]dnetwork.Summary, error)
 }
 
 const (
@@ -106,7 +125,7 @@ func (c containerState) String() string {
 	}
 }
 
-func dockerAPIClient(ctx context.Context) (*dclient.Client, error) {
+func buildDockerAPIClient(ctx context.Context) (dockerAPIClient, error) {
 	if client, ok := dockerAPIClientFromContext(ctx); ok {
 		return client, nil
 	}
@@ -114,7 +133,7 @@ func dockerAPIClient(ctx context.Context) (*dclient.Client, error) {
 }
 
 func newDockerClient(ctx context.Context, platform, arch string) (*dockerClient, error) {
-	client, err := dockerAPIClient(ctx)
+	client, err := buildDockerAPIClient(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create a new docker API client, reason: %w", err)
 	}

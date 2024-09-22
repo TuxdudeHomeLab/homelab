@@ -7,7 +7,6 @@ import (
 	"os"
 	"strings"
 
-	dclient "github.com/docker/docker/client"
 	"github.com/tuxdude/zzzlogi"
 )
 
@@ -33,8 +32,8 @@ func log(ctx context.Context) zzzlogi.Logger {
 	return logger
 }
 
-func dockerAPIClientFromContext(ctx context.Context) (*dclient.Client, bool) {
-	client, ok := ctx.Value(dockerAPIClientKey).(*dclient.Client)
+func dockerAPIClientFromContext(ctx context.Context) (dockerAPIClient, bool) {
+	client, ok := ctx.Value(dockerAPIClientKey).(dockerAPIClient)
 	return client, ok
 }
 
@@ -44,7 +43,7 @@ func withLogger(ctx context.Context, logger zzzlogi.Logger) context.Context {
 
 // This is used purely by tests.
 // nolint:unused
-func withDockerAPIClient(ctx context.Context, client *dclient.Client) context.Context {
+func withDockerAPIClient(ctx context.Context, client dockerAPIClient) context.Context {
 	return context.WithValue(ctx, dockerAPIClientKey, client)
 }
 
