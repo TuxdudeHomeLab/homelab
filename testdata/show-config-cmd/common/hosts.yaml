@@ -1,0 +1,6 @@
+hosts:
+  - name: fakehost
+    allowedContainers:
+      - group: g1
+        container: c1
+  - name: host2
