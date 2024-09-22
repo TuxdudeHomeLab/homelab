@@ -1,6 +1,8 @@
 package main
 
-func queryContainers(dep *deployment, allGroups bool, group, container string) containerList {
+import "context"
+
+func queryContainers(ctx context.Context, dep *deployment, allGroups bool, group, container string) containerList {
 	if allGroups {
 		return containerMapToList(dep.queryAllContainers())
 	} else if group != "" && container == "" {
@@ -12,6 +14,6 @@ func queryContainers(dep *deployment, allGroups bool, group, container string) c
 		}
 		return nil
 	}
-	log.Fatalf("Invalid scenario, possibly indicating a bug in the code")
+	log(ctx).Fatalf("Invalid scenario, possibly indicating a bug in the code")
 	return nil
 }

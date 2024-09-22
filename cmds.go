@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -25,7 +26,7 @@ type globalCmdOptions struct {
 	configsDir string
 }
 
-func buildHomelabCmd(options *globalCmdOptions) *cobra.Command {
+func buildHomelabCmd(ctx context.Context, options *globalCmdOptions) *cobra.Command {
 	h := &cobra.Command{
 		Use:           homelabCmdStr,
 		Version:       fmt.Sprintf("%s [Revision: %s @ %s]", pkgVersion, pkgCommit, pkgTimestamp),
@@ -44,12 +45,12 @@ The configuration is managed using a yaml file. The configuration specifies the 
 	h.PersistentFlags().StringVar(
 		&options.cliConfig, cliConfigFlagStr, "", "The path to the Homelab CLI config")
 	if h.MarkPersistentFlagFilename(cliConfigFlagStr) != nil {
-		log.Fatalf("failed to mark --%s flag as filename flag", cliConfigFlagStr)
+		log(ctx).Fatalf("failed to mark --%s flag as filename flag", cliConfigFlagStr)
 	}
 	h.PersistentFlags().StringVar(
 		&options.configsDir, configsDirFlagStr, "", "The path to the directory containing the homelab configs")
 	if h.MarkPersistentFlagDirname(configsDirFlagStr) != nil {
-		log.Fatalf("failed to mark --%s flag as dirname flag", configsDirFlagStr)
+		log(ctx).Fatalf("failed to mark --%s flag as dirname flag", configsDirFlagStr)
 	}
 	h.MarkFlagsMutuallyExclusive(cliConfigFlagStr, configsDirFlagStr)
 
@@ -67,15 +68,15 @@ The configuration is managed using a yaml file. The configuration specifies the 
 	return h
 }
 
-func initHomelabCmd() *cobra.Command {
+func initHomelabCmd(ctx context.Context) *cobra.Command {
 	globalOptions := globalCmdOptions{}
-	homelabCmd := buildHomelabCmd(&globalOptions)
-	homelabCmd.AddCommand(buildShowConfigCmd(&globalOptions))
-	homelabCmd.AddCommand(buildStartCmd(&globalOptions))
+	homelabCmd := buildHomelabCmd(ctx, &globalOptions)
+	homelabCmd.AddCommand(buildShowConfigCmd(ctx, &globalOptions))
+	homelabCmd.AddCommand(buildStartCmd(ctx, &globalOptions))
 	return homelabCmd
 }
 
-func execHomelabCmd() error {
-	homelab := initHomelabCmd()
+func execHomelabCmd(ctx context.Context) error {
+	homelab := initHomelabCmd(ctx)
 	return homelab.Execute()
 }

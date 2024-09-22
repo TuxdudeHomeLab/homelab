@@ -1,16 +1,18 @@
 package main
 
-func homelabConfigsPath(cliConfigFlag string, configsDirFlag string) (string, error) {
+import "context"
+
+func homelabConfigsPath(ctx context.Context, cliConfigFlag string, configsDirFlag string) (string, error) {
 	// Use the flag from the command line if present.
 	if len(configsDirFlag) > 0 {
-		log.Debugf("Using Homelab configs path from command line flag: %s", configsDirFlag)
+		log(ctx).Debugf("Using Homelab configs path from command line flag: %s", configsDirFlag)
 		return configsDirFlag, nil
 	}
-	path, err := configsPath(cliConfigFlag)
+	path, err := configsPath(ctx, cliConfigFlag)
 	if err != nil {
 		return "", err
 	}
 
-	log.Debugf("Using Homelab configs path from CLI config: %s", path)
+	log(ctx).Debugf("Using Homelab configs path from CLI config: %s", path)
 	return path, nil
 }

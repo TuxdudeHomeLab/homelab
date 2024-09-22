@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/netip"
 	"sort"
@@ -247,7 +248,7 @@ func validateContainerRestartPolicy(config *ContainerRestartPolicyConfig, locati
 	return nil
 }
 
-func validateIPAMConfig(config *IPAMConfig) (networkMap, map[ContainerReference]networkContainerIPList, error) {
+func validateIPAMConfig(ctx context.Context, config *IPAMConfig) (networkMap, map[ContainerReference]networkContainerIPList, error) {
 	networks := networkMap{}
 	hostInterfaces := stringSet{}
 	bridgeModeNetworks := config.Networks.BridgeModeNetworks
@@ -368,16 +369,16 @@ func validateIPAMConfig(config *IPAMConfig) (networkMap, map[ContainerReference]
 			n2 := ips[j].network
 
 			if n1.mode != n2.mode {
-				log.Fatalf("Container %s has networks of different types which is unsupported", ct)
+				log(ctx).Fatalf("Container %s has networks of different types which is unsupported", ct)
 			}
 			if n1.mode == networkModeBridge {
 				if n1.bridgeModeConfig.Priority == n2.bridgeModeConfig.Priority {
-					log.Fatalf("Container %s is connected to two bridge mode networks of same priority %d which is unsupported", ct, n1.bridgeModeConfig.Priority)
+					log(ctx).Fatalf("Container %s is connected to two bridge mode networks of same priority %d which is unsupported", ct, n1.bridgeModeConfig.Priority)
 				}
 				return n1.bridgeModeConfig.Priority < n2.bridgeModeConfig.Priority
 			} else {
 				if n1.containerModeConfig.Priority == n2.containerModeConfig.Priority {
-					log.Fatalf("Container %s is connected to two container mode networks of same priority %d which is unsupported", ct, n1.containerModeConfig.Priority)
+					log(ctx).Fatalf("Container %s is connected to two container mode networks of same priority %d which is unsupported", ct, n1.containerModeConfig.Priority)
 				}
 				return n1.containerModeConfig.Priority < n2.containerModeConfig.Priority
 			}

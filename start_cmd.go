@@ -18,7 +18,7 @@ type startCmdOptions struct {
 	container string
 }
 
-func buildStartCmd(globalOptions *globalCmdOptions) *cobra.Command {
+func buildStartCmd(ctx context.Context, globalOptions *globalCmdOptions) *cobra.Command {
 	options := startCmdOptions{}
 
 	s := &cobra.Command{
@@ -40,7 +40,7 @@ func buildStartCmd(globalOptions *globalCmdOptions) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
 			cmd.SilenceErrors = true
-			err := execStartCmd(cmd, args, &options, globalOptions)
+			err := execStartCmd(ctx, cmd, args, &options, globalOptions)
 			if err != nil {
 				return newHomelabRuntimeError(err)
 			}
@@ -58,13 +58,13 @@ func buildStartCmd(globalOptions *globalCmdOptions) *cobra.Command {
 	return s
 }
 
-func execStartCmd(cmd *cobra.Command, args []string, options *startCmdOptions, globalOptions *globalCmdOptions) error {
-	configsPath, err := homelabConfigsPath(globalOptions.cliConfig, globalOptions.configsDir)
+func execStartCmd(ctx context.Context, cmd *cobra.Command, args []string, options *startCmdOptions, globalOptions *globalCmdOptions) error {
+	configsPath, err := homelabConfigsPath(ctx, globalOptions.cliConfig, globalOptions.configsDir)
 	if err != nil {
 		return err
 	}
 
-	dep, err := buildDeployment(configsPath)
+	dep, err := buildDeployment(ctx, configsPath)
 	if err != nil {
 		return err
 	}
@@ -75,14 +75,12 @@ func execStartCmd(cmd *cobra.Command, args []string, options *startCmdOptions, g
 	}
 	defer dockerClient.close()
 
-	res := queryContainers(dep, options.allGroups, options.group, options.container)
-	log.Debugf("start command - Starting containers: ")
+	res := queryContainers(ctx, dep, options.allGroups, options.group, options.container)
+	log(ctx).Debugf("start command - Starting containers: ")
 	for _, c := range res {
-		log.Debugf("%s", c.name())
+		log(ctx).Debugf("%s", c.name())
 	}
-	log.DebugEmpty()
-
-	ctx := context.Background()
+	log(ctx).DebugEmpty()
 
 	var errList []error
 	for _, c := range res {

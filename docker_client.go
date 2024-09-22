@@ -106,8 +106,7 @@ func (c containerState) String() string {
 	case containerStateDead:
 		return "Dead"
 	default:
-		log.Fatalf("Invalid scenario, possibly indicating a bug in the code")
-		return "invalid-container-state"
+		panic("Invalid scenario in containerState stringer, possibly indicating a bug in the code")
 	}
 }
 
@@ -147,9 +146,9 @@ func (d *dockerClient) pullImage(ctx context.Context, imageName string) error {
 	// Perform the actual image pull.
 	if showPullProgress {
 		if !avail {
-			log.Infof("Pulling image: %s", imageName)
+			log(ctx).Infof("Pulling image: %s", imageName)
 		} else {
-			log.Debugf("Pulling image: %s", imageName)
+			log(ctx).Debugf("Pulling image: %s", imageName)
 		}
 		termFd, isTerm := term.GetFdInfo(os.Stdout)
 		err = jsonmessage.DisplayJSONMessagesStream(progress, os.Stdout, termFd, isTerm, nil)
@@ -162,7 +161,7 @@ func (d *dockerClient) pullImage(ctx context.Context, imageName string) error {
 
 	// If pull progress was already shown, no need to show the updates again.
 	if showPullProgress {
-		log.Debugf("Pulled image successfully: %s", imageName)
+		log(ctx).Debugf("Pulled image successfully: %s", imageName)
 		return nil
 	}
 
@@ -170,10 +169,10 @@ func (d *dockerClient) pullImage(ctx context.Context, imageName string) error {
 	// of the image.
 	avail, newId := d.queryLocalImage(ctx, imageName)
 	if !avail {
-		log.Fatalf("Image is expected to be available after pull, but is unavailable possibly indicating a bug or system failure!")
+		log(ctx).Fatalf("Image is expected to be available after pull, but is unavailable possibly indicating a bug or system failure!")
 	}
 	if newId != id {
-		log.Infof("Pulled newer version of image %s: %s", imageName, newId)
+		log(ctx).Infof("Pulled newer version of image %s: %s", imageName, newId)
 	}
 	return nil
 }
@@ -199,65 +198,65 @@ func (d *dockerClient) queryLocalImage(ctx context.Context, imageName string) (b
 }
 
 func (d *dockerClient) createContainer(ctx context.Context, containerName string, cConfig *dcontainer.Config, hConfig *dcontainer.HostConfig, nConfig *dnetwork.NetworkingConfig) error {
-	log.Debugf("Creating container %s ...", containerName)
+	log(ctx).Debugf("Creating container %s ...", containerName)
 	resp, err := d.client.ContainerCreate(ctx, cConfig, hConfig, nConfig, &d.ociPlatform, containerName)
 	if err != nil {
-		log.Errorf("err: %s", reflect.TypeOf(err))
+		log(ctx).Errorf("err: %s", reflect.TypeOf(err))
 		return fmt.Errorf("failed to create the container, reason: %w", err)
 	}
 
-	log.Debugf("Container %s created successfully - %s", containerName, resp.ID)
+	log(ctx).Debugf("Container %s created successfully - %s", containerName, resp.ID)
 	if len(resp.Warnings) > 0 {
-		log.Warnf("Warnings encountered while creating the container %s\n%s", containerName, prettyPrintJSON(resp.Warnings))
+		log(ctx).Warnf("Warnings encountered while creating the container %s\n%s", containerName, prettyPrintJSON(resp.Warnings))
 	}
 	return nil
 }
 
 func (d *dockerClient) startContainer(ctx context.Context, containerName string) error {
-	log.Debugf("Starting container %s ...", containerName)
+	log(ctx).Debugf("Starting container %s ...", containerName)
 	err := d.client.ContainerStart(ctx, containerName, dcontainer.StartOptions{})
 	if err != nil {
-		log.Errorf("err: %s", reflect.TypeOf(err))
+		log(ctx).Errorf("err: %s", reflect.TypeOf(err))
 		return fmt.Errorf("failed to start the container, reason: %w", err)
 	}
 
-	log.Debugf("Container %s started successfully", containerName)
+	log(ctx).Debugf("Container %s started successfully", containerName)
 	return nil
 }
 
 func (d *dockerClient) stopContainer(ctx context.Context, containerName string) error {
-	log.Debugf("Stopping container %s ...", containerName)
+	log(ctx).Debugf("Stopping container %s ...", containerName)
 	err := d.client.ContainerStop(ctx, containerName, dcontainer.StopOptions{})
 	if err != nil {
-		log.Errorf("err: %s", reflect.TypeOf(err))
+		log(ctx).Errorf("err: %s", reflect.TypeOf(err))
 		return fmt.Errorf("failed to stop the container, reason: %w", err)
 	}
 
-	log.Debugf("Container %s stopped successfully", containerName)
+	log(ctx).Debugf("Container %s stopped successfully", containerName)
 	return nil
 }
 
 func (d *dockerClient) killContainer(ctx context.Context, containerName string) error {
-	log.Debugf("Killing container %s ...", containerName)
+	log(ctx).Debugf("Killing container %s ...", containerName)
 	err := d.client.ContainerKill(ctx, containerName, unix.SignalName(unix.SIGKILL))
 	if err != nil {
-		log.Errorf("err: %s", reflect.TypeOf(err))
+		log(ctx).Errorf("err: %s", reflect.TypeOf(err))
 		return fmt.Errorf("failed to kill the container, reason: %w", err)
 	}
 
-	log.Debugf("Container %s killed successfully", containerName)
+	log(ctx).Debugf("Container %s killed successfully", containerName)
 	return nil
 }
 
 func (d *dockerClient) removeContainer(ctx context.Context, containerName string) error {
-	log.Debugf("Removing container %s ...", containerName)
+	log(ctx).Debugf("Removing container %s ...", containerName)
 	err := d.client.ContainerRemove(ctx, containerName, dcontainer.RemoveOptions{Force: false})
 	if err != nil {
-		log.Errorf("err: %s", reflect.TypeOf(err))
+		log(ctx).Errorf("err: %s", reflect.TypeOf(err))
 		return fmt.Errorf("failed to remove the container, reason: %w", err)
 	}
 
-	log.Debugf("Container %s removed successfully", containerName)
+	log(ctx).Debugf("Container %s removed successfully", containerName)
 	return nil
 }
 
@@ -297,32 +296,32 @@ func (d *dockerClient) networkExists(ctx context.Context, networkName string) bo
 }
 
 func (d *dockerClient) connectContainerToBridgeModeNetwork(ctx context.Context, containerName, networkName, ip string) error {
-	log.Debugf("Connecting container %s to network %s with IP %s ...", containerName, networkName, ip)
+	log(ctx).Debugf("Connecting container %s to network %s with IP %s ...", containerName, networkName, ip)
 	err := d.client.NetworkConnect(ctx, networkName, containerName, &dnetwork.EndpointSettings{
 		IPAMConfig: &dnetwork.EndpointIPAMConfig{
 			IPv4Address: ip,
 		},
 	})
 	if err != nil {
-		log.Errorf("err: %s", reflect.TypeOf(err))
+		log(ctx).Errorf("err: %s", reflect.TypeOf(err))
 		return fmt.Errorf("failed to connect container %s to network %s, reason: %w", containerName, networkName, err)
 	}
 
-	log.Debugf("Container %s connected to network %s successfully", containerName, networkName)
+	log(ctx).Debugf("Container %s connected to network %s successfully", containerName, networkName)
 	return nil
 }
 
 // TODO: Remove this after this function is used.
 // nolint (unused)
 func (d *dockerClient) disconnectContainerFromNetwork(ctx context.Context, containerName, networkName string) error {
-	log.Debugf("Disconnecting container %s from network %s ...", containerName, networkName)
+	log(ctx).Debugf("Disconnecting container %s from network %s ...", containerName, networkName)
 	err := d.client.NetworkDisconnect(ctx, networkName, containerName, false)
 	if err != nil {
-		log.Errorf("err: %s", reflect.TypeOf(err))
+		log(ctx).Errorf("err: %s", reflect.TypeOf(err))
 		return fmt.Errorf("failed to disconnect container %s from network %s, reason: %w", containerName, networkName, err)
 	}
 
-	log.Debugf("Container %s disconnected from network %s successfully", containerName, networkName)
+	log(ctx).Debugf("Container %s disconnected from network %s successfully", containerName, networkName)
 	return nil
 }
 

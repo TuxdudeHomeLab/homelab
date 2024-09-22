@@ -1,10 +1,13 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/tuxdude/zzzlogi"
 )
 
 const (
@@ -12,6 +15,24 @@ const (
 	logLevelEnvDebug = "debug"
 	logLevelEnvTrace = "trace"
 )
+
+var (
+	loggerKey = ctxKeyLogger{}
+)
+
+type ctxKeyLogger struct{}
+
+func log(ctx context.Context) zzzlogi.Logger {
+	logger, ok := ctx.Value(loggerKey).(zzzlogi.Logger)
+	if !ok {
+		panic("Unable to retriever logger from context")
+	}
+	return logger
+}
+
+func withLogger(ctx context.Context, logger zzzlogi.Logger) context.Context {
+	return context.WithValue(ctx, loggerKey, logger)
+}
 
 // Returns the JSON formatted string representation of the specified object.
 func prettyPrintJSON(x interface{}) string {
@@ -41,17 +62,17 @@ func stringifyMap[K comparable, V any](m map[K]V) string {
 	return sb.String()
 }
 
-func logToErrorAndReturn(format string, args ...interface{}) error {
-	log.Errorf(format, args...)
-	log.ErrorEmpty()
+func logToErrorAndReturn(ctx context.Context, format string, args ...interface{}) error {
+	log(ctx).Errorf(format, args...)
+	log(ctx).ErrorEmpty()
 	return fmt.Errorf(format, args...)
 }
 
 // TODO: Remove this after this function is used.
 // nolint (unused)
-func logToWarnAndReturn(format string, args ...interface{}) error {
-	log.Warnf(format, args...)
-	log.WarnEmpty()
+func logToWarnAndReturn(ctx context.Context, format string, args ...interface{}) error {
+	log(ctx).Warnf(format, args...)
+	log(ctx).WarnEmpty()
 	return fmt.Errorf(format, args...)
 }
 

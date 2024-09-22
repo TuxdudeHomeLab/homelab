@@ -808,7 +808,7 @@ func TestParseConfigUsingReader(t *testing.T) {
 			t.Parallel()
 
 			input := strings.NewReader(tc.config)
-			got, gotErr := buildDeploymentFromReader(input, fakeHostInfo)
+			got, gotErr := buildDeploymentFromReader(testContext(), input, fakeHostInfo)
 			if gotErr != nil {
 				t.Errorf(
 					"buildDeploymentFromReader()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v",
@@ -1147,7 +1147,7 @@ func TestParseAndValidateConfigsFromPath(t *testing.T) {
 			t.Parallel()
 
 			p := fmt.Sprintf("%s/testdata/%s", pwd(), tc.configsPath)
-			got, gotErr := buildDeploymentFromConfigsPath(p, fakeHostInfo)
+			got, gotErr := buildDeploymentFromConfigsPath(testContext(), p, fakeHostInfo)
 			if gotErr != nil {
 				t.Errorf(
 					"buildDeploymentFromConfigsPath()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v",
@@ -1221,7 +1221,7 @@ func TestParseConfigsFromPathErrors(t *testing.T) {
 				p = fmt.Sprintf("%s/testdata/%s", pwd(), tc.configsPath)
 			}
 			c := HomelabConfig{}
-			gotErr := c.parseConfigs(p)
+			gotErr := c.parseConfigs(testContext(), p)
 			if gotErr == nil {
 				t.Errorf(
 					"HomelabConfig.parseConfigs()\nTest Case: %q\nFailure: gotErr == nil\nReason: want = %q",
@@ -1293,7 +1293,7 @@ func TestValidateConfig(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, gotErr := buildDeploymentFromConfig(&tc.config, fakeHostInfo)
+			_, gotErr := buildDeploymentFromConfig(testContext(), &tc.config, fakeHostInfo)
 			if gotErr != nil {
 				t.Errorf(
 					"buildDeploymentFromConfig()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v",
@@ -4497,7 +4497,7 @@ func TestValidateConfigErrors(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, gotErr := buildDeploymentFromConfig(&tc.config, fakeHostInfo)
+			_, gotErr := buildDeploymentFromConfig(testContext(), &tc.config, fakeHostInfo)
 			if gotErr == nil {
 				t.Errorf(
 					"HomelabConfig.validate()\nTest Case: %q\nFailure: gotErr == nil\nReason: want = %q",

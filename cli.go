@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -14,10 +15,10 @@ type CLIConfig struct {
 	} `yaml:"homelab"`
 }
 
-func cliConfigPath(cliConfigFlag string) (string, error) {
+func cliConfigPath(ctx context.Context, cliConfigFlag string) (string, error) {
 	// Use the flag from the command line if present.
 	if len(cliConfigFlag) > 0 {
-		log.Debugf("Using Homelab CLI config path from command line flag: %s", cliConfigFlag)
+		log(ctx).Debugf("Using Homelab CLI config path from command line flag: %s", cliConfigFlag)
 		return cliConfigFlag, nil
 	}
 	// Fall back to the default path - "~/.homelab/config.yaml".
@@ -29,12 +30,12 @@ func cliConfigPath(cliConfigFlag string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to determine absolute path of the homelab CLI config, reason: %w", err)
 	}
-	log.Debugf("Using default Homelab CLI config path: %s", path)
+	log(ctx).Debugf("Using default Homelab CLI config path: %s", path)
 	return path, nil
 }
 
-func parseCLIConfig(cliConfigFlag string) (*CLIConfig, error) {
-	path, err := cliConfigPath(cliConfigFlag)
+func parseCLIConfig(ctx context.Context, cliConfigFlag string) (*CLIConfig, error) {
+	path, err := cliConfigPath(ctx, cliConfigFlag)
 	if err != nil {
 		return nil, err
 	}
@@ -53,12 +54,12 @@ func parseCLIConfig(cliConfigFlag string) (*CLIConfig, error) {
 		return nil, fmt.Errorf("failed to parse homelab CLI config, reason: %w", err)
 	}
 
-	log.Tracef("Homelab CLI Config:\n%v\n", prettyPrintJSON(config))
+	log(ctx).Tracef("Homelab CLI Config:\n%v\n", prettyPrintJSON(config))
 	return &config, nil
 }
 
-func configsPath(cliConfigFlag string) (string, error) {
-	config, err := parseCLIConfig(cliConfigFlag)
+func configsPath(ctx context.Context, cliConfigFlag string) (string, error) {
+	config, err := parseCLIConfig(ctx, cliConfigFlag)
 	if err != nil {
 		return "", err
 	}

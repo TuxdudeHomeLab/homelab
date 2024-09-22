@@ -42,15 +42,15 @@ func (n *network) create(ctx context.Context, docker *dockerClient) error {
 	// exactly the same properties if we choose to reuse the existing
 	// network, and display a warning when they differ.
 	if !docker.networkExists(ctx, n.name()) {
-		log.Debugf("Creating network %s ...", n.name())
+		log(ctx).Debugf("Creating network %s ...", n.name())
 		err := docker.createNetwork(ctx, n)
 		if err != nil {
 			return err
 		}
-		log.Infof("Created network %s", n.name())
-		log.InfoEmpty()
+		log(ctx).Infof("Created network %s", n.name())
+		log(ctx).InfoEmpty()
 	} else {
-		log.Debugf("Not re-creating existing network %s", n.name())
+		log(ctx).Debugf("Not re-creating existing network %s", n.name())
 	}
 	return nil
 }
@@ -83,8 +83,7 @@ func (n *network) name() string {
 	} else if n.mode == networkModeContainer {
 		return n.containerModeConfig.Name
 	} else {
-		log.Fatalf("unknown network, possibly indicating a bug in the code!")
-		return "{Network Unknown}"
+		panic("unknown network mode, possibly indicating a bug in the code!")
 	}
 }
 
@@ -94,8 +93,7 @@ func (n *network) String() string {
 	} else if n.mode == networkModeContainer {
 		return fmt.Sprintf("{Network (Container) Name: %s}", n.name())
 	} else {
-		log.Fatalf("unknown network, possibly indicating a bug in the code!")
-		return "{Network Unknown}"
+		panic("unknown network mode, possibly indicating a bug in the code!")
 	}
 }
 

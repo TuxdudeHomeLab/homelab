@@ -3,6 +3,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"os"
 
@@ -15,7 +16,6 @@ const (
 )
 
 var (
-	log = buildLogger()
 	// The package information will be populated by the build system.
 	pkgVersion   = "unset"
 	pkgCommit    = "unset"
@@ -38,14 +38,16 @@ func buildLogger() zzzlogi.Logger {
 }
 
 func run() int {
-	err := execHomelabCmd()
+	logger := buildLogger()
+	ctx := withLogger(context.Background(), logger)
+	err := execHomelabCmd(ctx)
 	if err != nil {
 		// Only log homelab runtime errors. Other errors are from cobra flag
 		// and command parsing. These errors are displayed already by cobra
 		// along with the usage.
 		hre := &homelabRuntimeError{}
 		if errors.As(err, &hre) {
-			log.Errorf("%s", hre)
+			logger.Errorf("%s", hre)
 		}
 		return 1
 	}

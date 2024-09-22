@@ -1,12 +1,16 @@
 package main
 
-import "github.com/spf13/cobra"
+import (
+	"context"
+
+	"github.com/spf13/cobra"
+)
 
 const (
 	showConfigCmdStr = "show-config"
 )
 
-func buildShowConfigCmd(globalOptions *globalCmdOptions) *cobra.Command {
+func buildShowConfigCmd(ctx context.Context, globalOptions *globalCmdOptions) *cobra.Command {
 	return &cobra.Command{
 		Use:     showConfigCmdStr,
 		GroupID: configCmdGroupID,
@@ -15,7 +19,7 @@ func buildShowConfigCmd(globalOptions *globalCmdOptions) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
 			cmd.SilenceErrors = true
-			err := execShowConfigCmd(cmd, args, globalOptions)
+			err := execShowConfigCmd(ctx, cmd, args, globalOptions)
 			if err != nil {
 				return newHomelabRuntimeError(err)
 			}
@@ -24,18 +28,18 @@ func buildShowConfigCmd(globalOptions *globalCmdOptions) *cobra.Command {
 	}
 }
 
-func execShowConfigCmd(cmd *cobra.Command, args []string, globalOptions *globalCmdOptions) error {
-	configsPath, err := homelabConfigsPath(globalOptions.cliConfig, globalOptions.configsDir)
+func execShowConfigCmd(ctx context.Context, cmd *cobra.Command, args []string, globalOptions *globalCmdOptions) error {
+	configsPath, err := homelabConfigsPath(ctx, globalOptions.cliConfig, globalOptions.configsDir)
 	if err != nil {
 		return err
 	}
 
 	config := HomelabConfig{}
-	err = config.parseConfigs(configsPath)
+	err = config.parseConfigs(ctx, configsPath)
 	if err != nil {
 		return err
 	}
 
-	log.Infof("Homelab config:\n%s", prettyPrintJSON(config))
+	log(ctx).Infof("Homelab config:\n%s", prettyPrintJSON(config))
 	return nil
 }

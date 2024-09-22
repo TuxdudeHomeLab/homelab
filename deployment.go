@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io"
 )
@@ -14,29 +15,29 @@ type deployment struct {
 	containerDockerConfigs containerDockerConfigMap
 }
 
-func buildDeployment(configsPath string) (*deployment, error) {
-	return buildDeploymentFromConfigsPath(configsPath, newHostInfo())
+func buildDeployment(ctx context.Context, configsPath string) (*deployment, error) {
+	return buildDeploymentFromConfigsPath(ctx, configsPath, newHostInfo(ctx))
 }
 
-func buildDeploymentFromConfigsPath(configsPath string, host *hostInfo) (*deployment, error) {
+func buildDeploymentFromConfigsPath(ctx context.Context, configsPath string, host *hostInfo) (*deployment, error) {
 	config := HomelabConfig{}
-	err := config.parseConfigs(configsPath)
+	err := config.parseConfigs(ctx, configsPath)
 	if err != nil {
 		return nil, err
 	}
-	return buildDeploymentFromConfig(&config, host)
+	return buildDeploymentFromConfig(ctx, &config, host)
 }
 
-func buildDeploymentFromReader(reader io.Reader, host *hostInfo) (*deployment, error) {
+func buildDeploymentFromReader(ctx context.Context, reader io.Reader, host *hostInfo) (*deployment, error) {
 	config := HomelabConfig{}
-	err := config.parse(reader)
+	err := config.parse(ctx, reader)
 	if err != nil {
 		return nil, err
 	}
-	return buildDeploymentFromConfig(&config, host)
+	return buildDeploymentFromConfig(ctx, &config, host)
 }
 
-func buildDeploymentFromConfig(config *HomelabConfig, host *hostInfo) (*deployment, error) {
+func buildDeploymentFromConfig(ctx context.Context, config *HomelabConfig, host *hostInfo) (*deployment, error) {
 	d := deployment{
 		config:                 config,
 		host:                   host,
@@ -57,7 +58,7 @@ func buildDeploymentFromConfig(config *HomelabConfig, host *hostInfo) (*deployme
 	// First build the networks as it will be looked up while building
 	// the container groups and containers within.
 	var containerRefIPs map[ContainerReference]networkContainerIPList
-	d.networks, containerRefIPs, err = validateIPAMConfig(&config.IPAM)
+	d.networks, containerRefIPs, err = validateIPAMConfig(ctx, &config.IPAM)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +77,7 @@ func buildDeploymentFromConfig(config *HomelabConfig, host *hostInfo) (*deployme
 		for _, ct := range g.containers {
 			cConfig, hConfig, nConfig, err := ct.generateDockerConfigs()
 			if err != nil {
-				log.Fatalf("Error generating docker configs for container %s, reason: %v", ct, err)
+				log(ctx).Fatalf("Error generating docker configs for container %s, reason: %v", ct, err)
 			}
 			cdc := containerDockerConfigs{
 				ContainerConfig: cConfig,

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"io/fs"
@@ -261,7 +262,7 @@ type ContainerRestartPolicyConfig struct {
 	MaxRetryCount int    `yaml:"maxRetryCount,omitempty"`
 }
 
-func mergedConfigReader(path string) (io.Reader, error) {
+func mergedConfigReader(ctx context.Context, path string) (io.Reader, error) {
 	var result []byte
 	err := filepath.WalkDir(path, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -274,7 +275,7 @@ func mergedConfigReader(path string) (io.Reader, error) {
 			return nil
 		}
 
-		log.Debugf("Picked up homelab config: %s", p)
+		log(ctx).Debugf("Picked up homelab config: %s", p)
 		configFile, err := os.ReadFile(p)
 		if err != nil {
 			return fmt.Errorf("failed to read homelab config file %s, reason: %w", p, err)
@@ -285,7 +286,7 @@ func mergedConfigReader(path string) (io.Reader, error) {
 		}
 		return nil
 	})
-	log.DebugEmpty()
+	log(ctx).DebugEmpty()
 
 	if err != nil {
 		return nil, err
@@ -298,7 +299,7 @@ func mergedConfigReader(path string) (io.Reader, error) {
 	return bytes.NewReader(result), nil
 }
 
-func (h *HomelabConfig) parse(r io.Reader) error {
+func (h *HomelabConfig) parse(ctx context.Context, r io.Reader) error {
 	dec := yaml.NewDecoder(r)
 	dec.KnownFields(true)
 	err := dec.Decode(h)
@@ -306,11 +307,11 @@ func (h *HomelabConfig) parse(r io.Reader) error {
 		return fmt.Errorf("failed to parse homelab config, reason: %w", err)
 	}
 
-	log.Tracef("Homelab Config:\n%v\n", prettyPrintJSON(h))
+	log(ctx).Tracef("Homelab Config:\n%v\n", prettyPrintJSON(h))
 	return nil
 }
 
-func (h *HomelabConfig) parseConfigs(configsPath string) error {
+func (h *HomelabConfig) parseConfigs(ctx context.Context, configsPath string) error {
 	pathStat, err := os.Stat(configsPath)
 	if err != nil {
 		return fmt.Errorf("os.Stat() failed on homelab configs path, reason: %w", err)
@@ -319,10 +320,10 @@ func (h *HomelabConfig) parseConfigs(configsPath string) error {
 		return fmt.Errorf("homelab configs path %s must be a directory", configsPath)
 	}
 
-	m, err := mergedConfigReader(configsPath)
+	m, err := mergedConfigReader(ctx, configsPath)
 	if err != nil {
 		return err
 	}
 
-	return h.parse(m)
+	return h.parse(ctx, m)
 }

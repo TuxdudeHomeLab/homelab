@@ -57,21 +57,21 @@ func (c *container) isAllowedOnCurrentHost() bool {
 }
 
 func (c *container) start(ctx context.Context, docker *dockerClient, humanFriendlyHostName string) error {
-	log.Debugf("Starting container %s ...", c.name())
+	log(ctx).Debugf("Starting container %s ...", c.name())
 
 	// Validate the container is allowed to run on the current host.
 	if !c.isAllowedOnCurrentHost() {
-		log.Warnf("Container %s not allowed to run on host '%s'", c.name(), humanFriendlyHostName)
+		log(ctx).Warnf("Container %s not allowed to run on host '%s'", c.name(), humanFriendlyHostName)
 		return nil
 	}
 
 	err := c.startInternal(ctx, docker)
 	if err != nil {
-		return logToErrorAndReturn("Failed to start container %s, reason:%v", c.name(), err)
+		return logToErrorAndReturn(ctx, "Failed to start container %s, reason:%v", c.name(), err)
 	}
 
-	log.Infof("Started container %s", c.name())
-	log.InfoEmpty()
+	log(ctx).Infof("Started container %s", c.name())
+	log(ctx).InfoEmpty()
 	return nil
 }
 
@@ -87,7 +87,7 @@ func (c *container) purge(ctx context.Context, docker *dockerClient) error {
 		if err != nil {
 			return err
 		}
-		log.Debugf("Container %s current state: %s", c.name(), st)
+		log(ctx).Debugf("Container %s current state: %s", c.name(), st)
 
 		switch st {
 		case containerStateNotFound:
@@ -116,11 +116,11 @@ func (c *container) purge(ctx context.Context, docker *dockerClient) error {
 		case containerStateRemoving:
 			// Nothing to be done here, although this could lead to some
 			// unknown handling in next steps.
-			log.Warnf("container %s is in REMOVING state already, can lead to issues while we create the container next")
+			log(ctx).Warnf("container %s is in REMOVING state already, can lead to issues while we create the container next")
 			// Add a delay before checking the container state again.
 			time.Sleep(stopAndRemoveKillDelay)
 		default:
-			log.Fatalf("container %s is in an unsupported state %v, possibly indicating a bug in the code", st)
+			log(ctx).Fatalf("container %s is in an unsupported state %v, possibly indicating a bug in the code", st)
 		}
 	}
 
@@ -167,9 +167,9 @@ func (c *container) startInternal(ctx context.Context, docker *dockerClient) err
 		if err != nil {
 			return err
 		}
-		log.Debugf("Connecting container %s to network %s with IP %s at the time of container creation ...", c.name(), c.ips[0].network.name(), c.ips[0].ip)
+		log(ctx).Debugf("Connecting container %s to network %s with IP %s at the time of container creation ...", c.name(), c.ips[0].network.name(), c.ips[0].ip)
 	} else {
-		log.Warnf("Container %s has no network endpoints configured, this is uncommon!", c.name())
+		log(ctx).Warnf("Container %s has no network endpoints configured, this is uncommon!", c.name())
 	}
 
 	// 5. Create the container.
@@ -434,8 +434,7 @@ func (c *container) restartPolicy() dcontainer.RestartPolicy {
 
 	rpm, err := restartPolicyModeFromString(mode)
 	if err != nil {
-		log.Fatalf("")
-		log.Fatalf("unable to convert restart policy mode %s setting for container %s, possibly indicating a bug in the code", mode, c.name())
+		panic(fmt.Sprintf("unable to convert restart policy mode %s setting for container %s, reason: %v, possibly indicating a bug in the code", mode, c.name(), err))
 	}
 	return dcontainer.RestartPolicy{Name: rpm, MaximumRetryCount: maxRetry}
 }

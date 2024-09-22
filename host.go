@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/netip"
@@ -27,10 +28,10 @@ const (
 	archArm64 = "arm64"
 )
 
-func newHostInfo() *hostInfo {
+func newHostInfo(ctx context.Context) *hostInfo {
 	res := hostInfo{
-		humanFriendlyHostName: systemHostName(),
-		ip:                    interfaceIP(),
+		humanFriendlyHostName: systemHostName(ctx),
+		ip:                    interfaceIP(ctx),
 		numCPUs:               runtime.NumCPU(),
 		os:                    runtime.GOOS,
 		arch:                  runtime.GOARCH,
@@ -38,43 +39,43 @@ func newHostInfo() *hostInfo {
 	}
 	res.hostName = strings.ToLower(res.humanFriendlyHostName)
 
-	log.Debugf("Host name: %s", res.hostName)
-	log.Debugf("Human Friendly Host name: %s", res.humanFriendlyHostName)
-	log.Debugf("Host IP: %s", res.ip)
-	log.Debugf("Num CPUs = %d", res.numCPUs)
-	log.Debugf("OS = %s", res.os)
-	log.Debugf("Arch = %s", res.arch)
-	log.Debugf("Docker Platform = %s", res.dockerPlatform)
-	log.DebugEmpty()
+	log(ctx).Debugf("Host name: %s", res.hostName)
+	log(ctx).Debugf("Human Friendly Host name: %s", res.humanFriendlyHostName)
+	log(ctx).Debugf("Host IP: %s", res.ip)
+	log(ctx).Debugf("Num CPUs = %d", res.numCPUs)
+	log(ctx).Debugf("OS = %s", res.os)
+	log(ctx).Debugf("Arch = %s", res.arch)
+	log(ctx).Debugf("Docker Platform = %s", res.dockerPlatform)
+	log(ctx).DebugEmpty()
 
 	if res.os != osLinux {
-		log.Fatalf("Only linux OS is supported, found OS: %s", res.os)
+		log(ctx).Fatalf("Only linux OS is supported, found OS: %s", res.os)
 	}
 	if res.arch != archAmd64 && res.arch != archArm64 {
-		log.Fatalf("Only amd64 and arm64 platforms are supported, found Arch: %s", res.arch)
+		log(ctx).Fatalf("Only amd64 and arm64 platforms are supported, found Arch: %s", res.arch)
 	}
 
 	return &res
 }
 
-func systemHostName() string {
+func systemHostName(ctx context.Context) string {
 	res, err := os.Hostname()
 	if err != nil {
-		log.Fatalf("Unable to determine the current machine's host name, %v", err)
+		log(ctx).Fatalf("Unable to determine the current machine's host name, %v", err)
 	}
 	return res
 }
 
-func interfaceIP() netip.Addr {
+func interfaceIP(ctx context.Context) netip.Addr {
 	conn, err := net.Dial("udp", "10.1.1.1:1234")
 	if err != nil {
-		log.Fatalf("Unable to determine the current machine's IP, %v", err)
+		log(ctx).Fatalf("Unable to determine the current machine's IP, %v", err)
 	}
 	defer conn.Close()
 
 	ip, ok := netip.AddrFromSlice(conn.LocalAddr().(*net.UDPAddr).IP)
 	if !ok {
-		log.Fatalf("Unable to convert host IP %s of net.IP type to netip.Addr type")
+		log(ctx).Fatalf("Unable to convert host IP %s of net.IP type to netip.Addr type")
 	}
 	return ip
 }
