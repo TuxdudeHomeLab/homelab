@@ -2,18 +2,27 @@ package main
 
 import "context"
 
-func queryContainers(ctx context.Context, dep *deployment, allGroups bool, group, container string) containerList {
+func queryContainers(ctx context.Context, dep *deployment, allGroups bool, group, container string) (containerList, error) {
 	if allGroups {
-		return containerMapToList(dep.queryAllContainers())
-	} else if group != "" && container == "" {
-		return containerMapToList(dep.queryAllContainersInGroup(group))
-	} else if group != "" {
-		c := dep.queryContainer(&ContainerReference{Group: group, Container: container})
-		if c != nil {
-			return containerList{c}
+		return containerMapToList(dep.queryAllContainers()), nil
+	}
+	if group != "" && container == "" {
+		ctMap, err := dep.queryAllContainersInGroup(group)
+		if err != nil {
+			return nil, err
 		}
-		return nil
+		return containerMapToList(ctMap), nil
+	}
+	if group != "" {
+		ct, err := dep.queryContainer(ContainerReference{Group: group, Container: container})
+		if err != nil {
+			return nil, err
+		}
+		if ct != nil {
+			return containerList{ct}, nil
+		}
+		return nil, nil
 	}
 	log(ctx).Fatalf("Invalid scenario, possibly indicating a bug in the code")
-	return nil
+	return nil, nil
 }

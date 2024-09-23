@@ -75,7 +75,11 @@ func execStartCmd(ctx context.Context, cmd *cobra.Command, args []string, option
 	}
 	defer dockerClient.close()
 
-	res := queryContainers(ctx, dep, options.allGroups, options.group, options.container)
+	res, err := queryContainers(ctx, dep, options.allGroups, options.group, options.container)
+	if err != nil {
+		return fmt.Errorf("start failed while querying containers, reason: %w", err)
+	}
+
 	log(ctx).Debugf("start command - Starting containers: ")
 	for _, c := range res {
 		log(ctx).Debugf("%s", c.name())

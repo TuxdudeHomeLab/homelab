@@ -101,31 +101,28 @@ func (d *deployment) queryAllContainers() containerMap {
 	return result
 }
 
-func (d *deployment) queryAllContainersInGroup(group string) containerMap {
+func (d *deployment) queryAllContainersInGroup(group string) (containerMap, error) {
 	result := make(containerMap)
-	for _, g := range d.groups {
-		if g.name() == group {
-			for cref, c := range g.containers {
-				result[cref] = c
-			}
-			break
-		}
+	g, found := d.groups[group]
+	if !found {
+		return nil, fmt.Errorf("group %s not found", group)
 	}
-	return result
+	for cref, c := range g.containers {
+		result[cref] = c
+	}
+	return result, nil
 }
 
-func (d *deployment) queryContainer(ct *ContainerReference) *container {
-	cn := containerName(ct)
-	for _, g := range d.groups {
-		if g.name() == ct.Group {
-			for _, c := range g.containers {
-				if c.name() == cn {
-					return c
-				}
-			}
-		}
+func (d *deployment) queryContainer(cRef ContainerReference) (*container, error) {
+	g, found := d.groups[cRef.Group]
+	if !found {
+		return nil, fmt.Errorf("group %s not found", cRef.Group)
 	}
-	return nil
+	ct, found := g.containers[cRef]
+	if !found {
+		return nil, fmt.Errorf("container %s not found", cRef)
+	}
+	return ct, nil
 }
 
 func (d *deployment) String() string {
