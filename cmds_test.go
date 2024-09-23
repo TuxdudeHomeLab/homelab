@@ -431,6 +431,88 @@ func TestExecHomelabCmd(t *testing.T) {
 	}
 }
 
+var executeHomelabCmdErrorTests = []struct {
+	name       string
+	args       []string
+	dockerHost *fakeDockerHost
+	want       string
+}{
+	{
+		name: "Homelab Command - Missing Subcommand",
+		args: []string{},
+		want: `homelab sub-command is required`,
+	},
+	{
+		name: "Homelab Command - Start - One Non Existing Group",
+		args: []string{
+			"start",
+			"--group",
+			"g3",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/start-cmd", pwd()),
+		},
+		dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{}),
+		want:       `start failed while querying containers, reason: group g3 not found`,
+	},
+	{
+		name: "Homelab Command - Start - One Non Existing Container In Invalid Group",
+		args: []string{
+			"start",
+			"--group",
+			"g3",
+			"--container",
+			"c3",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/start-cmd", pwd()),
+		},
+		dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{}),
+		want:       `start failed while querying containers, reason: group g3 not found`,
+	},
+	{
+		name: "Homelab Command - Start - One Non Existing Container In Valid Group",
+		args: []string{
+			"start",
+			"--group",
+			"g1",
+			"--container",
+			"c3",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/start-cmd", pwd()),
+		},
+		dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{}),
+		want:       `start failed while querying containers, reason: container {g1 c3} not found`,
+	},
+}
+
+func TestExecHomelabCmdErrors(t *testing.T) {
+	for _, test := range executeHomelabCmdErrorTests {
+		tc := test
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			_, _, gotErr := execHomelabCmdTest(tc.dockerHost, tc.args...)
+			if gotErr == nil {
+				t.Errorf(
+					"execHomelabCmd()\nTest Case: %q\nFailure: gotErr == nil\nReason: want = %q",
+					tc.name, tc.want)
+				return
+			}
+
+			match, err := regexp.MatchString(fmt.Sprintf("^%s$", tc.want), gotErr.Error())
+			if err != nil {
+				t.Errorf(
+					"execHomelabCmd()\nTest Case: %q\nFailure: unexpected exception while matching against gotErr error string\nReason: error = %v", tc.name, err)
+				return
+			}
+
+			if !match {
+				t.Errorf(
+					"execHomelabCmd()\nTest Case: %q\nFailure: gotErr did not match the want regex\nReason:\n\ngotErr = %q\n\twant = %q", tc.name, gotErr, tc.want)
+			}
+		})
+	}
+}
+
 func initPkgVersionInfoForTest() {
 	pkgVersion = "my-pkg-version"
 	pkgCommit = "my-pkg-commit"
