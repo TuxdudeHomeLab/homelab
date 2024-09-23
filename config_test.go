@@ -1220,11 +1220,11 @@ func TestParseConfigsFromPathErrors(t *testing.T) {
 			if !strings.HasPrefix(tc.configsPath, "/") {
 				p = fmt.Sprintf("%s/testdata/%s", pwd(), tc.configsPath)
 			}
-			c := HomelabConfig{}
-			gotErr := c.parseConfigs(testContext(), p)
+
+			_, gotErr := buildDeploymentFromConfigsPath(testContext(), p)
 			if gotErr == nil {
 				t.Errorf(
-					"HomelabConfig.parseConfigs()\nTest Case: %q\nFailure: gotErr == nil\nReason: want = %q",
+					"buildDeploymentFromConfigsPath()\nTest Case: %q\nFailure: gotErr == nil\nReason: want = %q",
 					tc.name, tc.want)
 				return
 			}

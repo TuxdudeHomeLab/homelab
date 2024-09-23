@@ -16,12 +16,12 @@ type deployment struct {
 }
 
 func buildDeploymentFromConfigsPath(ctx context.Context, configsPath string) (*deployment, error) {
-	config := HomelabConfig{}
-	err := config.parseConfigs(ctx, configsPath)
+	r, err := mergedConfigsReader(ctx, configsPath)
 	if err != nil {
 		return nil, err
 	}
-	return buildDeploymentFromConfig(ctx, &config)
+
+	return buildDeployment(ctx, r)
 }
 
 func buildDeployment(ctx context.Context, reader io.Reader) (*deployment, error) {

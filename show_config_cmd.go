@@ -34,12 +34,11 @@ func execShowConfigCmd(ctx context.Context, cmd *cobra.Command, args []string, g
 		return err
 	}
 
-	config := HomelabConfig{}
-	err = config.parseConfigs(ctx, configsPath)
+	dep, err := buildDeploymentFromConfigsPath(ctx, configsPath)
 	if err != nil {
 		return err
 	}
 
-	log(ctx).Infof("Homelab config:\n%s", prettyPrintJSON(config))
+	log(ctx).Infof("Homelab config:\n%s", prettyPrintJSON(dep.config))
 	return nil
 }

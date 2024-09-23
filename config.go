@@ -1,15 +1,10 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
-	"io/fs"
-	"os"
-	"path/filepath"
 
-	"github.com/TwiN/deepmerge"
 	"gopkg.in/yaml.v3"
 )
 
@@ -262,43 +257,6 @@ type ContainerRestartPolicyConfig struct {
 	MaxRetryCount int    `yaml:"maxRetryCount,omitempty"`
 }
 
-func mergedConfigReader(ctx context.Context, path string) (io.Reader, error) {
-	var result []byte
-	err := filepath.WalkDir(path, func(p string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return fmt.Errorf("failed to read contents of directory %s, reason: %w", path, err)
-		} else if d == nil || d.IsDir() {
-			return nil
-		}
-		ext := filepath.Ext(p)
-		if ext != ".yml" && ext != ".yaml" {
-			return nil
-		}
-
-		log(ctx).Debugf("Picked up homelab config: %s", p)
-		configFile, err := os.ReadFile(p)
-		if err != nil {
-			return fmt.Errorf("failed to read homelab config file %s, reason: %w", p, err)
-		}
-		result, err = deepmerge.YAML(result, configFile)
-		if err != nil {
-			return fmt.Errorf("failed to deep merge config file %s, reason: %w", p, err)
-		}
-		return nil
-	})
-	log(ctx).DebugEmpty()
-
-	if err != nil {
-		return nil, err
-	}
-
-	if len(result) == 0 {
-		return nil, fmt.Errorf("no homelab configs found in %s", path)
-	}
-
-	return bytes.NewReader(result), nil
-}
-
 func (h *HomelabConfig) parse(ctx context.Context, r io.Reader) error {
 	dec := yaml.NewDecoder(r)
 	dec.KnownFields(true)
@@ -309,21 +267,4 @@ func (h *HomelabConfig) parse(ctx context.Context, r io.Reader) error {
 
 	log(ctx).Tracef("Homelab Config:\n%v\n", prettyPrintJSON(h))
 	return nil
-}
-
-func (h *HomelabConfig) parseConfigs(ctx context.Context, configsPath string) error {
-	pathStat, err := os.Stat(configsPath)
-	if err != nil {
-		return fmt.Errorf("os.Stat() failed on homelab configs path, reason: %w", err)
-	}
-	if !pathStat.IsDir() {
-		return fmt.Errorf("homelab configs path %s must be a directory", configsPath)
-	}
-
-	m, err := mergedConfigReader(ctx, configsPath)
-	if err != nil {
-		return err
-	}
-
-	return h.parse(ctx, m)
 }
