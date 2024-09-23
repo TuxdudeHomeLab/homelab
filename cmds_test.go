@@ -6,20 +6,21 @@ import (
 	"regexp"
 	"strings"
 	"testing"
-
-	"github.com/spf13/cobra"
 )
 
 var executeHomelabCmdTests = []struct {
-	name       string
-	args       []string
-	dockerHost *fakeDockerHost
-	want       string
+	name    string
+	args    []string
+	ctxInfo *testContextInfo
+	want    string
 }{
 	{
 		name: "Homelab Command - Show Version",
 		args: []string{
 			"--version",
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newEmptyFakeDockerHost(),
 		},
 		want: `homelab version my-pkg-version \[Revision: my-pkg-commit @ my-pkg-timestamp\]`,
 	},
@@ -27,6 +28,9 @@ var executeHomelabCmdTests = []struct {
 		name: "Homelab Command - Show Help",
 		args: []string{
 			"--help",
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newEmptyFakeDockerHost(),
 		},
 		want: `(?s)A CLI for managing both the configuration and deployment of groups of docker containers on a given host\.
 The configuration is managed using a yaml file\. The configuration specifies the container groups and individual containers, their properties and how to deploy them\.
@@ -40,6 +44,9 @@ Use "homelab \[command\] --help" for more information about a command\.`,
 			"show-config",
 			"--configs-dir",
 			fmt.Sprintf("%s/testdata/show-config-cmd", pwd()),
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newEmptyFakeDockerHost(),
 		},
 		want: `Homelab config:
 {
@@ -345,11 +352,13 @@ Use "homelab \[command\] --help" for more information about a command\.`,
 			"--configs-dir",
 			fmt.Sprintf("%s/testdata/start-cmd", pwd()),
 		},
-		dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{
-			validImagesForPull: stringSet{
-				"abc/xyz": {},
-			},
-		}),
+		ctxInfo: &testContextInfo{
+			dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{
+				validImagesForPull: stringSet{
+					"abc/xyz": {},
+				},
+			}),
+		},
 		want: `Pulling image: abc/xyz
 Created network net1
 Started container g1-c1
@@ -365,11 +374,13 @@ Container g2-c3 not allowed to run on host FakeHost`,
 			"--configs-dir",
 			fmt.Sprintf("%s/testdata/start-cmd", pwd()),
 		},
-		dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{
-			validImagesForPull: stringSet{
-				"abc/xyz": {},
-			},
-		}),
+		ctxInfo: &testContextInfo{
+			dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{
+				validImagesForPull: stringSet{
+					"abc/xyz": {},
+				},
+			}),
+		},
 		want: `Pulling image: abc/xyz
 Created network net1
 Started container g1-c1
@@ -386,11 +397,13 @@ Container g1-c2 not allowed to run on host FakeHost`,
 			"--configs-dir",
 			fmt.Sprintf("%s/testdata/start-cmd", pwd()),
 		},
-		dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{
-			validImagesForPull: stringSet{
-				"abc/xyz": {},
-			},
-		}),
+		ctxInfo: &testContextInfo{
+			dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{
+				validImagesForPull: stringSet{
+					"abc/xyz": {},
+				},
+			}),
+		},
 		want: `Pulling image: abc/xyz
 Created network net1
 Started container g1-c1`,
@@ -408,7 +421,7 @@ func TestExecHomelabCmd(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, out, gotErr := execHomelabCmdTest(tc.dockerHost, tc.args...)
+			out, gotErr := execHomelabCmdTest(tc.ctxInfo, tc.args...)
 			if gotErr != nil {
 				t.Errorf(
 					"execHomelabCmd()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v\nOutput: %v",
@@ -432,14 +445,17 @@ func TestExecHomelabCmd(t *testing.T) {
 }
 
 var executeHomelabCmdErrorTests = []struct {
-	name       string
-	args       []string
-	dockerHost *fakeDockerHost
-	want       string
+	name    string
+	args    []string
+	ctxInfo *testContextInfo
+	want    string
 }{
 	{
 		name: "Homelab Command - Missing Subcommand",
 		args: []string{},
+		ctxInfo: &testContextInfo{
+			dockerHost: newEmptyFakeDockerHost(),
+		},
 		want: `homelab sub-command is required`,
 	},
 	{
@@ -451,8 +467,10 @@ var executeHomelabCmdErrorTests = []struct {
 			"--configs-dir",
 			fmt.Sprintf("%s/testdata/start-cmd", pwd()),
 		},
-		dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{}),
-		want:       `start failed while querying containers, reason: group g3 not found`,
+		ctxInfo: &testContextInfo{
+			dockerHost: newEmptyFakeDockerHost(),
+		},
+		want: `start failed while querying containers, reason: group g3 not found`,
 	},
 	{
 		name: "Homelab Command - Start - One Non Existing Container In Invalid Group",
@@ -465,8 +483,10 @@ var executeHomelabCmdErrorTests = []struct {
 			"--configs-dir",
 			fmt.Sprintf("%s/testdata/start-cmd", pwd()),
 		},
-		dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{}),
-		want:       `start failed while querying containers, reason: group g3 not found`,
+		ctxInfo: &testContextInfo{
+			dockerHost: newEmptyFakeDockerHost(),
+		},
+		want: `start failed while querying containers, reason: group g3 not found`,
 	},
 	{
 		name: "Homelab Command - Start - One Non Existing Container In Valid Group",
@@ -479,8 +499,10 @@ var executeHomelabCmdErrorTests = []struct {
 			"--configs-dir",
 			fmt.Sprintf("%s/testdata/start-cmd", pwd()),
 		},
-		dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{}),
-		want:       `start failed while querying containers, reason: container {g1 c3} not found`,
+		ctxInfo: &testContextInfo{
+			dockerHost: newEmptyFakeDockerHost(),
+		},
+		want: `start failed while querying containers, reason: container {g1 c3} not found`,
 	},
 }
 
@@ -490,7 +512,7 @@ func TestExecHomelabCmdErrors(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, _, gotErr := execHomelabCmdTest(tc.dockerHost, tc.args...)
+			_, gotErr := execHomelabCmdTest(tc.ctxInfo, tc.args...)
 			if gotErr == nil {
 				t.Errorf(
 					"execHomelabCmd()\nTest Case: %q\nFailure: gotErr == nil\nReason: want = %q",
@@ -519,18 +541,10 @@ func initPkgVersionInfoForTest() {
 	pkgTimestamp = "my-pkg-timestamp"
 }
 
-func execHomelabCmdTest(dockerHost *fakeDockerHost, args ...string) (*cobra.Command, string, error) {
+func execHomelabCmdTest(ctxInfo *testContextInfo, args ...string) (string, error) {
 	buf := new(bytes.Buffer)
-	ctx := testContextWithLogger(capturingTestLogger(buf))
-	if dockerHost != nil {
-		ctx = withDockerAPIClient(ctx, dockerHost)
-	}
-
-	cmd := initHomelabCmd(ctx)
-	cmd.SetOut(buf)
-	cmd.SetErr(buf)
-	cmd.SetArgs(args)
-
-	c, err := cmd.ExecuteC()
-	return c, buf.String(), err
+	ctxInfo.logger = newCapturingTestLogger(buf)
+	ctx := newTestContext(ctxInfo)
+	err := execHomelabCmd(ctx, buf, buf, args...)
+	return buf.String(), err
 }

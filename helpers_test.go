@@ -10,28 +10,46 @@ import (
 )
 
 var (
-	fakeConfigEnv = newConfigEnv(fakeHostInfo)
+	// TODO: Remove this after configEnv gets actually used in the code.
+	_ = newConfigEnv(newFakeHostInfo())
 )
 
-func testContext() context.Context {
-	return testContextWithLogger(testLogger())
+type testContextInfo struct {
+	logger          zzzlogi.Logger
+	dockerHost      dockerAPIClient
+	useRealHostInfo bool
 }
 
-func testContextWithLogger(logger zzzlogi.Logger) context.Context {
-	return withLogger(testContextWithFakeHostInfo(), logger)
+func newVanillaTestContext() context.Context {
+	return newTestContext(
+		&testContextInfo{
+			dockerHost: newEmptyFakeDockerHost(),
+		})
 }
 
-func testContextWithFakeHostInfo() context.Context {
-	return withHostInfo(context.Background(), fakeHostInfo)
+func newTestContext(info *testContextInfo) context.Context {
+	ctx := context.Background()
+	if info.logger != nil {
+		ctx = withLogger(ctx, info.logger)
+	} else {
+		ctx = withLogger(ctx, newTestLogger())
+	}
+	if info.dockerHost != nil {
+		ctx = withDockerAPIClient(ctx, info.dockerHost)
+	}
+	if !info.useRealHostInfo {
+		ctx = withHostInfo(ctx, newFakeHostInfo())
+	}
+	return ctx
 }
 
-func testLogger() zzzlogi.Logger {
+func newTestLogger() zzzlogi.Logger {
 	config := zzzlog.NewConsoleLoggerConfig()
 	config.SkipCallerInfo = true
 	return zzzlog.NewLogger(config)
 }
 
-func capturingTestLogger(w io.Writer) zzzlogi.Logger {
+func newCapturingTestLogger(w io.Writer) zzzlogi.Logger {
 	config := zzzlog.NewVanillaLoggerConfig()
 	config.Dest = w
 	return zzzlog.NewLogger(config)

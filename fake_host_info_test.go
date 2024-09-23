@@ -12,8 +12,8 @@ const (
 	fakeHostDockerPlatform    = "linux/amd64"
 )
 
-var (
-	fakeHostInfo = &hostInfo{
+func newFakeHostInfo() *hostInfo {
+	return &hostInfo{
 		hostName:              fakeHostName,
 		humanFriendlyHostName: fakeHumanFriendlyHostName,
 		ip:                    netip.MustParseAddr(fakeHostIP),
@@ -22,4 +22,4 @@ var (
 		arch:                  fakeHostArch,
 		dockerPlatform:        fakeHostDockerPlatform,
 	}
-)
+}

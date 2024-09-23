@@ -63,6 +63,10 @@ type fakeDockerHostInitInfo struct {
 	validImagesForPull stringSet
 }
 
+func newEmptyFakeDockerHost() *fakeDockerHost {
+	return newFakeDockerHost(&fakeDockerHostInitInfo{})
+}
+
 func newFakeDockerHost(initInfo *fakeDockerHostInitInfo) *fakeDockerHost {
 	f := &fakeDockerHost{
 		containers:         fakeContainerMap{},

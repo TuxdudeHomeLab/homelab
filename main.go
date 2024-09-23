@@ -40,18 +40,19 @@ func buildLogger() zzzlogi.Logger {
 func run() int {
 	logger := buildLogger()
 	ctx := withLogger(context.Background(), logger)
-	err := execHomelabCmd(ctx)
-	if err != nil {
-		// Only log homelab runtime errors. Other errors are from cobra flag
-		// and command parsing. These errors are displayed already by cobra
-		// along with the usage.
-		hre := &homelabRuntimeError{}
-		if errors.As(err, &hre) {
-			logger.Errorf("%s", hre)
-		}
-		return 1
+	err := execHomelabCmd(ctx, os.Stdout, os.Stderr, os.Args...)
+	if err == nil {
+		return 0
 	}
-	return 0
+
+	// Only log homelab runtime errors. Other errors are from cobra flag
+	// and command parsing. These errors are displayed already by cobra
+	// along with the usage.
+	hre := &homelabRuntimeError{}
+	if errors.As(err, &hre) {
+		logger.Errorf("%s", hre)
+	}
+	return 1
 }
 
 func main() {

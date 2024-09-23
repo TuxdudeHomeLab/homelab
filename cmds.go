@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 
 	"github.com/spf13/cobra"
 )
@@ -76,7 +77,10 @@ func initHomelabCmd(ctx context.Context) *cobra.Command {
 	return homelabCmd
 }
 
-func execHomelabCmd(ctx context.Context) error {
+func execHomelabCmd(ctx context.Context, outW, errW io.Writer, args ...string) error {
 	homelab := initHomelabCmd(ctx)
+	homelab.SetOut(outW)
+	homelab.SetErr(errW)
+	homelab.SetArgs(args)
 	return homelab.Execute()
 }

@@ -12,11 +12,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-var (
-	// TODO: Remove this after we start using fakeConfigEnv.
-	_ = fakeConfigEnv
-)
-
 var buildDeploymentUsingReaderTests = []struct {
 	name              string
 	config            string
@@ -808,7 +803,7 @@ func TestBuildDeploymentUsingReader(t *testing.T) {
 			t.Parallel()
 
 			input := strings.NewReader(tc.config)
-			got, gotErr := buildDeployment(testContext(), input)
+			got, gotErr := buildDeployment(newVanillaTestContext(), input)
 			if gotErr != nil {
 				t.Errorf(
 					"buildDeployment()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v",
@@ -1147,7 +1142,7 @@ func TestBuildDeploymentFromConfigsPath(t *testing.T) {
 			t.Parallel()
 
 			p := fmt.Sprintf("%s/testdata/%s", pwd(), tc.configsPath)
-			got, gotErr := buildDeploymentFromConfigsPath(testContext(), p)
+			got, gotErr := buildDeploymentFromConfigsPath(newVanillaTestContext(), p)
 			if gotErr != nil {
 				t.Errorf(
 					"buildDeploymentFromConfigsPath()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v",
@@ -1221,7 +1216,7 @@ func TestBuildDeploymentFromConfigsPathErrors(t *testing.T) {
 				p = fmt.Sprintf("%s/testdata/%s", pwd(), tc.configsPath)
 			}
 
-			_, gotErr := buildDeploymentFromConfigsPath(testContext(), p)
+			_, gotErr := buildDeploymentFromConfigsPath(newVanillaTestContext(), p)
 			if gotErr == nil {
 				t.Errorf(
 					"buildDeploymentFromConfigsPath()\nTest Case: %q\nFailure: gotErr == nil\nReason: want = %q",
@@ -1293,7 +1288,7 @@ func TestBuildDeploymentFromConfig(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, gotErr := buildDeploymentFromConfig(testContext(), &tc.config)
+			_, gotErr := buildDeploymentFromConfig(newVanillaTestContext(), &tc.config)
 			if gotErr != nil {
 				t.Errorf(
 					"buildDeploymentFromConfig()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v",
@@ -4497,7 +4492,7 @@ func TestBuildDeploymentFromConfigErrors(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, gotErr := buildDeploymentFromConfig(testContext(), &tc.config)
+			_, gotErr := buildDeploymentFromConfig(newVanillaTestContext(), &tc.config)
 			if gotErr == nil {
 				t.Errorf(
 					"HomelabConfig.validate()\nTest Case: %q\nFailure: gotErr == nil\nReason: want = %q",
