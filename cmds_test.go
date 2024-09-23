@@ -345,6 +345,26 @@ Use "homelab \[command\] --help" for more information about a command\.`,
 }`,
 	},
 	{
+		name: "Homelab Command - Start - All Groups With Real Host Info",
+		args: []string{
+			"start",
+			"--all-groups",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/start-cmd", pwd()),
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{
+				validImagesForPull: stringSet{
+					"abc/xyz": {},
+				},
+			}),
+			useRealHostInfo: true,
+		},
+		want: `Container g1-c1 not allowed to run on host [^\s]+
+Container g1-c2 not allowed to run on host [^\s]+
+Container g2-c3 not allowed to run on host [^\s]+`,
+	},
+	{
 		name: "Homelab Command - Start - All Groups",
 		args: []string{
 			"start",
