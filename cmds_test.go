@@ -338,7 +338,7 @@ Use "homelab \[command\] --help" for more information about a command\.`,
 }`,
 	},
 	{
-		name: "Homelab Command - Start",
+		name: "Homelab Command - Start - All Groups",
 		args: []string{
 			"start",
 			"--all-groups",
@@ -355,6 +355,45 @@ Created network net1
 Started container g1-c1
 Container g1-c2 not allowed to run on host FakeHost
 Container g2-c3 not allowed to run on host FakeHost`,
+	},
+	{
+		name: "Homelab Command - Start - One Group",
+		args: []string{
+			"start",
+			"--group",
+			"g1",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/start-cmd", pwd()),
+		},
+		host: newFakeDockerHost(&fakeDockerHostInitInfo{
+			validImagesForPull: stringSet{
+				"abc/xyz": {},
+			},
+		}),
+		want: `Pulling image: abc/xyz
+Created network net1
+Started container g1-c1
+Container g1-c2 not allowed to run on host FakeHost`,
+	},
+	{
+		name: "Homelab Command - Start - One Container",
+		args: []string{
+			"start",
+			"--group",
+			"g1",
+			"--container",
+			"c1",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/start-cmd", pwd()),
+		},
+		host: newFakeDockerHost(&fakeDockerHostInitInfo{
+			validImagesForPull: stringSet{
+				"abc/xyz": {},
+			},
+		}),
+		want: `Pulling image: abc/xyz
+Created network net1
+Started container g1-c1`,
 	},
 }
 
