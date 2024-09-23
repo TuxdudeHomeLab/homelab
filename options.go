@@ -8,7 +8,7 @@ func homelabConfigsPath(ctx context.Context, cliConfigFlag string, configsDirFla
 		log(ctx).Debugf("Using Homelab configs path from command line flag: %s", configsDirFlag)
 		return configsDirFlag, nil
 	}
-	path, err := configsPath(ctx, cliConfigFlag)
+	path, err := configsPathFromCLIConfig(ctx, cliConfigFlag)
 	if err != nil {
 		return "", err
 	}

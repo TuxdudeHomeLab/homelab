@@ -58,7 +58,7 @@ func parseCLIConfig(ctx context.Context, cliConfigFlag string) (*CLIConfig, erro
 	return &config, nil
 }
 
-func configsPath(ctx context.Context, cliConfigFlag string) (string, error) {
+func configsPathFromCLIConfig(ctx context.Context, cliConfigFlag string) (string, error) {
 	config, err := parseCLIConfig(ctx, cliConfigFlag)
 	if err != nil {
 		return "", err
