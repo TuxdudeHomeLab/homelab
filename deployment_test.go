@@ -17,7 +17,7 @@ var (
 	_ = fakeConfigEnv
 )
 
-var parseAndValidateConfigUsingReaderTests = []struct {
+var buildDeploymentUsingReaderTests = []struct {
 	name              string
 	config            string
 	want              *HomelabConfig
@@ -801,8 +801,8 @@ groups:
 	},
 }
 
-func TestParseConfigUsingReader(t *testing.T) {
-	for _, test := range parseAndValidateConfigUsingReaderTests {
+func TestBuildDeploymentUsingReader(t *testing.T) {
+	for _, test := range buildDeploymentUsingReaderTests {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
@@ -829,7 +829,7 @@ func TestParseConfigUsingReader(t *testing.T) {
 	}
 }
 
-var validParseAndValidateConfigsFromPathTests = []struct {
+var buildDeploymentFromConfigsPathTests = []struct {
 	name              string
 	configsPath       string
 	want              *HomelabConfig
@@ -1140,8 +1140,8 @@ var validParseAndValidateConfigsFromPathTests = []struct {
 	},
 }
 
-func TestParseAndValidateConfigsFromPath(t *testing.T) {
-	for _, test := range validParseAndValidateConfigsFromPathTests {
+func TestBuildDeploymentFromConfigsPath(t *testing.T) {
+	for _, test := range buildDeploymentFromConfigsPathTests {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
@@ -1168,7 +1168,7 @@ func TestParseAndValidateConfigsFromPath(t *testing.T) {
 	}
 }
 
-var parseConfigsErrorTests = []struct {
+var buildDeploymentFromConfigsPathErrorTests = []struct {
 	name        string
 	configsPath string
 	want        string
@@ -1210,8 +1210,8 @@ var parseConfigsErrorTests = []struct {
 	},
 }
 
-func TestParseConfigsFromPathErrors(t *testing.T) {
-	for _, test := range parseConfigsErrorTests {
+func TestBuildDeploymentFromConfigsPathErrors(t *testing.T) {
+	for _, test := range buildDeploymentFromConfigsPathErrorTests {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
@@ -1232,19 +1232,19 @@ func TestParseConfigsFromPathErrors(t *testing.T) {
 			match, err := regexp.MatchString(fmt.Sprintf("^%s$", tc.want), gotErr.Error())
 			if err != nil {
 				t.Errorf(
-					"HomelabConfig.parseConfigs()\nTest Case: %q\nFailure: unexpected exception while matching against gotErr error string\nReason: error = %v", tc.name, err)
+					"buildDeploymentFromConfigsPath()\nTest Case: %q\nFailure: unexpected exception while matching against gotErr error string\nReason: error = %v", tc.name, err)
 				return
 			}
 
 			if !match {
 				t.Errorf(
-					"HomelabConfig.parseConfigs()\nTest Case: %q\nFailure: gotErr did not match the want regex\nReason:\n\ngotErr = %q\n\twant = %q", tc.name, gotErr, tc.want)
+					"buildDeploymentFromConfigsPath()\nTest Case: %q\nFailure: gotErr did not match the want regex\nReason:\n\ngotErr = %q\n\twant = %q", tc.name, gotErr, tc.want)
 			}
 		})
 	}
 }
 
-var validateConfigTests = []struct {
+var buildDeploymentFromConfigTests = []struct {
 	name   string
 	config HomelabConfig
 }{
@@ -1287,8 +1287,8 @@ var validateConfigTests = []struct {
 	},
 }
 
-func TestValidateConfig(t *testing.T) {
-	for _, test := range validateConfigTests {
+func TestBuildDeploymentFromConfig(t *testing.T) {
+	for _, test := range buildDeploymentFromConfigTests {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
@@ -1306,7 +1306,7 @@ func TestValidateConfig(t *testing.T) {
 	}
 }
 
-var validateConfigErrorTests = []struct {
+var buildDeploymentFromConfigErrorTests = []struct {
 	name   string
 	config HomelabConfig
 	want   string
@@ -4491,8 +4491,8 @@ var validateConfigErrorTests = []struct {
 	},
 }
 
-func TestValidateConfigErrors(t *testing.T) {
-	for _, test := range validateConfigErrorTests {
+func TestBuildDeploymentFromConfigErrors(t *testing.T) {
+	for _, test := range buildDeploymentFromConfigErrorTests {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
