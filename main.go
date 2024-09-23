@@ -11,10 +11,6 @@ import (
 	"github.com/tuxdude/zzzlogi"
 )
 
-const (
-	defaultCLIConfigPathFormat = "%s/.homelab/config.yaml"
-)
-
 var (
 	// The package information will be populated by the build system.
 	pkgVersion   = "unset"

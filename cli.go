@@ -9,6 +9,10 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const (
+	defaultCLIConfigPathFormat = "%s/.homelab/config.yaml"
+)
+
 type CLIConfig struct {
 	HomelabCLIConfig struct {
 		ConfigsPath string `yaml:"configsPath"`
