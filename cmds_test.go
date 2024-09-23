@@ -373,6 +373,55 @@ var executeHomelabCmdErrorTests = []struct {
 		want: `show-config failed while determining the configs path, reason: failed to open homelab CLI config file, reason: open .+/homelab/testdata/foobar\.yaml: no such file or directory`,
 	},
 	{
+		name: "Homelab Command - Show Config - Invalid Empty CLI Config",
+		args: []string{
+			"show-config",
+			"--cli-config",
+			fmt.Sprintf("%s/testdata/cli-configs/invalid-empty-config/config.yaml", pwd()),
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newEmptyFakeDockerHost(),
+		},
+		want: `show-config failed while determining the configs path, reason: failed to parse homelab CLI config, reason: EOF`,
+	},
+	{
+		name: "Homelab Command - Show Config - Invalid Garbage CLI Config",
+		args: []string{
+			"show-config",
+			"--cli-config",
+			fmt.Sprintf("%s/testdata/cli-configs/invalid-garbage-config/config.yaml", pwd()),
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newEmptyFakeDockerHost(),
+		},
+		want: `show-config failed while determining the configs path, reason: failed to parse homelab CLI config, reason: yaml: unmarshal errors:
+  line 1: cannot unmarshal !!str ` + "`foo bar`" + ` into main.CLIConfig`,
+	},
+	{
+		name: "Homelab Command - Show Config - Invalid CLI Config With Empty Configs Path",
+		args: []string{
+			"show-config",
+			"--cli-config",
+			fmt.Sprintf("%s/testdata/cli-configs/invalid-config-with-empty-configs-path/config.yaml", pwd()),
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newEmptyFakeDockerHost(),
+		},
+		want: `show-config failed while determining the configs path, reason: homelab configs path setting in homelab.configsPath is empty/unset in the homelab CLI config`,
+	},
+	{
+		name: "Homelab Command - Show Config - Invalid CLI Config With Invalid Configs Path",
+		args: []string{
+			"show-config",
+			"--cli-config",
+			fmt.Sprintf("%s/testdata/cli-configs/invalid-config-with-invalid-configs-path/config.yaml", pwd()),
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newEmptyFakeDockerHost(),
+		},
+		want: `show-config failed while parsing the configs, reason: os\.Stat\(\) failed on homelab configs path, reason: stat /foo2/bar2: no such file or directory`,
+	},
+	{
 		name: "Homelab Command - Show Config - Non Existing Configs Path",
 		args: []string{
 			"show-config",
@@ -565,6 +614,28 @@ var executeHomelabCmdOSEnvErrorTests = []struct {
 	envs    testOSEnvMap
 	want    string
 }{
+	{
+		name: "Homelab Command - Show Config - Default CLI Config Path - Home Directory Doesn't Exist",
+		args: []string{
+			"show-config",
+		},
+		ctxInfo: &testContextInfo{},
+		envs: testOSEnvMap{
+			"HOME": "",
+		},
+		want: `show-config failed while determining the configs path, reason: failed to obtain the user's home directory for reading the homelab CLI config, reason: \$HOME is not defined`,
+	},
+	{
+		name: "Homelab Command - Show Config - Default CLI Config Path Doesn't Exist",
+		args: []string{
+			"show-config",
+		},
+		ctxInfo: &testContextInfo{},
+		envs: testOSEnvMap{
+			"HOME": "/foo/bar",
+		},
+		want: `show-config failed while determining the configs path, reason: failed to open homelab CLI config file, reason: open /foo/bar/\.homelab/config\.yaml: no such file or directory`,
+	},
 	{
 		name: "Homelab Command - Start - Docker Client Creation Failed",
 		args: []string{

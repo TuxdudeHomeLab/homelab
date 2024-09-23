@@ -74,5 +74,9 @@ func configsPathFromCLIConfig(ctx context.Context, cliConfigFlag string) (string
 	if err != nil {
 		return "", err
 	}
-	return config.HomelabCLIConfig.ConfigsPath, nil
+	p := config.HomelabCLIConfig.ConfigsPath
+	if len(p) == 0 {
+		return "", fmt.Errorf("homelab configs path setting in homelab.configsPath is empty/unset in the homelab CLI config")
+	}
+	return p, nil
 }
