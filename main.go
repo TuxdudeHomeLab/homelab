@@ -36,7 +36,7 @@ func buildLogger() zzzlogi.Logger {
 func run() int {
 	logger := buildLogger()
 	ctx := withLogger(context.Background(), logger)
-	err := execHomelabCmd(ctx, os.Stdout, os.Stderr, os.Args...)
+	err := execHomelabCmd(ctx, os.Stdout, os.Stderr, os.Args[1:]...)
 	if err == nil {
 		return 0
 	}
