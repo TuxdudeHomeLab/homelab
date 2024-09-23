@@ -50,295 +50,108 @@ Use "homelab \[command\] --help" for more information about a command\.`,
 		},
 		want: `Homelab config:
 {
-  "Global": {
-    "Env": null,
-    "MountDefs": null,
-    "Container": {
-      "StopSignal": "",
-      "StopTimeout": 0,
-      "RestartPolicy": {
-        "Mode": "",
-        "MaxRetryCount": 0
-      },
-      "DomainName": "",
-      "DNSSearch": null,
-      "Env": null,
-      "Mounts": null,
-      "Labels": null
-    }
-  },
-  "IPAM": {
-    "Networks": {
-      "BridgeModeNetworks": \[
+  "ipam": {
+    "networks": {
+      "bridgeModeNetworks": \[
         {
-          "Name": "net1",
-          "HostInterfaceName": "docker-net1",
-          "CIDR": "172\.18\.100\.0/24",
-          "Priority": 1,
-          "Containers": \[
+          "name": "net1",
+          "hostInterfaceName": "docker-net1",
+          "cidr": "172\.18\.100\.0/24",
+          "priority": 1,
+          "containers": \[
             {
-              "IP": "172\.18\.100\.11",
-              "Container": {
-                "Group": "g1",
-                "Container": "c1"
+              "ip": "172\.18\.100\.11",
+              "container": {
+                "group": "g1",
+                "container": "c1"
               }
             },
             {
-              "IP": "172\.18\.100\.12",
-              "Container": {
-                "Group": "g1",
-                "Container": "c2"
+              "ip": "172\.18\.100\.12",
+              "container": {
+                "group": "g1",
+                "container": "c2"
               }
             }
           \]
         },
         {
-          "Name": "net2",
-          "HostInterfaceName": "docker-net2",
-          "CIDR": "172\.18\.101\.0/24",
-          "Priority": 1,
-          "Containers": \[
+          "name": "net2",
+          "hostInterfaceName": "docker-net2",
+          "cidr": "172\.18\.101\.0/24",
+          "priority": 1,
+          "containers": \[
             {
-              "IP": "172\.18\.101\.21",
-              "Container": {
-                "Group": "g2",
-                "Container": "c3"
+              "ip": "172\.18\.101\.21",
+              "container": {
+                "group": "g2",
+                "container": "c3"
               }
             }
           \]
         }
-      \],
-      "ContainerModeNetworks": null
+      \]
     }
   },
-  "Hosts": \[
+  "hosts": \[
     {
-      "Name": "fakehost",
-      "AllowedContainers": \[
+      "name": "fakehost",
+      "allowedContainers": \[
         {
-          "Group": "g1",
-          "Container": "c1"
+          "group": "g1",
+          "container": "c1"
         }
       \]
     },
     {
-      "Name": "host2",
-      "AllowedContainers": null
+      "name": "host2"
     }
   \],
-  "Groups": \[
+  "groups": \[
     {
-      "Name": "g1",
-      "Order": 1
+      "name": "g1",
+      "order": 1
     },
     {
-      "Name": "g2",
-      "Order": 2
+      "name": "g2",
+      "order": 2
     }
   \],
-  "Containers": \[
+  "containers": \[
     {
-      "Info": {
-        "Group": "g1",
-        "Container": "c1"
+      "info": {
+        "group": "g1",
+        "container": "c1"
       },
-      "Config": {
-        "Env": null
+      "image": {
+        "image": "abc/xyz"
       },
-      "Image": {
-        "Image": "abc/xyz",
-        "SkipImagePull": false,
-        "IgnoreImagePullFailures": false,
-        "PullImageBeforeStop": false
-      },
-      "Metadata": {
-        "Labels": null
-      },
-      "Lifecycle": {
-        "Order": 1,
-        "StartPreHook": "",
-        "RestartPolicy": {
-          "Mode": "",
-          "MaxRetryCount": 0
-        },
-        "AutoRemove": false,
-        "StopSignal": "",
-        "StopTimeout": 0
-      },
-      "User": {
-        "User": "",
-        "PrimaryGroup": "",
-        "AdditionalGroups": null
-      },
-      "Filesystem": {
-        "ReadOnlyRootfs": false,
-        "Mounts": null,
-        "Devices": null
-      },
-      "Network": {
-        "HostName": "",
-        "DomainName": "",
-        "DNSServers": null,
-        "DNSOptions": null,
-        "DNSSearch": null,
-        "PublishedPorts": null
-      },
-      "Security": {
-        "Privileged": false,
-        "Sysctls": null,
-        "CapAdd": null,
-        "CapDrop": null
-      },
-      "Health": {
-        "Cmd": null,
-        "Retries": 0,
-        "Interval": "",
-        "Timeout": "",
-        "StartPeriod": "",
-        "StartInterval": ""
-      },
-      "Runtime": {
-        "AttachToTty": false,
-        "ShmSize": "",
-        "Env": null,
-        "Entrypoint": null,
-        "Args": null
+      "lifecycle": {
+        "order": 1
       }
     },
     {
-      "Info": {
-        "Group": "g1",
-        "Container": "c2"
+      "info": {
+        "group": "g1",
+        "container": "c2"
       },
-      "Config": {
-        "Env": null
+      "image": {
+        "image": "abc/xyz2"
       },
-      "Image": {
-        "Image": "abc/xyz2",
-        "SkipImagePull": false,
-        "IgnoreImagePullFailures": false,
-        "PullImageBeforeStop": false
-      },
-      "Metadata": {
-        "Labels": null
-      },
-      "Lifecycle": {
-        "Order": 2,
-        "StartPreHook": "",
-        "RestartPolicy": {
-          "Mode": "",
-          "MaxRetryCount": 0
-        },
-        "AutoRemove": false,
-        "StopSignal": "",
-        "StopTimeout": 0
-      },
-      "User": {
-        "User": "",
-        "PrimaryGroup": "",
-        "AdditionalGroups": null
-      },
-      "Filesystem": {
-        "ReadOnlyRootfs": false,
-        "Mounts": null,
-        "Devices": null
-      },
-      "Network": {
-        "HostName": "",
-        "DomainName": "",
-        "DNSServers": null,
-        "DNSOptions": null,
-        "DNSSearch": null,
-        "PublishedPorts": null
-      },
-      "Security": {
-        "Privileged": false,
-        "Sysctls": null,
-        "CapAdd": null,
-        "CapDrop": null
-      },
-      "Health": {
-        "Cmd": null,
-        "Retries": 0,
-        "Interval": "",
-        "Timeout": "",
-        "StartPeriod": "",
-        "StartInterval": ""
-      },
-      "Runtime": {
-        "AttachToTty": false,
-        "ShmSize": "",
-        "Env": null,
-        "Entrypoint": null,
-        "Args": null
+      "lifecycle": {
+        "order": 2
       }
     },
     {
-      "Info": {
-        "Group": "g2",
-        "Container": "c3"
+      "info": {
+        "group": "g2",
+        "container": "c3"
       },
-      "Config": {
-        "Env": null
+      "image": {
+        "image": "abc/xyz3"
       },
-      "Image": {
-        "Image": "abc/xyz3",
-        "SkipImagePull": false,
-        "IgnoreImagePullFailures": false,
-        "PullImageBeforeStop": false
-      },
-      "Metadata": {
-        "Labels": null
-      },
-      "Lifecycle": {
-        "Order": 1,
-        "StartPreHook": "",
-        "RestartPolicy": {
-          "Mode": "",
-          "MaxRetryCount": 0
-        },
-        "AutoRemove": false,
-        "StopSignal": "",
-        "StopTimeout": 0
-      },
-      "User": {
-        "User": "",
-        "PrimaryGroup": "",
-        "AdditionalGroups": null
-      },
-      "Filesystem": {
-        "ReadOnlyRootfs": false,
-        "Mounts": null,
-        "Devices": null
-      },
-      "Network": {
-        "HostName": "",
-        "DomainName": "",
-        "DNSServers": null,
-        "DNSOptions": null,
-        "DNSSearch": null,
-        "PublishedPorts": null
-      },
-      "Security": {
-        "Privileged": false,
-        "Sysctls": null,
-        "CapAdd": null,
-        "CapDrop": null
-      },
-      "Health": {
-        "Cmd": null,
-        "Retries": 0,
-        "Interval": "",
-        "Timeout": "",
-        "StartPeriod": "",
-        "StartInterval": ""
-      },
-      "Runtime": {
-        "AttachToTty": false,
-        "ShmSize": "",
-        "Env": null,
-        "Entrypoint": null,
-        "Args": null
+      "lifecycle": {
+        "order": 1
       }
     }
   \]
@@ -356,129 +169,55 @@ Use "homelab \[command\] --help" for more information about a command\.`,
 		},
 		want: `Homelab config:
 {
-  "Global": {
-    "Env": null,
-    "MountDefs": null,
-    "Container": {
-      "StopSignal": "",
-      "StopTimeout": 0,
-      "RestartPolicy": {
-        "Mode": "",
-        "MaxRetryCount": 0
-      },
-      "DomainName": "",
-      "DNSSearch": null,
-      "Env": null,
-      "Mounts": null,
-      "Labels": null
-    }
-  },
-  "IPAM": {
-    "Networks": {
-      "BridgeModeNetworks": \[
+  "ipam": {
+    "networks": {
+      "bridgeModeNetworks": \[
         {
-          "Name": "net1",
-          "HostInterfaceName": "docker-net1",
-          "CIDR": "172\.18\.100\.0/24",
-          "Priority": 1,
-          "Containers": \[
+          "name": "net1",
+          "hostInterfaceName": "docker-net1",
+          "cidr": "172\.18\.100\.0/24",
+          "priority": 1,
+          "containers": \[
             {
-              "IP": "172\.18\.100\.11",
-              "Container": {
-                "Group": "g1",
-                "Container": "c1"
+              "ip": "172\.18\.100\.11",
+              "container": {
+                "group": "g1",
+                "container": "c1"
               }
             }
           \]
         }
-      \],
-      "ContainerModeNetworks": null
+      \]
     }
   },
-  "Hosts": \[
+  "hosts": \[
     {
-      "Name": "fakehost",
-      "AllowedContainers": \[
+      "name": "fakehost",
+      "allowedContainers": \[
         {
-          "Group": "g1",
-          "Container": "c1"
+          "group": "g1",
+          "container": "c1"
         }
       \]
     }
   \],
-  "Groups": \[
+  "groups": \[
     {
-      "Name": "g1",
-      "Order": 1
+      "name": "g1",
+      "order": 1
     }
   \],
-  "Containers": \[
+  "containers": \[
     {
-      "Info": {
-        "Group": "g1",
-        "Container": "c1"
+      "info": {
+        "group": "g1",
+        "container": "c1"
       },
-      "Config": {
-        "Env": null
+      "image": {
+        "image": "abc/xyz"
       },
-      "Image": {
-        "Image": "abc/xyz",
-        "SkipImagePull": false,
-        "IgnoreImagePullFailures": false,
-        "PullImageBeforeStop": false
-      },
-      "Metadata": {
-        "Labels": null
-      },
-      "Lifecycle": {
-        "Order": 10,
-        "StartPreHook": "",
-        "RestartPolicy": {
-          "Mode": "",
-          "MaxRetryCount": 0
-        },
-        "AutoRemove": false,
-        "StopSignal": "",
-        "StopTimeout": 0
-      },
-      "User": {
-        "User": "",
-        "PrimaryGroup": "",
-        "AdditionalGroups": null
-      },
-      "Filesystem": {
-        "ReadOnlyRootfs": false,
-        "Mounts": null,
-        "Devices": null
-      },
-      "Network": {
-        "HostName": "",
-        "DomainName": "",
-        "DNSServers": null,
-        "DNSOptions": null,
-        "DNSSearch": null,
-        "PublishedPorts": null
-      },
-      "Security": {
-        "Privileged": false,
-        "Sysctls": null,
-        "CapAdd": null,
-        "CapDrop": null
-      },
-      "Health": {
-        "Cmd": null,
-        "Retries": 0,
-        "Interval": "",
-        "Timeout": "",
-        "StartPeriod": "",
-        "StartInterval": ""
-      },
-      "Runtime": {
-        "AttachToTty": false,
-        "ShmSize": "",
-        "Env": null,
-        "Entrypoint": null,
-        "Args": null
+      "lifecycle": {
+        "order": 10
       }
     }
   \]

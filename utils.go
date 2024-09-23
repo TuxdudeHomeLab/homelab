@@ -2,12 +2,13 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
 
 	"github.com/tuxdude/zzzlogi"
+
+	"github.com/clarketm/json"
 )
 
 const (
