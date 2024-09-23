@@ -89,9 +89,12 @@ func execStartCmd(ctx context.Context, cmd *cobra.Command, args []string, option
 	for _, c := range res {
 		// We ignore the errors to keep moving forward even if one or more
 		// of the containers fail to start.
-		err := c.start(ctx, dockerClient, dep.host.humanFriendlyHostName)
+		started, err := c.start(ctx, dockerClient)
 		if err != nil {
 			errList = append(errList, err)
+		}
+		if !started {
+			log(ctx).Warnf("Container %s not allowed to run on host %s", c.name(), dep.host.humanFriendlyHostName)
 		}
 	}
 

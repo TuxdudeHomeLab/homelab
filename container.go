@@ -56,23 +56,22 @@ func (c *container) isAllowedOnCurrentHost() bool {
 	return c.allowedOnHost
 }
 
-func (c *container) start(ctx context.Context, docker *dockerClient, humanFriendlyHostName string) error {
+func (c *container) start(ctx context.Context, docker *dockerClient) (bool, error) {
 	log(ctx).Debugf("Starting container %s ...", c.name())
 
 	// Validate the container is allowed to run on the current host.
 	if !c.isAllowedOnCurrentHost() {
-		log(ctx).Warnf("Container %s not allowed to run on host %s", c.name(), humanFriendlyHostName)
-		return nil
+		return false, nil
 	}
 
 	err := c.startInternal(ctx, docker)
 	if err != nil {
-		return logToErrorAndReturn(ctx, "Failed to start container %s, reason:%v", c.name(), err)
+		return false, logToErrorAndReturn(ctx, "Failed to start container %s, reason:%v", c.name(), err)
 	}
 
 	log(ctx).Infof("Started container %s", c.name())
 	log(ctx).InfoEmpty()
-	return nil
+	return true, nil
 }
 
 func (c *container) purge(ctx context.Context, docker *dockerClient) error {
