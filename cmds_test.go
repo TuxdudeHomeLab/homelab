@@ -375,7 +375,8 @@ Container g2-c3 not allowed to run on host [^\s]+`,
 		ctxInfo: &testContextInfo{
 			dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{
 				validImagesForPull: stringSet{
-					"abc/xyz": {},
+					"abc/xyz":  {},
+					"abc/xyz3": {},
 				},
 			}),
 		},
@@ -383,7 +384,9 @@ Container g2-c3 not allowed to run on host [^\s]+`,
 Created network net1
 Started container g1-c1
 Container g1-c2 not allowed to run on host FakeHost
-Container g2-c3 not allowed to run on host FakeHost`,
+Pulling image: abc/xyz3
+Created network net2
+Started container g2-c3`,
 	},
 	{
 		name: "Homelab Command - Start - One Group",
@@ -479,6 +482,112 @@ var executeHomelabCmdErrorTests = []struct {
 		want: `homelab sub-command is required`,
 	},
 	{
+		name: "Homelab Command - Show Config - Non Existing CLI Config Path",
+		args: []string{
+			"show-config",
+			"--cli-config",
+			fmt.Sprintf("%s/testdata/foobar.yaml", pwd()),
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newEmptyFakeDockerHost(),
+		},
+		want: `show-config failed while determining the configs path, reason: failed to open homelab CLI config file, reason: open .+/homelab/testdata/foobar.yaml: no such file or directory`,
+	},
+	{
+		name: "Homelab Command - Show Config - Non Existing Configs Path",
+		args: []string{
+			"show-config",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/foobar", pwd()),
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newEmptyFakeDockerHost(),
+		},
+		want: `show-config failed while parsing the configs, reason: os.Stat\(\) failed on homelab configs path, reason: stat .+/homelab/testdata/foobar: no such file or directory`,
+	},
+	{
+		name: "Homelab Command - Start - No Group Flag",
+		args: []string{
+			"start",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/start-cmd", pwd()),
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newEmptyFakeDockerHost(),
+		},
+		want: `--group flag must be specified when --all-groups is false`,
+	},
+	{
+		name: "Homelab Command - Start - Container Flag Without Group Flag",
+		args: []string{
+			"start",
+			"--container",
+			"c1",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/start-cmd", pwd()),
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newEmptyFakeDockerHost(),
+		},
+		want: `when --all-groups is false, --group flag must be specified when specifying the --container flag.`,
+	},
+	{
+		name: "Homelab Command - Start - Group Flag With AllGroups Flag",
+		args: []string{
+			"start",
+			"--all-groups",
+			"--group",
+			"g1",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/start-cmd", pwd()),
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newEmptyFakeDockerHost(),
+		},
+		want: `--group flag cannot be specified when all-groups is true`,
+	},
+	{
+		name: "Homelab Command - Start - Container Flag With AllGroups Flag",
+		args: []string{
+			"start",
+			"--all-groups",
+			"--container",
+			"c1",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/start-cmd", pwd()),
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newEmptyFakeDockerHost(),
+		},
+		want: `--container flag cannot be specified when all-groups is true`,
+	},
+	{
+		name: "Homelab Command - Start - Non Existing CLI Config Path",
+		args: []string{
+			"start",
+			"--all-groups",
+			"--cli-config",
+			fmt.Sprintf("%s/testdata/foobar.yaml", pwd()),
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newEmptyFakeDockerHost(),
+		},
+		want: `start failed while determining the configs path, reason: failed to open homelab CLI config file, reason: open .+/homelab/testdata/foobar.yaml: no such file or directory`,
+	},
+	{
+		name: "Homelab Command - Start - Non Existing Configs Path",
+		args: []string{
+			"start",
+			"--all-groups",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/foobar", pwd()),
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newEmptyFakeDockerHost(),
+		},
+		want: `start failed while parsing the configs, reason: os.Stat\(\) failed on homelab configs path, reason: stat .+/homelab/testdata/foobar: no such file or directory`,
+	},
+	{
 		name: "Homelab Command - Start - One Non Existing Group",
 		args: []string{
 			"start",
@@ -524,6 +633,21 @@ var executeHomelabCmdErrorTests = []struct {
 		},
 		want: `start failed while querying containers, reason: container {g1 c3} not found`,
 	},
+	{
+		name: "Homelab Command - Start - Failure",
+		args: []string{
+			"start",
+			"--all-groups",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/start-cmd", pwd()),
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newEmptyFakeDockerHost(),
+		},
+		want: `start failed for 2 containers, reason\(s\):
+1 - Failed to start container g1-c1, reason:failed to pull the image abc/xyz, reason: image abc/xyz not found or invalid and cannot be pulled by the fake docker host
+2 - Failed to start container g2-c3, reason:failed to pull the image abc/xyz3, reason: image abc/xyz3 not found or invalid and cannot be pulled by the fake docker host`,
+	},
 }
 
 func TestExecHomelabCmdErrors(t *testing.T) {
@@ -551,6 +675,61 @@ func TestExecHomelabCmdErrors(t *testing.T) {
 				t.Errorf(
 					"execHomelabCmd()\nTest Case: %q\nFailure: gotErr did not match the want regex\nReason:\n\ngotErr = %q\n\twant = %q", tc.name, gotErr, tc.want)
 			}
+		})
+	}
+}
+
+var executeHomelabCmdOSEnvErrorTests = []struct {
+	name    string
+	args    []string
+	ctxInfo *testContextInfo
+	envs    testOSEnvMap
+	want    string
+}{
+	{
+		name: "Homelab Command - Start - Docker Client Creation Failed",
+		args: []string{
+			"start",
+			"--all-groups",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/start-cmd", pwd()),
+		},
+		ctxInfo: &testContextInfo{},
+		envs: testOSEnvMap{
+			"DOCKER_HOST": "/var/run/foobar-docker.sock",
+		},
+		want: "failed to create a new docker API client, reason: unable to parse docker host `/var/run/foobar-docker.sock`",
+	},
+}
+
+func TestExecHomelabCmdOSEnvErrors(t *testing.T) {
+	for _, tc := range executeHomelabCmdOSEnvErrorTests {
+		t.Run(tc.name, func(t *testing.T) {
+			setTestEnv(tc.envs)
+
+			_, gotErr := execHomelabCmdTest(tc.ctxInfo, tc.args...)
+			if gotErr == nil {
+				t.Errorf(
+					"execHomelabCmd()\nTest Case: %q\nFailure: gotErr == nil\nReason: want = %q",
+					tc.name, tc.want)
+				return
+			}
+
+			match, err := regexp.MatchString(fmt.Sprintf("^%s$", tc.want), gotErr.Error())
+			if err != nil {
+				t.Errorf(
+					"execHomelabCmd()\nTest Case: %q\nFailure: unexpected exception while matching against gotErr error string\nReason: error = %v", tc.name, err)
+				return
+			}
+
+			if !match {
+				t.Errorf(
+					"execHomelabCmd()\nTest Case: %q\nFailure: gotErr did not match the want regex\nReason:\n\ngotErr = %q\n\twant = %q", tc.name, gotErr, tc.want)
+			}
+
+			t.Cleanup(func() {
+				clearTestEnv(tc.envs)
+			})
 		})
 	}
 }

@@ -3,4 +3,6 @@ hosts:
     allowedContainers:
       - group: g1
         container: c1
+      - group: g2
+        container: c3
   - name: host2

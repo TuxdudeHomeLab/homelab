@@ -29,11 +29,17 @@ func buildStartCmd(ctx context.Context, globalOptions *globalCmdOptions) *cobra.
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			gFlag := cmd.Flag(groupFlagStr)
 			cFlag := cmd.Flag(containerFlagStr)
-			if !options.allGroups && !gFlag.Changed {
-				return fmt.Errorf("--group flag must be specified when --all-groups is either not specified or set to false.")
+			if options.allGroups && gFlag.Changed {
+				return fmt.Errorf("--group flag cannot be specified when all-groups is true")
 			}
-			if !options.allGroups && !gFlag.Changed && !cFlag.Changed {
-				return fmt.Errorf("when --all-groups is false, either --group flag must be specified or both --group and --container flags must be specified.")
+			if options.allGroups && cFlag.Changed {
+				return fmt.Errorf("--container flag cannot be specified when all-groups is true")
+			}
+			if !options.allGroups && !gFlag.Changed && cFlag.Changed {
+				return fmt.Errorf("when --all-groups is false, --group flag must be specified when specifying the --container flag.")
+			}
+			if !options.allGroups && !gFlag.Changed {
+				return fmt.Errorf("--group flag must be specified when --all-groups is false")
 			}
 			return nil
 		},
@@ -53,18 +59,11 @@ func buildStartCmd(ctx context.Context, globalOptions *globalCmdOptions) *cobra.
 		&options.group, groupFlagStr, "", "Start one or all containers in the specified group.")
 	s.Flags().StringVar(
 		&options.container, containerFlagStr, "", "Start the specified container.")
-	s.MarkFlagsMutuallyExclusive(allGroupsFlagStr, groupFlagStr)
-	s.MarkFlagsMutuallyExclusive(allGroupsFlagStr, containerFlagStr)
 	return s
 }
 
 func execStartCmd(ctx context.Context, cmd *cobra.Command, args []string, options *startCmdOptions, globalOptions *globalCmdOptions) error {
-	configsPath, err := homelabConfigsPath(ctx, globalOptions.cliConfig, globalOptions.configsDir)
-	if err != nil {
-		return err
-	}
-
-	dep, err := buildDeploymentFromConfigsPath(ctx, configsPath)
+	dep, err := deploymentFromCommand(ctx, "start", globalOptions.cliConfig, globalOptions.configsDir)
 	if err != nil {
 		return err
 	}
@@ -75,7 +74,7 @@ func execStartCmd(ctx context.Context, cmd *cobra.Command, args []string, option
 	}
 	defer dockerClient.close()
 
-	res, err := queryContainers(ctx, dep, options.allGroups, options.group, options.container)
+	res, err := dep.queryContainers(ctx, options.allGroups, options.group, options.container)
 	if err != nil {
 		return fmt.Errorf("start failed while querying containers, reason: %w", err)
 	}
@@ -99,9 +98,9 @@ func execStartCmd(ctx context.Context, cmd *cobra.Command, args []string, option
 	if len(errList) > 0 {
 		var sb strings.Builder
 		for i, e := range errList {
-			sb.WriteString(fmt.Sprintf("\n%d %s", i+1, e))
+			sb.WriteString(fmt.Sprintf("\n%d - %s", i+1, e))
 		}
-		return fmt.Errorf("start failed for %d containers, reason(s): %s", len(errList), sb.String())
+		return fmt.Errorf("start failed for %d containers, reason(s):%s", len(errList), sb.String())
 	}
 	return nil
 }

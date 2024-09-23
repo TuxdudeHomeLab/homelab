@@ -125,6 +125,28 @@ func (d *deployment) queryContainer(cRef ContainerReference) (*container, error)
 	return ct, nil
 }
 
+func (d *deployment) queryContainers(ctx context.Context, allGroups bool, group, container string) (containerList, error) {
+	if allGroups {
+		return containerMapToList(d.queryAllContainers()), nil
+	}
+	if group != "" && container == "" {
+		ctMap, err := d.queryAllContainersInGroup(group)
+		if err != nil {
+			return nil, err
+		}
+		return containerMapToList(ctMap), nil
+	}
+	if group != "" {
+		ct, err := d.queryContainer(ContainerReference{Group: group, Container: container})
+		if err != nil {
+			return nil, err
+		}
+		return containerList{ct}, nil
+	}
+	log(ctx).Fatalf("Invalid scenario, possibly indicating a bug in the code")
+	return nil, nil
+}
+
 func (d *deployment) String() string {
 	return fmt.Sprintf("Deployment{Groups:%s, Networks:%s}", d.groups, d.networks)
 }

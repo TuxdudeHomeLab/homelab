@@ -29,12 +29,7 @@ func buildShowConfigCmd(ctx context.Context, globalOptions *globalCmdOptions) *c
 }
 
 func execShowConfigCmd(ctx context.Context, cmd *cobra.Command, args []string, globalOptions *globalCmdOptions) error {
-	configsPath, err := homelabConfigsPath(ctx, globalOptions.cliConfig, globalOptions.configsDir)
-	if err != nil {
-		return err
-	}
-
-	dep, err := buildDeploymentFromConfigsPath(ctx, configsPath)
+	dep, err := deploymentFromCommand(ctx, "show-config", globalOptions.cliConfig, globalOptions.configsDir)
 	if err != nil {
 		return err
 	}

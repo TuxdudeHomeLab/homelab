@@ -1,25 +1,20 @@
 package main
 
-import "context"
+import (
+	"context"
+	"fmt"
+)
 
-func queryContainers(ctx context.Context, dep *deployment, allGroups bool, group, container string) (containerList, error) {
-	if allGroups {
-		return containerMapToList(dep.queryAllContainers()), nil
+func deploymentFromCommand(ctx context.Context, command, cliConfig, configsDir string) (*deployment, error) {
+	configsPath, err := homelabConfigsPath(ctx, cliConfig, configsDir)
+	if err != nil {
+		return nil, fmt.Errorf("%s failed while determining the configs path, reason: %w", command, err)
 	}
-	if group != "" && container == "" {
-		ctMap, err := dep.queryAllContainersInGroup(group)
-		if err != nil {
-			return nil, err
-		}
-		return containerMapToList(ctMap), nil
+
+	dep, err := buildDeploymentFromConfigsPath(ctx, configsPath)
+	if err != nil {
+		return nil, fmt.Errorf("%s failed while parsing the configs, reason: %w", command, err)
 	}
-	if group != "" {
-		ct, err := dep.queryContainer(ContainerReference{Group: group, Container: container})
-		if err != nil {
-			return nil, err
-		}
-		return containerList{ct}, nil
-	}
-	log(ctx).Fatalf("Invalid scenario, possibly indicating a bug in the code")
-	return nil, nil
+
+	return dep, nil
 }

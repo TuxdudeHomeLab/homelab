@@ -20,6 +20,8 @@ type testContextInfo struct {
 	useRealHostInfo bool
 }
 
+type testOSEnvMap map[string]string
+
 func newVanillaTestContext() context.Context {
 	return newTestContext(
 		&testContextInfo{
@@ -53,6 +55,24 @@ func newCapturingTestLogger(w io.Writer) zzzlogi.Logger {
 	config := zzzlog.NewVanillaLoggerConfig()
 	config.Dest = w
 	return zzzlog.NewLogger(config)
+}
+
+func setTestEnv(envs testOSEnvMap) {
+	for k, v := range envs {
+		err := os.Setenv(k, v)
+		if err != nil {
+			panic(err)
+		}
+	}
+}
+
+func clearTestEnv(envs testOSEnvMap) {
+	for k := range envs {
+		err := os.Unsetenv(k)
+		if err != nil {
+			panic(err)
+		}
+	}
 }
 
 func pwd() string {
