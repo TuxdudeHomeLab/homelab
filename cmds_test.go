@@ -11,10 +11,10 @@ import (
 )
 
 var executeHomelabCmdTests = []struct {
-	name string
-	args []string
-	host *fakeDockerHost
-	want string
+	name       string
+	args       []string
+	dockerHost *fakeDockerHost
+	want       string
 }{
 	{
 		name: "Homelab Command - Show Version",
@@ -345,7 +345,7 @@ Use "homelab \[command\] --help" for more information about a command\.`,
 			"--configs-dir",
 			fmt.Sprintf("%s/testdata/start-cmd", pwd()),
 		},
-		host: newFakeDockerHost(&fakeDockerHostInitInfo{
+		dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{
 			validImagesForPull: stringSet{
 				"abc/xyz": {},
 			},
@@ -365,7 +365,7 @@ Container g2-c3 not allowed to run on host FakeHost`,
 			"--configs-dir",
 			fmt.Sprintf("%s/testdata/start-cmd", pwd()),
 		},
-		host: newFakeDockerHost(&fakeDockerHostInitInfo{
+		dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{
 			validImagesForPull: stringSet{
 				"abc/xyz": {},
 			},
@@ -386,7 +386,7 @@ Container g1-c2 not allowed to run on host FakeHost`,
 			"--configs-dir",
 			fmt.Sprintf("%s/testdata/start-cmd", pwd()),
 		},
-		host: newFakeDockerHost(&fakeDockerHostInitInfo{
+		dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{
 			validImagesForPull: stringSet{
 				"abc/xyz": {},
 			},
@@ -408,7 +408,7 @@ func TestExecHomelabCmd(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, out, gotErr := execHomelabCmdTest(tc.host, tc.args...)
+			_, out, gotErr := execHomelabCmdTest(tc.dockerHost, tc.args...)
 			if gotErr != nil {
 				t.Errorf(
 					"execHomelabCmd()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v\nOutput: %v",
