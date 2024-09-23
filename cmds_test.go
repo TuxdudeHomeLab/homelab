@@ -370,7 +370,7 @@ var executeHomelabCmdErrorTests = []struct {
 		ctxInfo: &testContextInfo{
 			dockerHost: newEmptyFakeDockerHost(),
 		},
-		want: `show-config failed while determining the configs path, reason: failed to open homelab CLI config file, reason: open .+/homelab/testdata/foobar.yaml: no such file or directory`,
+		want: `show-config failed while determining the configs path, reason: failed to open homelab CLI config file, reason: open .+/homelab/testdata/foobar\.yaml: no such file or directory`,
 	},
 	{
 		name: "Homelab Command - Show Config - Non Existing Configs Path",
@@ -382,7 +382,7 @@ var executeHomelabCmdErrorTests = []struct {
 		ctxInfo: &testContextInfo{
 			dockerHost: newEmptyFakeDockerHost(),
 		},
-		want: `show-config failed while parsing the configs, reason: os.Stat\(\) failed on homelab configs path, reason: stat .+/homelab/testdata/foobar: no such file or directory`,
+		want: `show-config failed while parsing the configs, reason: os\.Stat\(\) failed on homelab configs path, reason: stat .+/homelab/testdata/foobar: no such file or directory`,
 	},
 	{
 		name: "Homelab Command - Start - No Group Flag",
@@ -408,7 +408,7 @@ var executeHomelabCmdErrorTests = []struct {
 		ctxInfo: &testContextInfo{
 			dockerHost: newEmptyFakeDockerHost(),
 		},
-		want: `when --all-groups is false, --group flag must be specified when specifying the --container flag.`,
+		want: `when --all-groups is false, --group flag must be specified when specifying the --container flag`,
 	},
 	{
 		name: "Homelab Command - Start - Group Flag With AllGroups Flag",
@@ -451,7 +451,7 @@ var executeHomelabCmdErrorTests = []struct {
 		ctxInfo: &testContextInfo{
 			dockerHost: newEmptyFakeDockerHost(),
 		},
-		want: `start failed while determining the configs path, reason: failed to open homelab CLI config file, reason: open .+/homelab/testdata/foobar.yaml: no such file or directory`,
+		want: `start failed while determining the configs path, reason: failed to open homelab CLI config file, reason: open .+/homelab/testdata/foobar\.yaml: no such file or directory`,
 	},
 	{
 		name: "Homelab Command - Start - Non Existing Configs Path",
@@ -464,7 +464,7 @@ var executeHomelabCmdErrorTests = []struct {
 		ctxInfo: &testContextInfo{
 			dockerHost: newEmptyFakeDockerHost(),
 		},
-		want: `start failed while parsing the configs, reason: os.Stat\(\) failed on homelab configs path, reason: stat .+/homelab/testdata/foobar: no such file or directory`,
+		want: `start failed while parsing the configs, reason: os\.Stat\(\) failed on homelab configs path, reason: stat .+/homelab/testdata/foobar: no such file or directory`,
 	},
 	{
 		name: "Homelab Command - Start - One Non Existing Group",
@@ -577,7 +577,7 @@ var executeHomelabCmdOSEnvErrorTests = []struct {
 		envs: testOSEnvMap{
 			"DOCKER_HOST": "/var/run/foobar-docker.sock",
 		},
-		want: "failed to create a new docker API client, reason: unable to parse docker host `/var/run/foobar-docker.sock`",
+		want: "failed to create a new docker API client, reason: unable to parse docker host `/var/run/foobar-docker\\.sock`",
 	},
 }
 

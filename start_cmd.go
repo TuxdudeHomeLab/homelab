@@ -36,7 +36,7 @@ func buildStartCmd(ctx context.Context, globalOptions *globalCmdOptions) *cobra.
 				return fmt.Errorf("--container flag cannot be specified when all-groups is true")
 			}
 			if !options.allGroups && !gFlag.Changed && cFlag.Changed {
-				return fmt.Errorf("when --all-groups is false, --group flag must be specified when specifying the --container flag.")
+				return fmt.Errorf("when --all-groups is false, --group flag must be specified when specifying the --container flag")
 			}
 			if !options.allGroups && !gFlag.Changed {
 				return fmt.Errorf("--group flag must be specified when --all-groups is false")
