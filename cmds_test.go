@@ -28,7 +28,11 @@ var executeHomelabCmdTests = []struct {
 		args: []string{
 			"--help",
 		},
-		want: `(?s)A CLI for managing both the configuration and deployment of groups of docker containers on a given host\.\n\nThe configuration is managed using a yaml file. The configuration specifies the container groups and individual containers, their properties and how to deploy them.\n\nUsage:\n.+Use "homelab \[command\] --help" for more information about a command\.`,
+		want: `(?s)A CLI for managing both the configuration and deployment of groups of docker containers on a given host\.
+The configuration is managed using a yaml file\. The configuration specifies the container groups and individual containers, their properties and how to deploy them\.
+Usage:
+.+
+Use "homelab \[command\] --help" for more information about a command\.`,
 	},
 	{
 		name: "Homelab Command - Show Config",
@@ -348,9 +352,7 @@ var executeHomelabCmdTests = []struct {
 		}),
 		want: `Pulling image: abc/xyz
 Created network net1
-
 Started container g1-c1
-
 Container g1-c2 not allowed to run on host FakeHost
 Container g2-c3 not allowed to run on host FakeHost`,
 	},
@@ -358,6 +360,10 @@ Container g2-c3 not allowed to run on host FakeHost`,
 
 func TestExecHomelabCmd(t *testing.T) {
 	initPkgVersionInfoForTest()
+	multiNewLineRegex, err := regexp.Compile(`\n+`)
+	if err != nil {
+		panic(err)
+	}
 	for _, test := range executeHomelabCmdTests {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {
@@ -371,7 +377,7 @@ func TestExecHomelabCmd(t *testing.T) {
 				return
 			}
 
-			match, err := regexp.MatchString(fmt.Sprintf("^%s$", tc.want), strings.TrimSpace(out))
+			match, err := regexp.MatchString(fmt.Sprintf("^%s$", tc.want), strings.TrimSpace(multiNewLineRegex.ReplaceAllString(out, "\n")))
 			if err != nil {
 				t.Errorf(
 					"execHomelabCmd()\nTest Case: %q\nFailure: unexpected exception while matching against gotErr error string\nReason: error = %v", tc.name, err)
