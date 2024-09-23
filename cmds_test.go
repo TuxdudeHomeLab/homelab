@@ -13,6 +13,7 @@ import (
 var executeHomelabCmdTests = []struct {
 	name string
 	args []string
+	host *fakeDockerHost
 	want string
 }{
 	{
@@ -36,7 +37,7 @@ var executeHomelabCmdTests = []struct {
 			"--configs-dir",
 			fmt.Sprintf("%s/testdata/show-config-cmd", pwd()),
 		},
-		want: `(?s)Homelab config:
+		want: `Homelab config:
 {
   "Global": {
     "Env": null,
@@ -332,6 +333,27 @@ var executeHomelabCmdTests = []struct {
   \]
 }`,
 	},
+	{
+		name: "Homelab Command - Start",
+		args: []string{
+			"start",
+			"--all-groups",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/start-cmd", pwd()),
+		},
+		host: newFakeDockerHost(&fakeDockerHostInitInfo{
+			validImagesForPull: stringSet{
+				"abc/xyz": {},
+			},
+		}),
+		want: `Pulling image: abc/xyz
+Created network net1
+
+Started container g1-c1
+
+Container g1-c2 not allowed to run on host FakeHost
+Container g2-c3 not allowed to run on host FakeHost`,
+	},
 }
 
 func TestExecHomelabCmd(t *testing.T) {
@@ -341,7 +363,7 @@ func TestExecHomelabCmd(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, out, gotErr := execHomelabCmdTest(tc.args...)
+			_, out, gotErr := execHomelabCmdTest(tc.host, tc.args...)
 			if gotErr != nil {
 				t.Errorf(
 					"execHomelabCmd()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v\nOutput: %v",
@@ -370,9 +392,14 @@ func initPkgVersionInfoForTest() {
 	pkgTimestamp = "my-pkg-timestamp"
 }
 
-func execHomelabCmdTest(args ...string) (*cobra.Command, string, error) {
+func execHomelabCmdTest(dockerHost *fakeDockerHost, args ...string) (*cobra.Command, string, error) {
 	buf := new(bytes.Buffer)
-	cmd := initHomelabCmd(testContextWithLogger(capturingTestLogger(buf)))
+	ctx := testContextWithLogger(capturingTestLogger(buf))
+	if dockerHost != nil {
+		ctx = withDockerAPIClient(ctx, dockerHost)
+	}
+
+	cmd := initHomelabCmd(ctx)
 	cmd.SetOut(buf)
 	cmd.SetErr(buf)
 	cmd.SetArgs(args)

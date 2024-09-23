@@ -1,0 +1,8 @@
+containers:
+  - info:
+      group: g1
+      container: c2
+    image:
+      image: abc/xyz2
+    lifecycle:
+      order: 2

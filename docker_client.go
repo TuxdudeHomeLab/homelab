@@ -32,17 +32,17 @@ type dockerAPIClient interface {
 	Close() error
 
 	ContainerCreate(ctx context.Context, config *dcontainer.Config, hostConfig *dcontainer.HostConfig, networkingConfig *dnetwork.NetworkingConfig, platform *ocispec.Platform, containerName string) (dcontainer.CreateResponse, error)
-	ContainerInspect(ctx context.Context, containerID string) (dtypes.ContainerJSON, error)
-	ContainerKill(ctx context.Context, containerID, signal string) error
-	ContainerRemove(ctx context.Context, containerID string, options dcontainer.RemoveOptions) error
-	ContainerStart(ctx context.Context, containerID string, options dcontainer.StartOptions) error
-	ContainerStop(ctx context.Context, containerID string, options dcontainer.StopOptions) error
+	ContainerInspect(ctx context.Context, containerName string) (dtypes.ContainerJSON, error)
+	ContainerKill(ctx context.Context, containerName, signal string) error
+	ContainerRemove(ctx context.Context, containerName string, options dcontainer.RemoveOptions) error
+	ContainerStart(ctx context.Context, containerName string, options dcontainer.StartOptions) error
+	ContainerStop(ctx context.Context, containerName string, options dcontainer.StopOptions) error
 
 	ImageList(ctx context.Context, options dimage.ListOptions) ([]dimage.Summary, error)
 	ImagePull(ctx context.Context, refStr string, options dimage.PullOptions) (io.ReadCloser, error)
 
-	NetworkConnect(ctx context.Context, networkID, containerID string, config *dnetwork.EndpointSettings) error
-	NetworkDisconnect(ctx context.Context, networkID, containerID string, force bool) error
+	NetworkConnect(ctx context.Context, networkName, containerName string, config *dnetwork.EndpointSettings) error
+	NetworkDisconnect(ctx context.Context, networkName, containerName string, force bool) error
 	NetworkList(ctx context.Context, options dnetwork.ListOptions) ([]dnetwork.Summary, error)
 }
 
@@ -83,7 +83,7 @@ func containerStateFromString(state string) containerState {
 
 func restartPolicyModeFromString(pol string) (dcontainer.RestartPolicyMode, error) {
 	switch pol {
-	case "no":
+	case "", "no":
 		return dcontainer.RestartPolicyDisabled, nil
 	case "always":
 		return dcontainer.RestartPolicyAlways, nil

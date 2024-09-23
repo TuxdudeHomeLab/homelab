@@ -808,22 +808,22 @@ func TestParseConfigUsingReader(t *testing.T) {
 			t.Parallel()
 
 			input := strings.NewReader(tc.config)
-			got, gotErr := buildDeploymentFromReader(testContext(), input, fakeHostInfo)
+			got, gotErr := buildDeployment(testContext(), input)
 			if gotErr != nil {
 				t.Errorf(
-					"buildDeploymentFromReader()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v",
+					"buildDeployment()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v",
 					tc.name, gotErr)
 				return
 			}
 
 			if diff := cmp.Diff(tc.want, got.config); diff != "" {
 				t.Errorf(
-					"buildDeploymentFromReader()\nTest Case: %q\nFailure: got did not match the want config\nDiff(-want +got): %s", tc.name, diff)
+					"buildDeployment()\nTest Case: %q\nFailure: got did not match the want config\nDiff(-want +got): %s", tc.name, diff)
 			}
 
 			if diff := cmp.Diff(tc.wantDockerConfigs, got.containerDockerConfigs); diff != "" {
 				t.Errorf(
-					"buildDeploymentFromReader()\nTest Case: %q\nFailure: docker configs got did not match the want config\nDiff(-want +got): %s", tc.name, diff)
+					"buildDeployment()\nTest Case: %q\nFailure: docker configs got did not match the want config\nDiff(-want +got): %s", tc.name, diff)
 			}
 		})
 	}
@@ -1147,7 +1147,7 @@ func TestParseAndValidateConfigsFromPath(t *testing.T) {
 			t.Parallel()
 
 			p := fmt.Sprintf("%s/testdata/%s", pwd(), tc.configsPath)
-			got, gotErr := buildDeploymentFromConfigsPath(testContext(), p, fakeHostInfo)
+			got, gotErr := buildDeploymentFromConfigsPath(testContext(), p)
 			if gotErr != nil {
 				t.Errorf(
 					"buildDeploymentFromConfigsPath()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v",
@@ -1293,7 +1293,7 @@ func TestValidateConfig(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, gotErr := buildDeploymentFromConfig(testContext(), &tc.config, fakeHostInfo)
+			_, gotErr := buildDeploymentFromConfig(testContext(), &tc.config)
 			if gotErr != nil {
 				t.Errorf(
 					"buildDeploymentFromConfig()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v",
@@ -4497,7 +4497,7 @@ func TestValidateConfigErrors(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, gotErr := buildDeploymentFromConfig(testContext(), &tc.config, fakeHostInfo)
+			_, gotErr := buildDeploymentFromConfig(testContext(), &tc.config)
 			if gotErr == nil {
 				t.Errorf(
 					"HomelabConfig.validate()\nTest Case: %q\nFailure: gotErr == nil\nReason: want = %q",

@@ -15,29 +15,29 @@ type deployment struct {
 	containerDockerConfigs containerDockerConfigMap
 }
 
-func buildDeployment(ctx context.Context, configsPath string) (*deployment, error) {
-	return buildDeploymentFromConfigsPath(ctx, configsPath, newHostInfo(ctx))
-}
-
-func buildDeploymentFromConfigsPath(ctx context.Context, configsPath string, host *hostInfo) (*deployment, error) {
+func buildDeploymentFromConfigsPath(ctx context.Context, configsPath string) (*deployment, error) {
 	config := HomelabConfig{}
 	err := config.parseConfigs(ctx, configsPath)
 	if err != nil {
 		return nil, err
 	}
-	return buildDeploymentFromConfig(ctx, &config, host)
+	return buildDeploymentFromConfig(ctx, &config)
 }
 
-func buildDeploymentFromReader(ctx context.Context, reader io.Reader, host *hostInfo) (*deployment, error) {
+func buildDeployment(ctx context.Context, reader io.Reader) (*deployment, error) {
 	config := HomelabConfig{}
 	err := config.parse(ctx, reader)
 	if err != nil {
 		return nil, err
 	}
-	return buildDeploymentFromConfig(ctx, &config, host)
+	return buildDeploymentFromConfig(ctx, &config)
 }
 
-func buildDeploymentFromConfig(ctx context.Context, config *HomelabConfig, host *hostInfo) (*deployment, error) {
+func buildDeploymentFromConfig(ctx context.Context, config *HomelabConfig) (*deployment, error) {
+	host, found := hostInfoFromContext(ctx)
+	if !found {
+		host = newHostInfo(ctx)
+	}
 	d := deployment{
 		config:                 config,
 		host:                   host,

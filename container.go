@@ -61,7 +61,7 @@ func (c *container) start(ctx context.Context, docker *dockerClient, humanFriend
 
 	// Validate the container is allowed to run on the current host.
 	if !c.isAllowedOnCurrentHost() {
-		log(ctx).Warnf("Container %s not allowed to run on host '%s'", c.name(), humanFriendlyHostName)
+		log(ctx).Warnf("Container %s not allowed to run on host %s", c.name(), humanFriendlyHostName)
 		return nil
 	}
 

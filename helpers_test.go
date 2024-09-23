@@ -18,7 +18,11 @@ func testContext() context.Context {
 }
 
 func testContextWithLogger(logger zzzlogi.Logger) context.Context {
-	return withLogger(context.Background(), logger)
+	return withLogger(testContextWithFakeHostInfo(), logger)
+}
+
+func testContextWithFakeHostInfo() context.Context {
+	return withHostInfo(context.Background(), fakeHostInfo)
 }
 
 func testLogger() zzzlogi.Logger {

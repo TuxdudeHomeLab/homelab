@@ -64,7 +64,7 @@ func execStartCmd(ctx context.Context, cmd *cobra.Command, args []string, option
 		return err
 	}
 
-	dep, err := buildDeployment(ctx, configsPath)
+	dep, err := buildDeploymentFromConfigsPath(ctx, configsPath)
 	if err != nil {
 		return err
 	}

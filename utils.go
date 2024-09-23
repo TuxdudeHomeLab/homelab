@@ -19,12 +19,14 @@ const (
 var (
 	loggerKey          = ctxKeyLogger{}
 	dockerAPIClientKey = ctxKeyDockerAPIClient{}
+	hostInfoKey        = ctxKeyHostInfo{}
 )
 
 type stringSet map[string]struct{}
 
 type ctxKeyLogger struct{}
 type ctxKeyDockerAPIClient struct{}
+type ctxKeyHostInfo struct{}
 
 func log(ctx context.Context) zzzlogi.Logger {
 	logger, ok := ctx.Value(loggerKey).(zzzlogi.Logger)
@@ -39,6 +41,11 @@ func dockerAPIClientFromContext(ctx context.Context) (dockerAPIClient, bool) {
 	return client, ok
 }
 
+func hostInfoFromContext(ctx context.Context) (*hostInfo, bool) {
+	client, ok := ctx.Value(hostInfoKey).(*hostInfo)
+	return client, ok
+}
+
 func withLogger(ctx context.Context, logger zzzlogi.Logger) context.Context {
 	return context.WithValue(ctx, loggerKey, logger)
 }
@@ -47,6 +54,12 @@ func withLogger(ctx context.Context, logger zzzlogi.Logger) context.Context {
 // nolint:unused
 func withDockerAPIClient(ctx context.Context, client dockerAPIClient) context.Context {
 	return context.WithValue(ctx, dockerAPIClientKey, client)
+}
+
+// This is used purely by tests.
+// nolint:unused
+func withHostInfo(ctx context.Context, host *hostInfo) context.Context {
+	return context.WithValue(ctx, hostInfoKey, host)
 }
 
 // Returns the JSON formatted string representation of the specified object.
