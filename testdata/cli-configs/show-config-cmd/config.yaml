@@ -1,0 +1,2 @@
+homelab:
+  configsPath: ./testdata/show-config-cmd-minimal

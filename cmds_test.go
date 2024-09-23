@@ -345,6 +345,146 @@ Use "homelab \[command\] --help" for more information about a command\.`,
 }`,
 	},
 	{
+		name: "Homelab Command - Show Config - Custom CLI Config Path",
+		args: []string{
+			"show-config",
+			"--cli-config",
+			fmt.Sprintf("%s/testdata/cli-configs/show-config-cmd/config.yaml", pwd()),
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newEmptyFakeDockerHost(),
+		},
+		want: `Homelab config:
+{
+  "Global": {
+    "Env": null,
+    "MountDefs": null,
+    "Container": {
+      "StopSignal": "",
+      "StopTimeout": 0,
+      "RestartPolicy": {
+        "Mode": "",
+        "MaxRetryCount": 0
+      },
+      "DomainName": "",
+      "DNSSearch": null,
+      "Env": null,
+      "Mounts": null,
+      "Labels": null
+    }
+  },
+  "IPAM": {
+    "Networks": {
+      "BridgeModeNetworks": \[
+        {
+          "Name": "net1",
+          "HostInterfaceName": "docker-net1",
+          "CIDR": "172\.18\.100\.0/24",
+          "Priority": 1,
+          "Containers": \[
+            {
+              "IP": "172\.18\.100\.11",
+              "Container": {
+                "Group": "g1",
+                "Container": "c1"
+              }
+            }
+          \]
+        }
+      \],
+      "ContainerModeNetworks": null
+    }
+  },
+  "Hosts": \[
+    {
+      "Name": "fakehost",
+      "AllowedContainers": \[
+        {
+          "Group": "g1",
+          "Container": "c1"
+        }
+      \]
+    }
+  \],
+  "Groups": \[
+    {
+      "Name": "g1",
+      "Order": 1
+    }
+  \],
+  "Containers": \[
+    {
+      "Info": {
+        "Group": "g1",
+        "Container": "c1"
+      },
+      "Config": {
+        "Env": null
+      },
+      "Image": {
+        "Image": "abc/xyz",
+        "SkipImagePull": false,
+        "IgnoreImagePullFailures": false,
+        "PullImageBeforeStop": false
+      },
+      "Metadata": {
+        "Labels": null
+      },
+      "Lifecycle": {
+        "Order": 10,
+        "StartPreHook": "",
+        "RestartPolicy": {
+          "Mode": "",
+          "MaxRetryCount": 0
+        },
+        "AutoRemove": false,
+        "StopSignal": "",
+        "StopTimeout": 0
+      },
+      "User": {
+        "User": "",
+        "PrimaryGroup": "",
+        "AdditionalGroups": null
+      },
+      "Filesystem": {
+        "ReadOnlyRootfs": false,
+        "Mounts": null,
+        "Devices": null
+      },
+      "Network": {
+        "HostName": "",
+        "DomainName": "",
+        "DNSServers": null,
+        "DNSOptions": null,
+        "DNSSearch": null,
+        "PublishedPorts": null
+      },
+      "Security": {
+        "Privileged": false,
+        "Sysctls": null,
+        "CapAdd": null,
+        "CapDrop": null
+      },
+      "Health": {
+        "Cmd": null,
+        "Retries": 0,
+        "Interval": "",
+        "Timeout": "",
+        "StartPeriod": "",
+        "StartInterval": ""
+      },
+      "Runtime": {
+        "AttachToTty": false,
+        "ShmSize": "",
+        "Env": null,
+        "Entrypoint": null,
+        "Args": null
+      }
+    }
+  \]
+}`,
+	},
+	{
 		name: "Homelab Command - Start - All Groups With Real Host Info",
 		args: []string{
 			"start",
