@@ -18,10 +18,7 @@ func queryContainers(ctx context.Context, dep *deployment, allGroups bool, group
 		if err != nil {
 			return nil, err
 		}
-		if ct != nil {
-			return containerList{ct}, nil
-		}
-		return nil, nil
+		return containerList{ct}, nil
 	}
 	log(ctx).Fatalf("Invalid scenario, possibly indicating a bug in the code")
 	return nil, nil
