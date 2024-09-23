@@ -15,8 +15,8 @@ const (
 
 type CLIConfig struct {
 	HomelabCLIConfig struct {
-		ConfigsPath string `yaml:"configsPath"`
-	} `yaml:"homelab"`
+		ConfigsPath string `yaml:"configsPath,omitempty"`
+	} `yaml:"homelab,omitempty"`
 }
 
 func cliConfigPath(ctx context.Context, cliConfigFlag string) (string, error) {
