@@ -11,6 +11,7 @@ require (
 	github.com/google/go-cmp v0.6.0
 	github.com/moby/term v0.5.0
 	github.com/opencontainers/image-spec v1.1.0
+	github.com/sasha-s/go-deadlock v0.3.5
 	github.com/spf13/cobra v1.8.1
 	github.com/tuxdude/zzzlog v0.3.2
 	github.com/tuxdude/zzzlogi v0.2.0
@@ -31,6 +32,7 @@ require (
 	github.com/moby/docker-image-spec v1.3.1 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
+	github.com/petermattis/goid v0.0.0-20240813172612-4fcff4a6cae7 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.55.0 // indirect

@@ -8,6 +8,8 @@ import (
 	"io"
 	"strings"
 
+	"github.com/sasha-s/go-deadlock"
+
 	dtypes "github.com/docker/docker/api/types"
 	dcontainer "github.com/docker/docker/api/types/container"
 	dimage "github.com/docker/docker/api/types/image"
@@ -17,6 +19,7 @@ import (
 )
 
 type fakeDockerHost struct {
+	mu                 deadlock.RWMutex
 	containers         fakeContainerMap
 	networks           fakeNetworkMap
 	images             fakeImageMap
@@ -61,6 +64,18 @@ type fakeDockerHostInitInfo struct {
 	networks           []*fakeNetworkInitInfo
 	existingImages     stringSet
 	validImagesForPull stringSet
+}
+
+func fakeDockerHostFromContext(ctx context.Context) *fakeDockerHost {
+	dockerClient, ok := dockerAPIClientFromContext(ctx)
+	if !ok {
+		panic("unable to retrieve the docker API client from context in test")
+	}
+	fakeDockerHost, ok := dockerClient.(*fakeDockerHost)
+	if !ok {
+		panic("unable to convert the retrieved client to fake docker host")
+	}
+	return fakeDockerHost
 }
 
 func newEmptyFakeDockerHost() *fakeDockerHost {
@@ -127,6 +142,9 @@ func (f *fakeDockerHost) Close() error {
 }
 
 func (f *fakeDockerHost) ContainerCreate(ctx context.Context, cConfig *dcontainer.Config, hConfig *dcontainer.HostConfig, nConfig *dnetwork.NetworkingConfig, platform *ocispec.Platform, containerName string) (dcontainer.CreateResponse, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
 	resp := dcontainer.CreateResponse{}
 	if _, found := f.containers[containerName]; found {
 		return resp, fmt.Errorf("container %s already exists in the fake docker host", containerName)
@@ -138,6 +156,9 @@ func (f *fakeDockerHost) ContainerCreate(ctx context.Context, cConfig *dcontaine
 }
 
 func (f *fakeDockerHost) ContainerInspect(ctx context.Context, containerName string) (dtypes.ContainerJSON, error) {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+
 	ct, found := f.containers[containerName]
 	if !found {
 		return dtypes.ContainerJSON{}, derrdefs.NotFound(fmt.Errorf("container %s not found on the fake docker host", containerName))
@@ -157,10 +178,32 @@ func (f *fakeDockerHost) ContainerKill(ctx context.Context, containerName, signa
 }
 
 func (f *fakeDockerHost) ContainerRemove(ctx context.Context, containerName string, options dcontainer.RemoveOptions) error {
-	panic("ContainerRemove unimplemented")
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	ct, found := f.containers[containerName]
+	if !found {
+		return derrdefs.NotFound(fmt.Errorf("container %s not found on the fake docker host", containerName))
+	}
+	switch ct.state {
+	case containerStateCreated, containerStateExited, containerStateDead:
+		delete(f.containers, containerName)
+		return nil
+	case containerStateRunning, containerStatePaused, containerStateRestarting, containerStateRemoving:
+		return fmt.Errorf("container in state %s on the fake docker host cannot be removed", ct.state)
+	case containerStateUnknown:
+		panic("ContainerRemove invoked on a container in an unknown state on the fake docker host, possibly indicating a bug")
+	case containerStateNotFound:
+		panic("ContainerRemove invoked on a container in a not found state on the fake docker host, possibly indicating a bug")
+	default:
+		panic(fmt.Sprintf("ContainerRemove invoked on a container in %s state on the fake docker host, possibly indicating a bug", ct.state))
+	}
 }
 
 func (f *fakeDockerHost) ContainerStart(ctx context.Context, containerName string, options dcontainer.StartOptions) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
 	ct, found := f.containers[containerName]
 	if !found {
 		return derrdefs.NotFound(fmt.Errorf("container %s not found on the fake docker host", containerName))
@@ -173,10 +216,32 @@ func (f *fakeDockerHost) ContainerStart(ctx context.Context, containerName strin
 }
 
 func (f *fakeDockerHost) ContainerStop(ctx context.Context, containerName string, options dcontainer.StopOptions) error {
-	panic("ContainerStop unimplemented")
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	ct, found := f.containers[containerName]
+	if !found {
+		return derrdefs.NotFound(fmt.Errorf("container %s not found on the fake docker host", containerName))
+	}
+	switch ct.state {
+	case containerStateRunning, containerStatePaused, containerStateRestarting:
+		ct.state = containerStateExited
+		return nil
+	case containerStateCreated, containerStateExited, containerStateDead, containerStateRemoving:
+		return fmt.Errorf("container in state %s on the fake docker host cannot be stopped", ct.state)
+	case containerStateUnknown:
+		panic("ContainerStop invoked on a container in an unknown state on the fake docker host, possibly indicating a bug")
+	case containerStateNotFound:
+		panic("ContainerStop invoked on a container in a not found state on the fake docker host, possibly indicating a bug")
+	default:
+		panic(fmt.Sprintf("ContainerStop invoked on a container in %s state on the fake docker host, possibly indicating a bug", ct.state))
+	}
 }
 
 func (f *fakeDockerHost) ImageList(ctx context.Context, options dimage.ListOptions) ([]dimage.Summary, error) {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+
 	if options.All {
 		return nil, fmt.Errorf("listing all images on the fake docker host is unsupported")
 	}
@@ -211,6 +276,9 @@ func (f *fakeDockerHost) ImageList(ctx context.Context, options dimage.ListOptio
 }
 
 func (f *fakeDockerHost) ImagePull(ctx context.Context, refStr string, options dimage.PullOptions) (io.ReadCloser, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
 	if _, found := f.validImagesForPull[refStr]; !found {
 		return nil, fmt.Errorf("image %s not found or invalid and cannot be pulled by the fake docker host", refStr)
 	}
@@ -218,6 +286,9 @@ func (f *fakeDockerHost) ImagePull(ctx context.Context, refStr string, options d
 }
 
 func (f *fakeDockerHost) NetworkConnect(ctx context.Context, networkName, containerName string, config *dnetwork.EndpointSettings) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
 	if _, found := f.networks[networkName]; !found {
 		return derrdefs.NotFound(fmt.Errorf("network %s not found on the fake docker host", networkName))
 	}
@@ -231,6 +302,9 @@ func (f *fakeDockerHost) NetworkDisconnect(ctx context.Context, networkName, con
 }
 
 func (f *fakeDockerHost) NetworkList(ctx context.Context, options dnetwork.ListOptions) ([]dnetwork.Summary, error) {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+
 	if options.Filters.Len() == 0 {
 		return nil, fmt.Errorf("filters cannot be empty while listing networks on the fake docker host")
 	}
@@ -252,6 +326,29 @@ func (f *fakeDockerHost) NetworkList(ctx context.Context, options dnetwork.ListO
 			Scope: "local",
 		},
 	}, nil
+}
+
+func (f *fakeDockerHost) forceRemoveContainer(containerName string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	_, found := f.containers[containerName]
+	if !found {
+		return derrdefs.NotFound(fmt.Errorf("container %s not found on the fake docker host", containerName))
+	}
+	delete(f.containers, containerName)
+	return nil
+}
+
+func (f *fakeDockerHost) getContainerState(containerName string) containerState {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+
+	ct, found := f.containers[containerName]
+	if !found {
+		return containerStateNotFound
+	}
+	return ct.state
 }
 
 func dockerContainerState(state containerState) *dtypes.ContainerState {
