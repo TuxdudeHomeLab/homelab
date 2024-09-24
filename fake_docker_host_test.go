@@ -24,6 +24,8 @@ type fakeDockerHost struct {
 	networks           fakeNetworkMap
 	images             fakeImageMap
 	validImagesForPull stringSet
+	failCreate         stringSet
+	failStart          stringSet
 }
 
 type fakeContainerInfo struct {
@@ -32,6 +34,9 @@ type fakeContainerInfo struct {
 	state                containerState
 	pendingRequiredStops int
 	pendingRequiredKills int
+	failInspect          bool
+	failRemove           bool
+	failStop             bool
 	containerConfig      *dcontainer.Config
 	hostConfig           *dcontainer.HostConfig
 	networkConfig        *dnetwork.NetworkingConfig
@@ -53,6 +58,9 @@ type fakeContainerInitInfo struct {
 	state              containerState
 	requiredExtraStops int
 	requiredExtraKills int
+	failInspect        bool
+	failRemove         bool
+	failStop           bool
 }
 
 type fakeNetworkInitInfo struct {
@@ -68,6 +76,8 @@ type fakeDockerHostInitInfo struct {
 	networks           []*fakeNetworkInitInfo
 	existingImages     stringSet
 	validImagesForPull stringSet
+	failCreate         stringSet
+	failStart          stringSet
 }
 
 func fakeDockerHostFromContext(ctx context.Context) *fakeDockerHost {
@@ -92,6 +102,8 @@ func newFakeDockerHost(initInfo *fakeDockerHostInitInfo) *fakeDockerHost {
 		networks:           fakeNetworkMap{},
 		images:             fakeImageMap{},
 		validImagesForPull: stringSet{},
+		failCreate:         stringSet{},
+		failStart:          stringSet{},
 	}
 	if initInfo == nil {
 		return f
@@ -106,6 +118,9 @@ func newFakeDockerHost(initInfo *fakeDockerHostInitInfo) *fakeDockerHost {
 		ctInfo.state = ct.state
 		ctInfo.pendingRequiredStops = ct.requiredExtraStops
 		ctInfo.pendingRequiredKills = ct.requiredExtraKills
+		ctInfo.failInspect = ct.failInspect
+		ctInfo.failStop = ct.failStop
+		ctInfo.failRemove = ct.failRemove
 		f.containers[ct.name] = ctInfo
 	}
 	for _, n := range initInfo.networks {
@@ -115,6 +130,12 @@ func newFakeDockerHost(initInfo *fakeDockerHostInitInfo) *fakeDockerHost {
 		f.images[img] = newFakeImageInfo(img)
 	}
 	f.validImagesForPull = initInfo.validImagesForPull
+	for c := range initInfo.failCreate {
+		f.failCreate[c] = struct{}{}
+	}
+	for c := range initInfo.failStart {
+		f.failStart[c] = struct{}{}
+	}
 	return f
 }
 
@@ -155,6 +176,11 @@ func (f *fakeDockerHost) ContainerCreate(ctx context.Context, cConfig *dcontaine
 	if _, found := f.containers[containerName]; found {
 		return resp, fmt.Errorf("container %s already exists in the fake docker host", containerName)
 	}
+
+	if _, found := f.failCreate[containerName]; found {
+		return resp, fmt.Errorf("failed to create container %s on the fake docker host", containerName)
+	}
+
 	ct := newFakeContainerInfo(containerName, cConfig, hConfig, nConfig)
 	f.containers[containerName] = ct
 	resp.ID = ct.id
@@ -169,6 +195,11 @@ func (f *fakeDockerHost) ContainerInspect(ctx context.Context, containerName str
 	if !found {
 		return dtypes.ContainerJSON{}, derrdefs.NotFound(fmt.Errorf("container %s not found on the fake docker host", containerName))
 	}
+
+	if ct.failInspect {
+		return dtypes.ContainerJSON{}, fmt.Errorf("failed to inspect container %s on the fake docker host", containerName)
+	}
+
 	return dtypes.ContainerJSON{
 		ContainerJSONBase: &dtypes.ContainerJSONBase{
 			ID:    ct.id,
@@ -187,6 +218,7 @@ func (f *fakeDockerHost) ContainerKill(ctx context.Context, containerName, signa
 	if !found {
 		return derrdefs.NotFound(fmt.Errorf("container %s not found on the fake docker host", containerName))
 	}
+
 	switch ct.state {
 	case containerStateRunning, containerStatePaused, containerStateRestarting:
 		if ct.pendingRequiredKills > 0 {
@@ -214,8 +246,13 @@ func (f *fakeDockerHost) ContainerRemove(ctx context.Context, containerName stri
 	if !found {
 		return derrdefs.NotFound(fmt.Errorf("container %s not found on the fake docker host", containerName))
 	}
+
 	switch ct.state {
 	case containerStateCreated, containerStateExited, containerStateDead:
+		if ct.failRemove {
+			return fmt.Errorf("failed to remove container %s on the fake docker host", containerName)
+		}
+
 		delete(f.containers, containerName)
 		return nil
 	case containerStateRunning, containerStatePaused, containerStateRestarting, containerStateRemoving:
@@ -237,9 +274,15 @@ func (f *fakeDockerHost) ContainerStart(ctx context.Context, containerName strin
 	if !found {
 		return derrdefs.NotFound(fmt.Errorf("container %s not found on the fake docker host", containerName))
 	}
+
 	if ct.state != containerStateCreated {
 		return fmt.Errorf("container %s is not in created state that is required to start the container, but rather in state %s on the fake docker host", containerName, ct.state)
 	}
+
+	if _, found := f.failStart[containerName]; found {
+		return fmt.Errorf("failed to start container %s on the fake docker host", containerName)
+	}
+
 	ct.state = containerStateRunning
 	return nil
 }
@@ -252,8 +295,13 @@ func (f *fakeDockerHost) ContainerStop(ctx context.Context, containerName string
 	if !found {
 		return derrdefs.NotFound(fmt.Errorf("container %s not found on the fake docker host", containerName))
 	}
+
 	switch ct.state {
 	case containerStateRunning, containerStatePaused, containerStateRestarting:
+		if ct.failStop {
+			return fmt.Errorf("failed to stop container %s on the fake docker host", containerName)
+		}
+
 		if ct.pendingRequiredStops > 0 {
 			ct.pendingRequiredStops--
 		} else {
@@ -372,6 +420,7 @@ func (f *fakeDockerHost) forceRemoveContainer(containerName string) error {
 	if !found {
 		return derrdefs.NotFound(fmt.Errorf("container %s not found on the fake docker host", containerName))
 	}
+
 	delete(f.containers, containerName)
 	return nil
 }

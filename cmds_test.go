@@ -692,7 +692,7 @@ func initPkgVersionInfoForTest() {
 
 func execHomelabCmdTest(ctxInfo *testContextInfo, args ...string) (string, error) {
 	buf := new(bytes.Buffer)
-	ctxInfo.logger = newCapturingTestLogger(buf)
+	ctxInfo.logger = newCapturingVanillaTestLogger(buf)
 	ctx := newTestContext(ctxInfo)
 	err := execHomelabCmd(ctx, buf, buf, args...)
 	return buf.String(), err

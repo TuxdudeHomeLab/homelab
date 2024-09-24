@@ -52,6 +52,13 @@ func newTestLogger() zzzlogi.Logger {
 }
 
 func newCapturingTestLogger(w io.Writer) zzzlogi.Logger {
+	config := zzzlog.NewConsoleLoggerConfig()
+	config.SkipCallerInfo = true
+	config.Dest = w
+	return zzzlog.NewLogger(config)
+}
+
+func newCapturingVanillaTestLogger(w io.Writer) zzzlogi.Logger {
 	config := zzzlog.NewVanillaLoggerConfig()
 	config.Dest = w
 	return zzzlog.NewLogger(config)
