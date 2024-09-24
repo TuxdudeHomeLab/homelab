@@ -831,7 +831,7 @@ var buildDeploymentFromConfigsPathTests = []struct {
 	wantDockerConfigs containerDockerConfigMap
 }{
 	{
-		name:        "Valid multi file config",
+		name:        "Valid Multi File Config",
 		configsPath: "parse-configs-valid",
 		want: &HomelabConfig{
 			Global: GlobalConfig{
