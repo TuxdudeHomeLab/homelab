@@ -30,11 +30,6 @@ var containerStartTests = []struct {
 		},
 		ctxInfo: &testContextInfo{
 			dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{
-				networks: []*fakeNetworkInitInfo{
-					{
-						name: "proxy-bridge",
-					},
-				},
 				validImagesForPull: stringSet{
 					"abc/xyz": {},
 				},
@@ -59,11 +54,6 @@ var containerStartTests = []struct {
 						name:  "g1-c1",
 						image: "abc/xyz",
 						state: containerStateCreated,
-					},
-				},
-				networks: []*fakeNetworkInitInfo{
-					{
-						name: "proxy-bridge",
 					},
 				},
 				validImagesForPull: stringSet{
@@ -92,11 +82,6 @@ var containerStartTests = []struct {
 						state: containerStateRunning,
 					},
 				},
-				networks: []*fakeNetworkInitInfo{
-					{
-						name: "proxy-bridge",
-					},
-				},
 				validImagesForPull: stringSet{
 					"abc/xyz": {},
 				},
@@ -121,11 +106,6 @@ var containerStartTests = []struct {
 						name:  "g1-c1",
 						image: "abc/xyz",
 						state: containerStatePaused,
-					},
-				},
-				networks: []*fakeNetworkInitInfo{
-					{
-						name: "proxy-bridge",
 					},
 				},
 				validImagesForPull: stringSet{
@@ -154,11 +134,6 @@ var containerStartTests = []struct {
 						state: containerStateRestarting,
 					},
 				},
-				networks: []*fakeNetworkInitInfo{
-					{
-						name: "proxy-bridge",
-					},
-				},
 				validImagesForPull: stringSet{
 					"abc/xyz": {},
 				},
@@ -183,11 +158,6 @@ var containerStartTests = []struct {
 						name:  "g1-c1",
 						image: "abc/xyz",
 						state: containerStateRemoving,
-					},
-				},
-				networks: []*fakeNetworkInitInfo{
-					{
-						name: "proxy-bridge",
 					},
 				},
 				validImagesForPull: stringSet{
@@ -226,11 +196,6 @@ var containerStartTests = []struct {
 						state: containerStateExited,
 					},
 				},
-				networks: []*fakeNetworkInitInfo{
-					{
-						name: "proxy-bridge",
-					},
-				},
 				validImagesForPull: stringSet{
 					"abc/xyz": {},
 				},
@@ -255,11 +220,6 @@ var containerStartTests = []struct {
 						name:  "g1-c1",
 						image: "abc/xyz",
 						state: containerStateDead,
-					},
-				},
-				networks: []*fakeNetworkInitInfo{
-					{
-						name: "proxy-bridge",
 					},
 				},
 				validImagesForPull: stringSet{
@@ -289,11 +249,6 @@ var containerStartTests = []struct {
 						requiredExtraStops: 5,
 					},
 				},
-				networks: []*fakeNetworkInitInfo{
-					{
-						name: "proxy-bridge",
-					},
-				},
 				validImagesForPull: stringSet{
 					"abc/xyz": {},
 				},
@@ -320,11 +275,6 @@ var containerStartTests = []struct {
 						state:              containerStateRunning,
 						requiredExtraStops: 1000,
 						requiredExtraKills: 4,
-					},
-				},
-				networks: []*fakeNetworkInitInfo{
-					{
-						name: "proxy-bridge",
 					},
 				},
 				validImagesForPull: stringSet{
@@ -427,11 +377,6 @@ var containerStartErrorTests = []struct {
 						requiredExtraKills: 5,
 					},
 				},
-				networks: []*fakeNetworkInitInfo{
-					{
-						name: "proxy-bridge",
-					},
-				},
 				validImagesForPull: stringSet{
 					"abc/xyz": {},
 				},
@@ -458,11 +403,6 @@ var containerStartErrorTests = []struct {
 						image:       "abc/xyz",
 						state:       containerStateRunning,
 						failInspect: true,
-					},
-				},
-				networks: []*fakeNetworkInitInfo{
-					{
-						name: "proxy-bridge",
 					},
 				},
 				validImagesForPull: stringSet{
@@ -493,11 +433,6 @@ var containerStartErrorTests = []struct {
 						failStop: true,
 					},
 				},
-				networks: []*fakeNetworkInitInfo{
-					{
-						name: "proxy-bridge",
-					},
-				},
 				validImagesForPull: stringSet{
 					"abc/xyz": {},
 				},
@@ -526,11 +461,6 @@ var containerStartErrorTests = []struct {
 						failRemove: true,
 					},
 				},
-				networks: []*fakeNetworkInitInfo{
-					{
-						name: "proxy-bridge",
-					},
-				},
 				validImagesForPull: stringSet{
 					"abc/xyz": {},
 				},
@@ -556,11 +486,6 @@ var containerStartErrorTests = []struct {
 						name:  "g1-c1",
 						image: "abc/xyz",
 						state: containerStateDead,
-					},
-				},
-				networks: []*fakeNetworkInitInfo{
-					{
-						name: "proxy-bridge",
 					},
 				},
 				validImagesForPull: stringSet{
@@ -591,11 +516,6 @@ var containerStartErrorTests = []struct {
 						name:  "g1-c1",
 						image: "abc/xyz",
 						state: containerStatePaused,
-					},
-				},
-				networks: []*fakeNetworkInitInfo{
-					{
-						name: "proxy-bridge",
 					},
 				},
 				validImagesForPull: stringSet{
