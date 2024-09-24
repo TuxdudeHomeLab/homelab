@@ -37,6 +37,26 @@ var containerStartTests = []struct {
 		},
 	},
 	{
+		name: "Container Start - Doesn't Exist Already - No Network Endpoints",
+		config: buildSingleContainerNoNetworkConfig(ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+			"abc/xyz"),
+		cRef: ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{
+				validImagesForPull: stringSet{
+					"abc/xyz": {},
+				},
+			}),
+		},
+	},
+
+	{
 		name: "Container Start - Exists Already In Created State",
 		config: buildSingleContainerConfig(ContainerReference{
 			Group:     "g1",
@@ -528,6 +548,96 @@ var containerStartErrorTests = []struct {
 		},
 		want: `Failed to start container g1-c1, reason:failed to start the container, reason: failed to start container g1-c1 on the fake docker host`,
 	},
+	{
+		name: "Container Start - Primary Network Create Failure",
+		config: buildSingleContainerConfig(ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+			"abc/xyz"),
+		cRef: ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{
+				containers: []*fakeContainerInitInfo{
+					{
+						name:  "g1-c1",
+						image: "abc/xyz",
+						state: containerStatePaused,
+					},
+				},
+				validImagesForPull: stringSet{
+					"abc/xyz": {},
+				},
+				failNetworkCreate: stringSet{
+					"g1-bridge": {},
+				},
+			}),
+		},
+		want: `Failed to start container g1-c1, reason:failed to create the network, reason: failed to create network g1-bridge on the fake docker host`,
+	},
+	{
+		name: "Container Start - Secondary Network Create Failure",
+		config: buildSingleContainerConfig(ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+			"abc/xyz"),
+		cRef: ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{
+				containers: []*fakeContainerInitInfo{
+					{
+						name:  "g1-c1",
+						image: "abc/xyz",
+						state: containerStatePaused,
+					},
+				},
+				validImagesForPull: stringSet{
+					"abc/xyz": {},
+				},
+				failNetworkCreate: stringSet{
+					"proxy-bridge": {},
+				},
+			}),
+		},
+		want: `Failed to start container g1-c1, reason:failed to create the network, reason: failed to create network proxy-bridge on the fake docker host`,
+	},
+	{
+		name: "Container Start - Secondary Network Connect Failure",
+		config: buildSingleContainerConfig(ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+			"abc/xyz"),
+		cRef: ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{
+				containers: []*fakeContainerInitInfo{
+					{
+						name:  "g1-c1",
+						image: "abc/xyz",
+						state: containerStatePaused,
+					},
+				},
+				validImagesForPull: stringSet{
+					"abc/xyz": {},
+				},
+				failNetworkConnect: stringSet{
+					"proxy-bridge": {},
+				},
+			}),
+		},
+		want: `Failed to start container g1-c1, reason:failed to connect container g1-c1 to network proxy-bridge, reason: failed to connect container g1-c1 to network proxy-bridge on the fake docker host`,
+	},
 }
 
 func TestContainerStartErrors(t *testing.T) {
@@ -593,37 +703,42 @@ func TestContainerStartErrors(t *testing.T) {
 }
 
 func buildSingleContainerConfig(ct ContainerReference, image string) HomelabConfig {
-	return HomelabConfig{
-		IPAM: IPAMConfig{
-			Networks: NetworksConfig{
-				BridgeModeNetworks: []BridgeModeNetworkConfig{
-					{
-						Name:              fmt.Sprintf("%s-bridge", ct.Group),
-						HostInterfaceName: fmt.Sprintf("docker-%s", ct.Group),
-						CIDR:              "172.18.101.0/24",
-						Priority:          1,
-						Containers: []ContainerIPConfig{
-							{
-								IP:        "172.18.101.11",
-								Container: ct,
-							},
+	config := buildSingleContainerNoNetworkConfig(ct, image)
+	config.IPAM = IPAMConfig{
+		Networks: NetworksConfig{
+			BridgeModeNetworks: []BridgeModeNetworkConfig{
+				{
+					Name:              fmt.Sprintf("%s-bridge", ct.Group),
+					HostInterfaceName: fmt.Sprintf("docker-%s", ct.Group),
+					CIDR:              "172.18.101.0/24",
+					Priority:          1,
+					Containers: []ContainerIPConfig{
+						{
+							IP:        "172.18.101.11",
+							Container: ct,
 						},
 					},
-					{
-						Name:              "proxy-bridge",
-						HostInterfaceName: "docker-prx",
-						CIDR:              "172.18.201.0/24",
-						Priority:          2,
-						Containers: []ContainerIPConfig{
-							{
-								IP:        "172.18.201.11",
-								Container: ct,
-							},
+				},
+				{
+					Name:              "proxy-bridge",
+					HostInterfaceName: "docker-prx",
+					CIDR:              "172.18.201.0/24",
+					Priority:          2,
+					Containers: []ContainerIPConfig{
+						{
+							IP:        "172.18.201.11",
+							Container: ct,
 						},
 					},
 				},
 			},
 		},
+	}
+	return config
+}
+
+func buildSingleContainerNoNetworkConfig(ct ContainerReference, image string) HomelabConfig {
+	return HomelabConfig{
 		Hosts: []HostConfig{
 			{
 				Name: fakeHostName,

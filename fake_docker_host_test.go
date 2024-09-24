@@ -27,6 +27,7 @@ type fakeDockerHost struct {
 	failContainerCreate stringSet
 	failContainerStart  stringSet
 	failNetworkCreate   stringSet
+	failNetworkConnect  stringSet
 }
 
 type fakeContainerInfo struct {
@@ -81,6 +82,7 @@ type fakeDockerHostInitInfo struct {
 	failContainerCreate stringSet
 	failContainerStart  stringSet
 	failNetworkCreate   stringSet
+	failNetworkConnect  stringSet
 }
 
 func fakeDockerHostFromContext(ctx context.Context) *fakeDockerHost {
@@ -108,6 +110,7 @@ func newFakeDockerHost(initInfo *fakeDockerHostInitInfo) *fakeDockerHost {
 		failContainerCreate: stringSet{},
 		failContainerStart:  stringSet{},
 		failNetworkCreate:   stringSet{},
+		failNetworkConnect:  stringSet{},
 	}
 	if initInfo == nil {
 		return f
@@ -140,8 +143,11 @@ func newFakeDockerHost(initInfo *fakeDockerHostInitInfo) *fakeDockerHost {
 	for c := range initInfo.failContainerStart {
 		f.failContainerStart[c] = struct{}{}
 	}
-	for c := range initInfo.failNetworkCreate {
-		f.failNetworkCreate[c] = struct{}{}
+	for n := range initInfo.failNetworkCreate {
+		f.failNetworkCreate[n] = struct{}{}
+	}
+	for n := range initInfo.failNetworkConnect {
+		f.failNetworkConnect[n] = struct{}{}
 	}
 	return f
 }
@@ -184,9 +190,11 @@ func (f *fakeDockerHost) ContainerCreate(ctx context.Context, cConfig *dcontaine
 		return resp, fmt.Errorf("container %s already exists in the fake docker host", containerName)
 	}
 
-	for n := range nConfig.EndpointsConfig {
-		if _, found := f.networks[n]; !found {
-			return resp, fmt.Errorf("container %s is attempting to connect to network %s that doesn't exist on the fake docker host", containerName, n)
+	if nConfig != nil {
+		for n := range nConfig.EndpointsConfig {
+			if _, found := f.networks[n]; !found {
+				return resp, fmt.Errorf("container %s is attempting to connect to network %s that doesn't exist on the fake docker host", containerName, n)
+			}
 		}
 	}
 
@@ -389,6 +397,11 @@ func (f *fakeDockerHost) NetworkConnect(ctx context.Context, networkName, contai
 	if _, found := f.networks[networkName]; !found {
 		return derrdefs.NotFound(fmt.Errorf("network %s not found on the fake docker host", networkName))
 	}
+
+	if _, found := f.failNetworkConnect[networkName]; found {
+		return fmt.Errorf("failed to connect container %s to network %s on the fake docker host", containerName, networkName)
+	}
+
 	// TODO: Perform more validations of the network endpoint within
 	// the network.
 	return nil
