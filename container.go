@@ -13,7 +13,11 @@ import (
 )
 
 const (
-	stopAndRemoveAttempts  = 5
+	// six attempts implies we will attempt killing the container
+	// five times in the worst case before giving up. The one
+	// remaining attempt is to remove the container which has been
+	// terminated.
+	stopAndRemoveAttempts  = 6
 	stopAndRemoveKillDelay = 1 * time.Second
 )
 
@@ -100,6 +104,9 @@ func (c *container) purge(ctx context.Context, docker *dockerClient) error {
 					return err
 				}
 				stoppedOnceAlready = true
+				// Reset this to attempt killing the container at least
+				// stopAndRemoveAttempts -1 times prior to giving up.
+				attemptsRemaining = stopAndRemoveAttempts
 			} else {
 				// Kill the container next as a precaution and ignore any errors.
 				_ = docker.killContainer(ctx, c.name())

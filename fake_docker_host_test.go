@@ -27,12 +27,14 @@ type fakeDockerHost struct {
 }
 
 type fakeContainerInfo struct {
-	name            string
-	id              string
-	state           containerState
-	containerConfig *dcontainer.Config
-	hostConfig      *dcontainer.HostConfig
-	networkConfig   *dnetwork.NetworkingConfig
+	name                 string
+	id                   string
+	state                containerState
+	pendingRequiredStops int
+	pendingRequiredKills int
+	containerConfig      *dcontainer.Config
+	hostConfig           *dcontainer.HostConfig
+	networkConfig        *dnetwork.NetworkingConfig
 }
 
 type fakeNetworkInfo struct {
@@ -46,9 +48,11 @@ type fakeImageInfo struct {
 }
 
 type fakeContainerInitInfo struct {
-	name  string
-	image string
-	state containerState
+	name               string
+	image              string
+	state              containerState
+	requiredExtraStops int
+	requiredExtraKills int
 }
 
 type fakeNetworkInitInfo struct {
@@ -100,6 +104,8 @@ func newFakeDockerHost(initInfo *fakeDockerHostInitInfo) *fakeDockerHost {
 			&dcontainer.HostConfig{},
 			&dnetwork.NetworkingConfig{})
 		ctInfo.state = ct.state
+		ctInfo.pendingRequiredStops = ct.requiredExtraStops
+		ctInfo.pendingRequiredKills = ct.requiredExtraKills
 		f.containers[ct.name] = ctInfo
 	}
 	for _, n := range initInfo.networks {
@@ -174,7 +180,30 @@ func (f *fakeDockerHost) ContainerInspect(ctx context.Context, containerName str
 }
 
 func (f *fakeDockerHost) ContainerKill(ctx context.Context, containerName, signal string) error {
-	panic("ContainerKill unimplemented")
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	ct, found := f.containers[containerName]
+	if !found {
+		return derrdefs.NotFound(fmt.Errorf("container %s not found on the fake docker host", containerName))
+	}
+	switch ct.state {
+	case containerStateRunning, containerStatePaused, containerStateRestarting:
+		if ct.pendingRequiredKills > 0 {
+			ct.pendingRequiredKills--
+		} else {
+			ct.state = containerStateExited
+		}
+		return nil
+	case containerStateCreated, containerStateExited, containerStateDead, containerStateRemoving:
+		return fmt.Errorf("container in state %s on the fake docker host cannot be killed", ct.state)
+	case containerStateUnknown:
+		panic("ContainerRemove invoked on a container in an unknown state on the fake docker host, possibly indicating a bug")
+	case containerStateNotFound:
+		panic("ContainerRemove invoked on a container in a not found state on the fake docker host, possibly indicating a bug")
+	default:
+		panic(fmt.Sprintf("ContainerRemove invoked on a container in %s state on the fake docker host, possibly indicating a bug", ct.state))
+	}
 }
 
 func (f *fakeDockerHost) ContainerRemove(ctx context.Context, containerName string, options dcontainer.RemoveOptions) error {
@@ -225,8 +254,15 @@ func (f *fakeDockerHost) ContainerStop(ctx context.Context, containerName string
 	}
 	switch ct.state {
 	case containerStateRunning, containerStatePaused, containerStateRestarting:
-		ct.state = containerStateExited
+		if ct.pendingRequiredStops > 0 {
+			ct.pendingRequiredStops--
+		} else {
+			ct.state = containerStateExited
+		}
 		return nil
+	// Created, Exited can be no-op stopped. Possibly Dead and Removing too.
+	// However our real implementation doesn't invoke stop in these cases,
+	// hence keeping the fake to the same contract for added safety.
 	case containerStateCreated, containerStateExited, containerStateDead, containerStateRemoving:
 		return fmt.Errorf("container in state %s on the fake docker host cannot be stopped", ct.state)
 	case containerStateUnknown:

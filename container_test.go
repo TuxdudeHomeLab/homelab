@@ -164,12 +164,14 @@ var containerStartTests = []struct {
 			}),
 		},
 		preExec: func(ctx context.Context) {
-			time.Sleep(2 * time.Second)
-			docker := fakeDockerHostFromContext(ctx)
-			err := docker.forceRemoveContainer("g1-c1")
-			if err != nil {
-				panic(err)
-			}
+			go func() {
+				time.Sleep(2 * time.Second)
+				docker := fakeDockerHostFromContext(ctx)
+				err := docker.forceRemoveContainer("g1-c1")
+				if err != nil {
+					panic(err)
+				}
+			}()
 		},
 	},
 	{
@@ -224,6 +226,61 @@ var containerStartTests = []struct {
 			}),
 		},
 	},
+	{
+		name: "Container Start - Exists Already In Running State Requiring Multiple Stops",
+		config: buildSingleContainerConfig(ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+			"abc/xyz"),
+		cRef: ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{
+				containers: []*fakeContainerInitInfo{
+					{
+						name:               "g1-c1",
+						image:              "abc/xyz",
+						state:              containerStateRunning,
+						requiredExtraStops: 5,
+					},
+				},
+				validImagesForPull: stringSet{
+					"abc/xyz": {},
+				},
+			}),
+		},
+	},
+	{
+		name: "Container Start - Exists Already In Running State Requiring Multiple Kills",
+		config: buildSingleContainerConfig(ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+			"abc/xyz"),
+		cRef: ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{
+				containers: []*fakeContainerInitInfo{
+					{
+						name:               "g1-c1",
+						image:              "abc/xyz",
+						state:              containerStateRunning,
+						requiredExtraStops: 1000,
+						requiredExtraKills: 4,
+					},
+				},
+				validImagesForPull: stringSet{
+					"abc/xyz": {},
+				},
+			}),
+		},
+	},
 }
 
 func TestContainerStart(t *testing.T) {
@@ -259,7 +316,7 @@ func TestContainerStart(t *testing.T) {
 			}
 
 			if tc.preExec != nil {
-				go tc.preExec(ctx)
+				tc.preExec(ctx)
 			}
 
 			gotStarted, gotErr := ct.start(ctx, dockerClient)
