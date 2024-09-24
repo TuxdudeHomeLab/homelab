@@ -19,13 +19,14 @@ import (
 )
 
 type fakeDockerHost struct {
-	mu                 deadlock.RWMutex
-	containers         fakeContainerMap
-	networks           fakeNetworkMap
-	images             fakeImageMap
-	validImagesForPull stringSet
-	failCreate         stringSet
-	failStart          stringSet
+	mu                  deadlock.RWMutex
+	containers          fakeContainerMap
+	networks            fakeNetworkMap
+	images              fakeImageMap
+	validImagesForPull  stringSet
+	failContainerCreate stringSet
+	failContainerStart  stringSet
+	failNetworkCreate   stringSet
 }
 
 type fakeContainerInfo struct {
@@ -43,8 +44,9 @@ type fakeContainerInfo struct {
 }
 
 type fakeNetworkInfo struct {
-	name string
-	id   string
+	name    string
+	id      string
+	options *dnetwork.CreateOptions
 }
 
 type fakeImageInfo struct {
@@ -72,12 +74,13 @@ type fakeNetworkMap map[string]*fakeNetworkInfo
 type fakeImageMap map[string]*fakeImageInfo
 
 type fakeDockerHostInitInfo struct {
-	containers         []*fakeContainerInitInfo
-	networks           []*fakeNetworkInitInfo
-	existingImages     stringSet
-	validImagesForPull stringSet
-	failCreate         stringSet
-	failStart          stringSet
+	containers          []*fakeContainerInitInfo
+	networks            []*fakeNetworkInitInfo
+	existingImages      stringSet
+	validImagesForPull  stringSet
+	failContainerCreate stringSet
+	failContainerStart  stringSet
+	failNetworkCreate   stringSet
 }
 
 func fakeDockerHostFromContext(ctx context.Context) *fakeDockerHost {
@@ -98,12 +101,13 @@ func newEmptyFakeDockerHost() *fakeDockerHost {
 
 func newFakeDockerHost(initInfo *fakeDockerHostInitInfo) *fakeDockerHost {
 	f := &fakeDockerHost{
-		containers:         fakeContainerMap{},
-		networks:           fakeNetworkMap{},
-		images:             fakeImageMap{},
-		validImagesForPull: stringSet{},
-		failCreate:         stringSet{},
-		failStart:          stringSet{},
+		containers:          fakeContainerMap{},
+		networks:            fakeNetworkMap{},
+		images:              fakeImageMap{},
+		validImagesForPull:  stringSet{},
+		failContainerCreate: stringSet{},
+		failContainerStart:  stringSet{},
+		failNetworkCreate:   stringSet{},
 	}
 	if initInfo == nil {
 		return f
@@ -130,11 +134,14 @@ func newFakeDockerHost(initInfo *fakeDockerHostInitInfo) *fakeDockerHost {
 		f.images[img] = newFakeImageInfo(img)
 	}
 	f.validImagesForPull = initInfo.validImagesForPull
-	for c := range initInfo.failCreate {
-		f.failCreate[c] = struct{}{}
+	for c := range initInfo.failContainerCreate {
+		f.failContainerCreate[c] = struct{}{}
 	}
-	for c := range initInfo.failStart {
-		f.failStart[c] = struct{}{}
+	for c := range initInfo.failContainerStart {
+		f.failContainerStart[c] = struct{}{}
+	}
+	for c := range initInfo.failNetworkCreate {
+		f.failNetworkCreate[c] = struct{}{}
 	}
 	return f
 }
@@ -177,7 +184,7 @@ func (f *fakeDockerHost) ContainerCreate(ctx context.Context, cConfig *dcontaine
 		return resp, fmt.Errorf("container %s already exists in the fake docker host", containerName)
 	}
 
-	if _, found := f.failCreate[containerName]; found {
+	if _, found := f.failContainerCreate[containerName]; found {
 		return resp, fmt.Errorf("failed to create container %s on the fake docker host", containerName)
 	}
 
@@ -279,7 +286,7 @@ func (f *fakeDockerHost) ContainerStart(ctx context.Context, containerName strin
 		return fmt.Errorf("container %s is not in created state that is required to start the container, but rather in state %s on the fake docker host", containerName, ct.state)
 	}
 
-	if _, found := f.failStart[containerName]; found {
+	if _, found := f.failContainerStart[containerName]; found {
 		return fmt.Errorf("failed to start container %s on the fake docker host", containerName)
 	}
 
@@ -381,6 +388,26 @@ func (f *fakeDockerHost) NetworkConnect(ctx context.Context, networkName, contai
 	return nil
 }
 
+func (f *fakeDockerHost) NetworkCreate(ctx context.Context, networkName string, options dnetwork.CreateOptions) (dnetwork.CreateResponse, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	resp := dnetwork.CreateResponse{}
+	if _, found := f.networks[networkName]; found {
+		return resp, fmt.Errorf("network %s already exists in the fake docker host", networkName)
+	}
+
+	if _, found := f.failNetworkCreate[networkName]; found {
+		return resp, fmt.Errorf("failed to create network %s on the fake docker host", networkName)
+	}
+
+	n := newFakeNetworkInfo(networkName)
+	n.options = &options
+	f.networks[networkName] = n
+	resp.ID = n.id
+	return resp, nil
+}
+
 func (f *fakeDockerHost) NetworkDisconnect(ctx context.Context, networkName, containerName string, force bool) error {
 	panic("NetworkDisconnect unimplemented")
 }
@@ -410,6 +437,10 @@ func (f *fakeDockerHost) NetworkList(ctx context.Context, options dnetwork.ListO
 			Scope: "local",
 		},
 	}, nil
+}
+
+func (f *fakeDockerHost) NetworkRemove(ctx context.Context, networkName string) error {
+	panic("NetworkRemove unimplemented")
 }
 
 func (f *fakeDockerHost) forceRemoveContainer(containerName string) error {

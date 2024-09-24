@@ -272,8 +272,6 @@ func validateIPAMConfig(ctx context.Context, config *IPAMConfig) (networkMap, ma
 			return nil, nil, fmt.Errorf("network %s cannot have a non-positive priority %d", n.Name, n.Priority)
 		}
 
-		bmn := newBridgeModeNetwork(&n)
-		networks[n.Name] = bmn
 		hostInterfaces[n.HostInterfaceName] = struct{}{}
 		prefix, err := netip.ParsePrefix(n.CIDR)
 		if err != nil {
@@ -298,8 +296,14 @@ func validateIPAMConfig(ctx context.Context, config *IPAMConfig) (networkMap, ma
 			}
 		}
 		prefixes[prefix] = n.Name
-
 		gatewayAddr := netAddr.Next()
+		bmn := newBridgeModeNetwork(n.Name, n.Priority, &bridgeModeNetworkInfo{
+			hostInterfaceName: n.HostInterfaceName,
+			cidr:              prefix,
+			gateway:           gatewayAddr,
+		})
+		networks[n.Name] = bmn
+
 		containers := make(map[ContainerReference]bool)
 		containerIPs := make(map[netip.Addr]bool)
 		for _, cip := range n.Containers {
@@ -345,7 +349,7 @@ func validateIPAMConfig(ctx context.Context, config *IPAMConfig) (networkMap, ma
 		if n.Priority <= 0 {
 			return nil, nil, fmt.Errorf("network %s cannot have a non-positive priority %d", n.Name, n.Priority)
 		}
-		cmn := newContainerModeNetwork(&n)
+		cmn := newContainerModeNetwork(n.Name, n.Priority)
 		networks[n.Name] = cmn
 
 		containers := make(map[ContainerReference]bool)
@@ -372,15 +376,15 @@ func validateIPAMConfig(ctx context.Context, config *IPAMConfig) (networkMap, ma
 				log(ctx).Fatalf("Container %s has networks of different types which is unsupported", ct)
 			}
 			if n1.mode == networkModeBridge {
-				if n1.bridgeModeConfig.Priority == n2.bridgeModeConfig.Priority {
-					log(ctx).Fatalf("Container %s is connected to two bridge mode networks of same priority %d which is unsupported", ct, n1.bridgeModeConfig.Priority)
+				if n1.priority == n2.priority {
+					log(ctx).Fatalf("Container %s is connected to two bridge mode networks of same priority %d which is unsupported", ct, n1.priority)
 				}
-				return n1.bridgeModeConfig.Priority < n2.bridgeModeConfig.Priority
+				return n1.priority < n2.priority
 			} else {
-				if n1.containerModeConfig.Priority == n2.containerModeConfig.Priority {
-					log(ctx).Fatalf("Container %s is connected to two container mode networks of same priority %d which is unsupported", ct, n1.containerModeConfig.Priority)
+				if n1.priority == n2.priority {
+					log(ctx).Fatalf("Container %s is connected to two container mode networks of same priority %d which is unsupported", ct, n1.priority)
 				}
-				return n1.containerModeConfig.Priority < n2.containerModeConfig.Priority
+				return n1.priority < n2.priority
 			}
 		})
 	}

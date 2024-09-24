@@ -3,12 +3,22 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/netip"
+
+	dnetwork "github.com/docker/docker/api/types/network"
 )
 
 type network struct {
-	mode                networkMode
-	bridgeModeConfig    *BridgeModeNetworkConfig
-	containerModeConfig *ContainerModeNetworkConfig
+	networkName    string
+	priority       int
+	mode           networkMode
+	bridgeModeInfo *bridgeModeNetworkInfo
+}
+
+type bridgeModeNetworkInfo struct {
+	hostInterfaceName string
+	cidr              netip.Prefix
+	gateway           netip.Addr
 }
 
 type networkMap map[string]*network
@@ -21,29 +31,37 @@ const (
 
 type networkMode uint8
 
-func newBridgeModeNetwork(config *BridgeModeNetworkConfig) *network {
+func newBridgeModeNetwork(name string, priority int, info *bridgeModeNetworkInfo) *network {
 	n := network{
-		mode:             networkModeBridge,
-		bridgeModeConfig: config,
+		networkName:    name,
+		priority:       priority,
+		mode:           networkModeBridge,
+		bridgeModeInfo: info,
 	}
 	return &n
 }
 
-func newContainerModeNetwork(config *ContainerModeNetworkConfig) *network {
+func newContainerModeNetwork(name string, priority int) *network {
 	n := network{
-		mode:                networkModeContainer,
-		containerModeConfig: config,
+		networkName: name,
+		priority:    priority,
+		mode:        networkModeContainer,
 	}
 	return &n
 }
 
 func (n *network) create(ctx context.Context, docker *dockerClient) error {
+	if n.mode == networkModeContainer {
+		log(ctx).Debugf("Nothing to do for creating container mode network %s", n.name())
+		return nil
+	}
+
 	// TODO: Validate that the existing network and the new network have
 	// exactly the same properties if we choose to reuse the existing
 	// network, and display a warning when they differ.
 	if !docker.networkExists(ctx, n.name()) {
 		log(ctx).Debugf("Creating network %s ...", n.name())
-		err := docker.createNetwork(ctx, n)
+		err := docker.createNetwork(ctx, n.name(), n.createOptions())
 		if err != nil {
 			return err
 		}
@@ -59,7 +77,7 @@ func (n *network) create(ctx context.Context, docker *dockerClient) error {
 // nolint (unused)
 func (n *network) delete(ctx context.Context, docker *dockerClient) error {
 	if docker.networkExists(ctx, n.name()) {
-		err := docker.deleteNetwork(ctx, n.name())
+		err := docker.removeNetwork(ctx, n.name())
 		if err != nil {
 			return err
 		}
@@ -77,14 +95,40 @@ func (n *network) disconnectContainer(ctx context.Context, docker *dockerClient,
 	return docker.disconnectContainerFromNetwork(ctx, containerName, n.name())
 }
 
-func (n *network) name() string {
-	if n.mode == networkModeBridge {
-		return n.bridgeModeConfig.Name
-	} else if n.mode == networkModeContainer {
-		return n.containerModeConfig.Name
-	} else {
-		panic("unknown network mode, possibly indicating a bug in the code!")
+func (n *network) createOptions() dnetwork.CreateOptions {
+	if n.mode != networkModeBridge {
+		panic("Only bridge mode network creation is possible")
 	}
+
+	return dnetwork.CreateOptions{
+		Driver:     "bridge",
+		Scope:      "local",
+		EnableIPv6: newBool(false),
+		IPAM: &dnetwork.IPAM{
+			Driver: "default",
+			Config: []dnetwork.IPAMConfig{
+				{
+					Subnet:  n.bridgeModeInfo.cidr.String(),
+					Gateway: n.bridgeModeInfo.gateway.String(),
+				},
+			},
+		},
+		Internal:   false,
+		Attachable: false,
+		Ingress:    false,
+		ConfigOnly: false,
+		Options: map[string]string{
+			"com.docker.network.bridge.enable_icc":           "true",
+			"com.docker.network.bridge.enable_ip_masquerade": "true",
+			"com.docker.network.bridge.host_binding_ipv4":    n.bridgeModeInfo.gateway.String(),
+			"com.docker.network.bridge.name":                 n.bridgeModeInfo.hostInterfaceName,
+			"com.docker.network.bridge.mtu":                  "1500",
+		},
+	}
+}
+
+func (n *network) name() string {
+	return n.networkName
 }
 
 func (n *network) String() string {

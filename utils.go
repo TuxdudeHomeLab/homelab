@@ -117,3 +117,7 @@ func isEnvValue(envVar string, envValue string) bool {
 	val, isVarSet := os.LookupEnv(envVar)
 	return isVarSet && val == envValue
 }
+
+func newBool(b bool) *bool {
+	return &b
+}

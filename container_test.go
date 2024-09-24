@@ -566,7 +566,7 @@ var containerStartErrorTests = []struct {
 				validImagesForPull: stringSet{
 					"abc/xyz": {},
 				},
-				failCreate: stringSet{
+				failContainerCreate: stringSet{
 					"g1-c1": {},
 				},
 			}),
@@ -601,7 +601,7 @@ var containerStartErrorTests = []struct {
 				validImagesForPull: stringSet{
 					"abc/xyz": {},
 				},
-				failStart: stringSet{
+				failContainerStart: stringSet{
 					"g1-c1": {},
 				},
 			}),

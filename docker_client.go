@@ -42,8 +42,10 @@ type dockerAPIClient interface {
 	ImagePull(ctx context.Context, refStr string, options dimage.PullOptions) (io.ReadCloser, error)
 
 	NetworkConnect(ctx context.Context, networkName, containerName string, config *dnetwork.EndpointSettings) error
+	NetworkCreate(ctx context.Context, networkName string, options dnetwork.CreateOptions) (dnetwork.CreateResponse, error)
 	NetworkDisconnect(ctx context.Context, networkName, containerName string, force bool) error
 	NetworkList(ctx context.Context, options dnetwork.ListOptions) ([]dnetwork.Summary, error)
+	NetworkRemove(ctx context.Context, networkName string) error
 }
 
 const (
@@ -286,15 +288,33 @@ func (d *dockerClient) getContainerState(ctx context.Context, containerName stri
 	return containerStateFromString(c.State.Status), nil
 }
 
-func (d *dockerClient) createNetwork(ctx context.Context, n *network) error {
-	// TODO: Implement this.
+func (d *dockerClient) createNetwork(ctx context.Context, networkName string, options dnetwork.CreateOptions) error {
+	log(ctx).Debugf("Creating network %s ...", networkName)
+	resp, err := d.client.NetworkCreate(ctx, networkName, options)
+
+	if err != nil {
+		log(ctx).Errorf("err: %s", reflect.TypeOf(err))
+		return fmt.Errorf("failed to create the network, reason: %w", err)
+	}
+
+	log(ctx).Debugf("Network %s created successfully - %s", networkName, resp.ID)
+	if len(resp.Warning) > 0 {
+		log(ctx).Warnf("Warnings encountered while creating the network %s\n%s", networkName, resp.Warning)
+	}
 	return nil
 }
 
 // TODO: Remove this after this function is used.
 // nolint (unused)
-func (d *dockerClient) deleteNetwork(ctx context.Context, networkName string) error {
-	// TODO: Implement this.
+func (d *dockerClient) removeNetwork(ctx context.Context, networkName string) error {
+	log(ctx).Debugf("Removing network %s ...", networkName)
+	err := d.client.NetworkRemove(ctx, networkName)
+	if err != nil {
+		log(ctx).Errorf("err: %s", reflect.TypeOf(err))
+		return fmt.Errorf("failed to remove the network, reason: %w", err)
+	}
+
+	log(ctx).Debugf("Network %s removed successfully", networkName)
 	return nil
 }
 
