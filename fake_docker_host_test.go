@@ -184,6 +184,12 @@ func (f *fakeDockerHost) ContainerCreate(ctx context.Context, cConfig *dcontaine
 		return resp, fmt.Errorf("container %s already exists in the fake docker host", containerName)
 	}
 
+	for n := range nConfig.EndpointsConfig {
+		if _, found := f.networks[n]; !found {
+			return resp, fmt.Errorf("container %s is attempting to connect to network %s that doesn't exist on the fake docker host", containerName, n)
+		}
+	}
+
 	if _, found := f.failContainerCreate[containerName]; found {
 		return resp, fmt.Errorf("failed to create container %s on the fake docker host", containerName)
 	}
