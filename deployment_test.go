@@ -2731,9 +2731,8 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		},
 		want: `container IP config within network net1 has invalid container reference, reason: container reference cannot have an empty container name`,
 	},
-
 	{
-		name: "Multiple Container Mode Network Stacks For Same Container",
+		name: "Multiple Container Mode Network Stacks For Same Container Within Same Network Stack",
 		config: HomelabConfig{
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
@@ -2769,6 +2768,93 @@ var buildDeploymentFromConfigErrorTests = []struct {
 			},
 		},
 		want: `container {Group:group1 Container:ct2} is connected to multiple container mode network stacks`,
+	},
+	{
+		name: "Multiple Container Mode Network Stacks For Same Container Across Network Stacks",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					ContainerModeNetworks: []ContainerModeNetworkConfig{
+						{
+							Name:     "net1",
+							Priority: 1,
+							Container: ContainerReference{
+								Group:     "some-group-1",
+								Container: "some-container-1",
+							},
+							AttachingContainers: []ContainerReference{
+								{
+									Group:     "group1",
+									Container: "ct1",
+								},
+							},
+						},
+						{
+							Name:     "net2",
+							Priority: 2,
+							Container: ContainerReference{
+								Group:     "some-group-2",
+								Container: "some-container-2",
+							},
+							AttachingContainers: []ContainerReference{
+								{
+									Group:     "group2",
+									Container: "ct2",
+								},
+								{
+									Group:     "group1",
+									Container: "ct1",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `container {Group:group1 Container:ct1} is connected to multiple container mode network stacks`,
+	},
+	{
+		name: "Container Connected To Both Bridge Mode and Container Mode Networks",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					BridgeModeNetworks: []BridgeModeNetworkConfig{
+						{
+							Name:              "net1",
+							HostInterfaceName: "docker-net1",
+							CIDR:              "172.18.100.0/24",
+							Priority:          1,
+							Containers: []ContainerIPConfig{
+								{
+									IP: "172.18.100.2",
+									Container: ContainerReference{
+										Group:     "group1",
+										Container: "ct1",
+									},
+								},
+							},
+						},
+					},
+					ContainerModeNetworks: []ContainerModeNetworkConfig{
+						{
+							Name:     "net2",
+							Priority: 1,
+							Container: ContainerReference{
+								Group:     "some-group-1",
+								Container: "some-container-1",
+							},
+							AttachingContainers: []ContainerReference{
+								{
+									Group:     "group1",
+									Container: "ct1",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `container {Group:group1 Container:ct1} is connected to both bridge mode and container mode network stacks`,
 	},
 	{
 		name: "Empty Host Name In Hosts Config",

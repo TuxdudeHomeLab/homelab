@@ -254,6 +254,8 @@ func validateIPAMConfig(ctx context.Context, config *IPAMConfig) (networkMap, ma
 	bridgeModeNetworks := config.Networks.BridgeModeNetworks
 	prefixes := make(map[netip.Prefix]string)
 	containerRefIPs := make(map[ContainerReference]networkContainerIPList)
+	allBridgeModeContainers := make(map[ContainerReference]struct{})
+
 	for _, n := range bridgeModeNetworks {
 		if len(n.Name) == 0 {
 			return nil, nil, fmt.Errorf("network name cannot be empty")
@@ -304,8 +306,8 @@ func validateIPAMConfig(ctx context.Context, config *IPAMConfig) (networkMap, ma
 		})
 		networks[n.Name] = bmn
 
-		containers := make(map[ContainerReference]bool)
-		containerIPs := make(map[netip.Addr]bool)
+		containers := make(map[ContainerReference]struct{})
+		containerIPs := make(map[netip.Addr]struct{})
 		for _, cip := range n.Containers {
 			ip := cip.IP
 			ct := cip.Container
@@ -326,19 +328,22 @@ func validateIPAMConfig(ctx context.Context, config *IPAMConfig) (networkMap, ma
 			if caddr.Compare(gatewayAddr) == 0 {
 				return nil, nil, fmt.Errorf("container {Group:%s Container:%s} endpoint in network %s cannot have an IP %s matching the gateway address %s", ct.Group, ct.Container, n.Name, ip, gatewayAddr)
 			}
-			if containers[ct] {
+			if _, found := containers[ct]; found {
 				return nil, nil, fmt.Errorf("container {Group:%s Container:%s} cannot have multiple endpoints in network %s", ct.Group, ct.Container, n.Name)
 			}
-			if containerIPs[caddr] {
+			if _, found := containerIPs[caddr]; found {
 				return nil, nil, fmt.Errorf("IP %s of container {Group:%s Container:%s} is already in use by another container in network %s", ip, ct.Group, ct.Container, n.Name)
 			}
 
-			containers[ct] = true
-			containerIPs[caddr] = true
+			containers[ct] = struct{}{}
+			allBridgeModeContainers[ct] = struct{}{}
+			containerIPs[caddr] = struct{}{}
 			containerRefIPs[ct] = append(containerRefIPs[ct], newBridgeModeContainerIP(bmn, ip))
 		}
 	}
+
 	containerModeNetworks := config.Networks.ContainerModeNetworks
+	allContainerModeContainers := make(map[ContainerReference]struct{})
 	for _, n := range containerModeNetworks {
 		if len(n.Name) == 0 {
 			return nil, nil, fmt.Errorf("network name cannot be empty")
@@ -357,15 +362,17 @@ func validateIPAMConfig(ctx context.Context, config *IPAMConfig) (networkMap, ma
 		})
 		networks[n.Name] = cmn
 
-		containers := make(map[ContainerReference]bool)
 		for _, ct := range n.AttachingContainers {
 			if err := validateContainerReference(&ct); err != nil {
 				return nil, nil, fmt.Errorf("container IP config within network %s has invalid container reference, reason: %w", n.Name, err)
 			}
-			if containers[ct] {
+			if _, found := allContainerModeContainers[ct]; found {
 				return nil, nil, fmt.Errorf("container {Group:%s Container:%s} is connected to multiple container mode network stacks", ct.Group, ct.Container)
 			}
-			containers[ct] = true
+			if _, found := allBridgeModeContainers[ct]; found {
+				return nil, nil, fmt.Errorf("container {Group:%s Container:%s} is connected to both bridge mode and container mode network stacks", ct.Group, ct.Container)
+			}
+			allContainerModeContainers[ct] = struct{}{}
 			containerRefIPs[ct] = append(containerRefIPs[ct], newContainerModeContainerIP(cmn))
 		}
 	}
