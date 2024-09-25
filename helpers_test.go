@@ -54,12 +54,14 @@ func newTestContext(info *testContextInfo) context.Context {
 func newTestLogger() zzzlogi.Logger {
 	config := zzzlog.NewConsoleLoggerConfig()
 	config.SkipCallerInfo = true
+	config.PanicInFatal = true
 	return zzzlog.NewLogger(config)
 }
 
 func newCapturingTestLogger(w io.Writer) zzzlogi.Logger {
 	config := zzzlog.NewConsoleLoggerConfig()
 	config.SkipCallerInfo = true
+	config.PanicInFatal = true
 	config.Dest = w
 	return zzzlog.NewLogger(config)
 }
@@ -67,6 +69,7 @@ func newCapturingTestLogger(w io.Writer) zzzlogi.Logger {
 func newCapturingVanillaTestLogger(w io.Writer) zzzlogi.Logger {
 	config := zzzlog.NewVanillaLoggerConfig()
 	config.Dest = w
+	config.PanicInFatal = true
 	return zzzlog.NewLogger(config)
 }
 
