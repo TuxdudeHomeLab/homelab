@@ -268,6 +268,61 @@ Created network net2
 Started container g2-c3`,
 	},
 	{
+		name: "Homelab Command - Start - All Groups With Multiple Same Order Containers",
+		args: []string{
+			"start",
+			"--all-groups",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/start-cmd-with-multiple-same-order-containers", pwd()),
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{
+				validImagesForPull: stringSet{
+					"abc/xyz":  {},
+					"abc/xyz3": {},
+					"abc/xyz4": {},
+				},
+			}),
+		},
+		want: `Pulling image: abc/xyz
+Created network net1
+Started container g1-c1
+Container g1-c2 not allowed to run on host FakeHost
+Pulling image: abc/xyz3
+Started container g1-c3
+Pulling image: abc/xyz4
+Created network net2
+Started container g2-c4`,
+	},
+	{
+		name: "Homelab Command - Start - All Groups With No Network Endpoints Containers",
+		args: []string{
+			"start",
+			"--all-groups",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/start-cmd-with-no-network-endpoints-containers", pwd()),
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{
+				validImagesForPull: stringSet{
+					"abc/xyz":  {},
+					"abc/xyz3": {},
+					"abc/xyz4": {},
+				},
+			}),
+		},
+		want: `Pulling image: abc/xyz
+Created network net1
+Started container g1-c1
+Container g1-c2 not allowed to run on host FakeHost
+Pulling image: abc/xyz3
+Container g1-c3 has no network endpoints configured, this is uncommon!
+Started container g1-c3
+Pulling image: abc/xyz4
+Created network net2
+Started container g2-c4`,
+	},
+	{
 		name: "Homelab Command - Start - One Group",
 		args: []string{
 			"start",
@@ -326,7 +381,7 @@ func TestExecHomelabCmd(t *testing.T) {
 			out, gotErr := execHomelabCmdTest(tc.ctxInfo, tc.args...)
 			if gotErr != nil {
 				t.Errorf(
-					"execHomelabCmd()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v\nOutput: %v",
+					"execHomelabCmd()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v\n\nOut:\n%v",
 					tc.name, gotErr, out)
 				return
 			}
@@ -340,7 +395,7 @@ func TestExecHomelabCmd(t *testing.T) {
 
 			if !match {
 				t.Errorf(
-					"execHomelabCmd()\nTest Case: %q\nFailure: output did not match the want regex\nReason:\n\nout:\n%s\nwant:\n%s\n", tc.name, out, tc.want)
+					"execHomelabCmd()\nTest Case: %q\nFailure: output did not match the want regex\nReason:\n\nOut:\n%s\nwant:\n%s\n", tc.name, out, tc.want)
 			}
 		})
 	}
