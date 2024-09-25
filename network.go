@@ -9,13 +9,14 @@ import (
 )
 
 type network struct {
-	networkName    string
-	priority       int
-	mode           networkMode
-	bridgeModeInfo *bridgeModeNetworkInfo
+	networkName       string
+	mode              networkMode
+	bridgeModeInfo    *bridgeModeNetworkInfo
+	containerModeInfo *containerModeNetworkInfo
 }
 
 type bridgeModeNetworkInfo struct {
+	priority          int
 	hostInterfaceName string
 	cidr              netip.Prefix
 	gateway           netip.Addr
@@ -38,18 +39,17 @@ type networkMode uint8
 func newBridgeModeNetwork(name string, priority int, info *bridgeModeNetworkInfo) *network {
 	n := network{
 		networkName:    name,
-		priority:       priority,
 		mode:           networkModeBridge,
 		bridgeModeInfo: info,
 	}
 	return &n
 }
 
-func newContainerModeNetwork(name string, priority int, info *containerModeNetworkInfo) *network {
+func newContainerModeNetwork(name string, info *containerModeNetworkInfo) *network {
 	n := network{
-		networkName: name,
-		priority:    priority,
-		mode:        networkModeContainer,
+		networkName:       name,
+		mode:              networkModeContainer,
+		containerModeInfo: info,
 	}
 	return &n
 }

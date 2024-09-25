@@ -300,6 +300,7 @@ func validateIPAMConfig(ctx context.Context, config *IPAMConfig) (networkMap, ma
 		prefixes[prefix] = n.Name
 		gatewayAddr := netAddr.Next()
 		bmn := newBridgeModeNetwork(n.Name, n.Priority, &bridgeModeNetworkInfo{
+			priority:          n.Priority,
 			hostInterfaceName: n.HostInterfaceName,
 			cidr:              prefix,
 			gateway:           gatewayAddr,
@@ -351,13 +352,10 @@ func validateIPAMConfig(ctx context.Context, config *IPAMConfig) (networkMap, ma
 		if _, found := networks[n.Name]; found {
 			return nil, nil, fmt.Errorf("network %s defined more than once in the IPAM config", n.Name)
 		}
-		if n.Priority <= 0 {
-			return nil, nil, fmt.Errorf("network %s cannot have a non-positive priority %d", n.Name, n.Priority)
-		}
 		if err := validateContainerReference(&n.Container); err != nil {
 			return nil, nil, fmt.Errorf("container reference of container mode network %s is invalid, reason: %w", n.Name, err)
 		}
-		cmn := newContainerModeNetwork(n.Name, n.Priority, &containerModeNetworkInfo{
+		cmn := newContainerModeNetwork(n.Name, &containerModeNetworkInfo{
 			container: n.Container,
 		})
 		networks[n.Name] = cmn
@@ -388,15 +386,12 @@ func validateIPAMConfig(ctx context.Context, config *IPAMConfig) (networkMap, ma
 				log(ctx).Fatalf("Container %s has networks of different types which is unsupported", ct)
 			}
 			if n1.mode == networkModeBridge {
-				if n1.priority == n2.priority {
-					log(ctx).Fatalf("Container %s is connected to two bridge mode networks of same priority %d which is unsupported", ct, n1.priority)
+				if n1.bridgeModeInfo.priority == n2.bridgeModeInfo.priority {
+					log(ctx).Fatalf("Container %s is connected to two bridge mode networks of same priority %d which is unsupported", ct, n1.bridgeModeInfo.priority)
 				}
-				return n1.priority < n2.priority
+				return n1.bridgeModeInfo.priority < n2.bridgeModeInfo.priority
 			} else {
-				if n1.priority == n2.priority {
-					log(ctx).Fatalf("Container %s is connected to two container mode networks of same priority %d which is unsupported", ct, n1.priority)
-				}
-				return n1.priority < n2.priority
+				return n1.name() < n2.name()
 			}
 		})
 	}

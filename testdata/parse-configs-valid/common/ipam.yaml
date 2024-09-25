@@ -42,7 +42,6 @@ ipam:
               container: c3
     containerModeNetworks:
       - name: g3-c4
-        priority: 1
         container:
           group: g3
           container: c4

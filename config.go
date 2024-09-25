@@ -73,7 +73,6 @@ type BridgeModeNetworkConfig struct {
 // container to another container's network stack.
 type ContainerModeNetworkConfig struct {
 	Name                string               `yaml:"name,omitempty" json:"name,omitempty"`
-	Priority            int                  `yaml:"priority,omitempty" json:"priority,omitempty"`
 	Container           ContainerReference   `yaml:"container,omitempty" json:"container,omitempty"`
 	AttachingContainers []ContainerReference `yaml:"attachingContainers,omitempty" json:"attachingContainers,omitempty"`
 }

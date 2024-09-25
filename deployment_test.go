@@ -115,7 +115,6 @@ ipam:
               container: ct3
     containerModeNetworks:
       - name: group3-ct4
-        priority: 1
         container:
           group: group3
           container: ct4
@@ -422,8 +421,7 @@ containers:
 					},
 					ContainerModeNetworks: []ContainerModeNetworkConfig{
 						{
-							Name:     "group3-ct4",
-							Priority: 1,
+							Name: "group3-ct4",
 							Container: ContainerReference{
 								Group:     "group3",
 								Container: "ct4",
@@ -930,8 +928,7 @@ var buildDeploymentFromConfigsPathTests = []struct {
 					},
 					ContainerModeNetworks: []ContainerModeNetworkConfig{
 						{
-							Name:     "g3-c4",
-							Priority: 1,
+							Name: "g3-c4",
 							Container: ContainerReference{
 								Group:     "g3",
 								Container: "c4",
@@ -1281,16 +1278,14 @@ var buildDeploymentFromConfigStringerTests = []struct {
 					},
 					ContainerModeNetworks: []ContainerModeNetworkConfig{
 						{
-							Name:     "net3",
-							Priority: 1,
+							Name: "net3",
 							Container: ContainerReference{
 								Group:     "g5",
 								Container: "ct101",
 							},
 						},
 						{
-							Name:     "net4",
-							Priority: 1,
+							Name: "net4",
 							Container: ContainerReference{
 								Group:     "g6",
 								Container: "ct201",
@@ -2556,7 +2551,6 @@ var buildDeploymentFromConfigErrorTests = []struct {
 				Networks: NetworksConfig{
 					ContainerModeNetworks: []ContainerModeNetworkConfig{
 						{
-							Priority: 1,
 							Container: ContainerReference{
 								Group:     "some-group",
 								Container: "some-container",
@@ -2575,16 +2569,14 @@ var buildDeploymentFromConfigErrorTests = []struct {
 				Networks: NetworksConfig{
 					ContainerModeNetworks: []ContainerModeNetworkConfig{
 						{
-							Name:     "net1",
-							Priority: 1,
+							Name: "net1",
 							Container: ContainerReference{
 								Group:     "some-group-1",
 								Container: "some-container-1",
 							},
 						},
 						{
-							Name:     "net1",
-							Priority: 2,
+							Name: "net1",
 							Container: ContainerReference{
 								Group:     "some-group-2",
 								Container: "some-container-2",
@@ -2611,8 +2603,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 					},
 					ContainerModeNetworks: []ContainerModeNetworkConfig{
 						{
-							Name:     "net1",
-							Priority: 2,
+							Name: "net1",
 							Container: ContainerReference{
 								Group:     "some-group",
 								Container: "some-container",
@@ -2625,33 +2616,13 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		want: `network net1 defined more than once in the IPAM config`,
 	},
 	{
-		name: "Empty Container Mode Network Priority",
-		config: HomelabConfig{
-			IPAM: IPAMConfig{
-				Networks: NetworksConfig{
-					ContainerModeNetworks: []ContainerModeNetworkConfig{
-						{
-							Name: "net1",
-							Container: ContainerReference{
-								Group:     "some-group",
-								Container: "some-container",
-							},
-						},
-					},
-				},
-			},
-		},
-		want: `network net1 cannot have a non-positive priority 0`,
-	},
-	{
 		name: "Container Mode Network Invalid Container Reference - Empty Group",
 		config: HomelabConfig{
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					ContainerModeNetworks: []ContainerModeNetworkConfig{
 						{
-							Name:     "net1",
-							Priority: 1,
+							Name: "net1",
 							Container: ContainerReference{
 								Container: "some-container",
 							},
@@ -2669,8 +2640,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 				Networks: NetworksConfig{
 					ContainerModeNetworks: []ContainerModeNetworkConfig{
 						{
-							Name:     "net1",
-							Priority: 1,
+							Name: "net1",
 							Container: ContainerReference{
 								Group: "some-group",
 							},
@@ -2688,8 +2658,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 				Networks: NetworksConfig{
 					ContainerModeNetworks: []ContainerModeNetworkConfig{
 						{
-							Name:     "net1",
-							Priority: 1,
+							Name: "net1",
 							Container: ContainerReference{
 								Group:     "some-group",
 								Container: "some-container",
@@ -2713,8 +2682,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 				Networks: NetworksConfig{
 					ContainerModeNetworks: []ContainerModeNetworkConfig{
 						{
-							Name:     "net1",
-							Priority: 1,
+							Name: "net1",
 							Container: ContainerReference{
 								Group:     "some-group",
 								Container: "some-container",
@@ -2738,8 +2706,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 				Networks: NetworksConfig{
 					ContainerModeNetworks: []ContainerModeNetworkConfig{
 						{
-							Name:     "net1",
-							Priority: 1,
+							Name: "net1",
 							Container: ContainerReference{
 								Group:     "some-group",
 								Container: "some-container",
@@ -2776,8 +2743,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 				Networks: NetworksConfig{
 					ContainerModeNetworks: []ContainerModeNetworkConfig{
 						{
-							Name:     "net1",
-							Priority: 1,
+							Name: "net1",
 							Container: ContainerReference{
 								Group:     "some-group-1",
 								Container: "some-container-1",
@@ -2790,8 +2756,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 							},
 						},
 						{
-							Name:     "net2",
-							Priority: 2,
+							Name: "net2",
 							Container: ContainerReference{
 								Group:     "some-group-2",
 								Container: "some-container-2",
@@ -2837,8 +2802,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 					},
 					ContainerModeNetworks: []ContainerModeNetworkConfig{
 						{
-							Name:     "net2",
-							Priority: 1,
+							Name: "net2",
 							Container: ContainerReference{
 								Group:     "some-group-1",
 								Container: "some-container-1",
