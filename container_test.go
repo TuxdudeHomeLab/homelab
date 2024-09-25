@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"testing"
 	"time"
+
+	"github.com/tuxdude/zzzlog"
 )
 
 var containerStartTests = []struct {
@@ -311,7 +313,7 @@ func TestContainerStart(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			buf := new(bytes.Buffer)
-			tc.ctxInfo.logger = newCapturingTestLogger(buf)
+			tc.ctxInfo.logger = newCapturingTestLogger(zzzlog.LvlDebug, buf)
 			ctx := newTestContext(tc.ctxInfo)
 
 			dep, gotErr := buildDeploymentFromConfig(ctx, &tc.config)
@@ -652,7 +654,7 @@ func TestContainerStartErrors(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			buf := new(bytes.Buffer)
-			tc.ctxInfo.logger = newCapturingTestLogger(buf)
+			tc.ctxInfo.logger = newCapturingTestLogger(zzzlog.LvlDebug, buf)
 			ctx := newTestContext(tc.ctxInfo)
 
 			dep, gotErr := buildDeploymentFromConfig(ctx, &tc.config)

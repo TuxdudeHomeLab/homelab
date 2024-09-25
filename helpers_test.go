@@ -58,8 +58,9 @@ func newTestLogger() zzzlogi.Logger {
 	return zzzlog.NewLogger(config)
 }
 
-func newCapturingTestLogger(w io.Writer) zzzlogi.Logger {
+func newCapturingTestLogger(lvl zzzlog.Level, w io.Writer) zzzlogi.Logger {
 	config := zzzlog.NewConsoleLoggerConfig()
+	config.MaxLevel = lvl
 	config.SkipCallerInfo = true
 	config.PanicInFatal = true
 	config.Dest = w
