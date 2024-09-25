@@ -21,10 +21,11 @@ var containerStartTests = []struct {
 }{
 	{
 		name: "Container Start - Doesn't Exist Already",
-		config: buildSingleContainerConfig(ContainerReference{
-			Group:     "g1",
-			Container: "c1",
-		},
+		config: buildSingleContainerConfig(
+			ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
 			"abc/xyz"),
 		cRef: ContainerReference{
 			Group:     "g1",
@@ -40,10 +41,11 @@ var containerStartTests = []struct {
 	},
 	{
 		name: "Container Start - Doesn't Exist Already - No Network Endpoints",
-		config: buildSingleContainerNoNetworkConfig(ContainerReference{
-			Group:     "g1",
-			Container: "c1",
-		},
+		config: buildSingleContainerNoNetworkConfig(
+			ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
 			"abc/xyz"),
 		cRef: ContainerReference{
 			Group:     "g1",
@@ -60,10 +62,11 @@ var containerStartTests = []struct {
 
 	{
 		name: "Container Start - Exists Already In Created State",
-		config: buildSingleContainerConfig(ContainerReference{
-			Group:     "g1",
-			Container: "c1",
-		},
+		config: buildSingleContainerConfig(
+			ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
 			"abc/xyz"),
 		cRef: ContainerReference{
 			Group:     "g1",
@@ -86,10 +89,11 @@ var containerStartTests = []struct {
 	},
 	{
 		name: "Container Start - Exists Already In Running State",
-		config: buildSingleContainerConfig(ContainerReference{
-			Group:     "g1",
-			Container: "c1",
-		},
+		config: buildSingleContainerConfig(
+			ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
 			"abc/xyz"),
 		cRef: ContainerReference{
 			Group:     "g1",
@@ -112,10 +116,11 @@ var containerStartTests = []struct {
 	},
 	{
 		name: "Container Start - Exists Already In Paused State",
-		config: buildSingleContainerConfig(ContainerReference{
-			Group:     "g1",
-			Container: "c1",
-		},
+		config: buildSingleContainerConfig(
+			ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
 			"abc/xyz"),
 		cRef: ContainerReference{
 			Group:     "g1",
@@ -138,10 +143,11 @@ var containerStartTests = []struct {
 	},
 	{
 		name: "Container Start - Exists Already In Restarting State",
-		config: buildSingleContainerConfig(ContainerReference{
-			Group:     "g1",
-			Container: "c1",
-		},
+		config: buildSingleContainerConfig(
+			ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
 			"abc/xyz"),
 		cRef: ContainerReference{
 			Group:     "g1",
@@ -164,10 +170,11 @@ var containerStartTests = []struct {
 	},
 	{
 		name: "Container Start - Exists Already In Removing State",
-		config: buildSingleContainerConfig(ContainerReference{
-			Group:     "g1",
-			Container: "c1",
-		},
+		config: buildSingleContainerConfig(
+			ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
 			"abc/xyz"),
 		cRef: ContainerReference{
 			Group:     "g1",
@@ -200,10 +207,11 @@ var containerStartTests = []struct {
 	},
 	{
 		name: "Container Start - Exists Already In Exited State",
-		config: buildSingleContainerConfig(ContainerReference{
-			Group:     "g1",
-			Container: "c1",
-		},
+		config: buildSingleContainerConfig(
+			ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
 			"abc/xyz"),
 		cRef: ContainerReference{
 			Group:     "g1",
@@ -226,10 +234,11 @@ var containerStartTests = []struct {
 	},
 	{
 		name: "Container Start - Exists Already In Dead State",
-		config: buildSingleContainerConfig(ContainerReference{
-			Group:     "g1",
-			Container: "c1",
-		},
+		config: buildSingleContainerConfig(
+			ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
 			"abc/xyz"),
 		cRef: ContainerReference{
 			Group:     "g1",
@@ -252,10 +261,11 @@ var containerStartTests = []struct {
 	},
 	{
 		name: "Container Start - Exists Already In Running State Requiring Multiple Stops",
-		config: buildSingleContainerConfig(ContainerReference{
-			Group:     "g1",
-			Container: "c1",
-		},
+		config: buildSingleContainerConfig(
+			ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
 			"abc/xyz"),
 		cRef: ContainerReference{
 			Group:     "g1",
@@ -279,10 +289,11 @@ var containerStartTests = []struct {
 	},
 	{
 		name: "Container Start - Exists Already In Running State Requiring Multiple Kills",
-		config: buildSingleContainerConfig(ContainerReference{
-			Group:     "g1",
-			Container: "c1",
-		},
+		config: buildSingleContainerConfig(
+			ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
 			"abc/xyz"),
 		cRef: ContainerReference{
 			Group:     "g1",
@@ -379,10 +390,11 @@ var containerStartErrorTests = []struct {
 }{
 	{
 		name: "Container Start - Unkillable Existing Container",
-		config: buildSingleContainerConfig(ContainerReference{
-			Group:     "g1",
-			Container: "c1",
-		},
+		config: buildSingleContainerConfig(
+			ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
 			"abc/xyz"),
 		cRef: ContainerReference{
 			Group:     "g1",
@@ -408,10 +420,11 @@ var containerStartErrorTests = []struct {
 	},
 	{
 		name: "Container Start - Inspect Existing Container Failure",
-		config: buildSingleContainerConfig(ContainerReference{
-			Group:     "g1",
-			Container: "c1",
-		},
+		config: buildSingleContainerConfig(
+			ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
 			"abc/xyz"),
 		cRef: ContainerReference{
 			Group:     "g1",
@@ -438,10 +451,11 @@ var containerStartErrorTests = []struct {
 	},
 	{
 		name: "Container Start - Stop Existing Container Failure",
-		config: buildSingleContainerConfig(ContainerReference{
-			Group:     "g1",
-			Container: "c1",
-		},
+		config: buildSingleContainerConfig(
+			ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
 			"abc/xyz"),
 		cRef: ContainerReference{
 			Group:     "g1",
@@ -468,10 +482,11 @@ var containerStartErrorTests = []struct {
 	},
 	{
 		name: "Container Start - Remove Existing Container Failure",
-		config: buildSingleContainerConfig(ContainerReference{
-			Group:     "g1",
-			Container: "c1",
-		},
+		config: buildSingleContainerConfig(
+			ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
 			"abc/xyz"),
 		cRef: ContainerReference{
 			Group:     "g1",
@@ -498,10 +513,11 @@ var containerStartErrorTests = []struct {
 	},
 	{
 		name: "Container Start - Create Container Failure",
-		config: buildSingleContainerConfig(ContainerReference{
-			Group:     "g1",
-			Container: "c1",
-		},
+		config: buildSingleContainerConfig(
+			ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
 			"abc/xyz"),
 		cRef: ContainerReference{
 			Group:     "g1",
@@ -528,10 +544,11 @@ var containerStartErrorTests = []struct {
 	},
 	{
 		name: "Container Start - Start Container Failure",
-		config: buildSingleContainerConfig(ContainerReference{
-			Group:     "g1",
-			Container: "c1",
-		},
+		config: buildSingleContainerConfig(
+			ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
 			"abc/xyz"),
 		cRef: ContainerReference{
 			Group:     "g1",
@@ -558,10 +575,11 @@ var containerStartErrorTests = []struct {
 	},
 	{
 		name: "Container Start - Primary Network Create Failure",
-		config: buildSingleContainerConfig(ContainerReference{
-			Group:     "g1",
-			Container: "c1",
-		},
+		config: buildSingleContainerConfig(
+			ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
 			"abc/xyz"),
 		cRef: ContainerReference{
 			Group:     "g1",
@@ -588,10 +606,11 @@ var containerStartErrorTests = []struct {
 	},
 	{
 		name: "Container Start - Secondary Network Create Failure",
-		config: buildSingleContainerConfig(ContainerReference{
-			Group:     "g1",
-			Container: "c1",
-		},
+		config: buildSingleContainerConfig(
+			ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
 			"abc/xyz"),
 		cRef: ContainerReference{
 			Group:     "g1",
@@ -618,10 +637,11 @@ var containerStartErrorTests = []struct {
 	},
 	{
 		name: "Container Start - Secondary Network Connect Failure",
-		config: buildSingleContainerConfig(ContainerReference{
-			Group:     "g1",
-			Container: "c1",
-		},
+		config: buildSingleContainerConfig(
+			ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
 			"abc/xyz"),
 		cRef: ContainerReference{
 			Group:     "g1",
