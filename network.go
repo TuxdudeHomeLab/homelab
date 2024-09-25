@@ -21,6 +21,10 @@ type bridgeModeNetworkInfo struct {
 	gateway           netip.Addr
 }
 
+type containerModeNetworkInfo struct {
+	container ContainerReference
+}
+
 type networkMap map[string]*network
 
 const (
@@ -41,7 +45,7 @@ func newBridgeModeNetwork(name string, priority int, info *bridgeModeNetworkInfo
 	return &n
 }
 
-func newContainerModeNetwork(name string, priority int) *network {
+func newContainerModeNetwork(name string, priority int, info *containerModeNetworkInfo) *network {
 	n := network{
 		networkName: name,
 		priority:    priority,

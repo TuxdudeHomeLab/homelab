@@ -116,7 +116,10 @@ ipam:
     containerModeNetworks:
       - name: group3-ct4
         priority: 1
-        containers:
+        container:
+          group: group3
+          container: ct4
+        attachingContainers:
           - group: group3
             container: ct5
           - group: group3
@@ -421,7 +424,11 @@ containers:
 						{
 							Name:     "group3-ct4",
 							Priority: 1,
-							Containers: []ContainerReference{
+							Container: ContainerReference{
+								Group:     "group3",
+								Container: "ct4",
+							},
+							AttachingContainers: []ContainerReference{
 								{
 									Group:     "group3",
 									Container: "ct5",
@@ -925,7 +932,11 @@ var buildDeploymentFromConfigsPathTests = []struct {
 						{
 							Name:     "g3-c4",
 							Priority: 1,
-							Containers: []ContainerReference{
+							Container: ContainerReference{
+								Group:     "g3",
+								Container: "c4",
+							},
+							AttachingContainers: []ContainerReference{
 								{
 									Group:     "g3",
 									Container: "c5",
@@ -1272,10 +1283,18 @@ var buildDeploymentFromConfigStringerTests = []struct {
 						{
 							Name:     "net3",
 							Priority: 1,
+							Container: ContainerReference{
+								Group:     "g5",
+								Container: "ct101",
+							},
 						},
 						{
 							Name:     "net4",
 							Priority: 1,
+							Container: ContainerReference{
+								Group:     "g6",
+								Container: "ct201",
+							},
 						},
 					},
 				},
@@ -1955,7 +1974,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		want: `host interface name of network net1 cannot be empty`,
 	},
 	{
-		name: "Duplicate network host interface names",
+		name: "Duplicate Network Host Interface Names",
 		config: HomelabConfig{
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
@@ -2538,6 +2557,10 @@ var buildDeploymentFromConfigErrorTests = []struct {
 					ContainerModeNetworks: []ContainerModeNetworkConfig{
 						{
 							Priority: 1,
+							Container: ContainerReference{
+								Group:     "some-group",
+								Container: "some-container",
+							},
 						},
 					},
 				},
@@ -2546,7 +2569,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		want: `network name cannot be empty`,
 	},
 	{
-		name: "Duplicate container mode network",
+		name: "Duplicate Container Mode Network Name",
 		config: HomelabConfig{
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
@@ -2554,10 +2577,18 @@ var buildDeploymentFromConfigErrorTests = []struct {
 						{
 							Name:     "net1",
 							Priority: 1,
+							Container: ContainerReference{
+								Group:     "some-group-1",
+								Container: "some-container-1",
+							},
 						},
 						{
 							Name:     "net1",
 							Priority: 2,
+							Container: ContainerReference{
+								Group:     "some-group-2",
+								Container: "some-container-2",
+							},
 						},
 					},
 				},
@@ -2566,7 +2597,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		want: `network net1 defined more than once in the IPAM config`,
 	},
 	{
-		name: "Duplicate bridge/container mode networks",
+		name: "Duplicate Bridge/Container Mode Networks",
 		config: HomelabConfig{
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
@@ -2582,6 +2613,10 @@ var buildDeploymentFromConfigErrorTests = []struct {
 						{
 							Name:     "net1",
 							Priority: 2,
+							Container: ContainerReference{
+								Group:     "some-group",
+								Container: "some-container",
+							},
 						},
 					},
 				},
@@ -2597,6 +2632,10 @@ var buildDeploymentFromConfigErrorTests = []struct {
 					ContainerModeNetworks: []ContainerModeNetworkConfig{
 						{
 							Name: "net1",
+							Container: ContainerReference{
+								Group:     "some-group",
+								Container: "some-container",
+							},
 						},
 					},
 				},
@@ -2613,7 +2652,49 @@ var buildDeploymentFromConfigErrorTests = []struct {
 						{
 							Name:     "net1",
 							Priority: 1,
-							Containers: []ContainerReference{
+							Container: ContainerReference{
+								Container: "some-container",
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `container reference of container mode network net1 is invalid, reason: container reference cannot have an empty group name`,
+	},
+	{
+		name: "Container Mode Network Invalid Container Reference - Empty Container",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					ContainerModeNetworks: []ContainerModeNetworkConfig{
+						{
+							Name:     "net1",
+							Priority: 1,
+							Container: ContainerReference{
+								Group: "some-group",
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `container reference of container mode network net1 is invalid, reason: container reference cannot have an empty container name`,
+	},
+	{
+		name: "Container Mode Network Invalid Attaching Container Reference - Empty Group",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					ContainerModeNetworks: []ContainerModeNetworkConfig{
+						{
+							Name:     "net1",
+							Priority: 1,
+							Container: ContainerReference{
+								Group:     "some-group",
+								Container: "some-container",
+							},
+							AttachingContainers: []ContainerReference{
 								{
 									Container: "ct1",
 								},
@@ -2626,7 +2707,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		want: `container IP config within network net1 has invalid container reference, reason: container reference cannot have an empty group name`,
 	},
 	{
-		name: "Container Mode Network Invalid Container Reference - Empty Container",
+		name: "Container Mode Network Invalid Attaching Container Reference - Empty Container",
 		config: HomelabConfig{
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
@@ -2634,7 +2715,11 @@ var buildDeploymentFromConfigErrorTests = []struct {
 						{
 							Name:     "net1",
 							Priority: 1,
-							Containers: []ContainerReference{
+							Container: ContainerReference{
+								Group:     "some-group",
+								Container: "some-container",
+							},
+							AttachingContainers: []ContainerReference{
 								{
 									Group: "g1",
 								},
@@ -2656,7 +2741,11 @@ var buildDeploymentFromConfigErrorTests = []struct {
 						{
 							Name:     "net1",
 							Priority: 1,
-							Containers: []ContainerReference{
+							Container: ContainerReference{
+								Group:     "some-group",
+								Container: "some-container",
+							},
+							AttachingContainers: []ContainerReference{
 								{
 									Group:     "group1",
 									Container: "ct1",

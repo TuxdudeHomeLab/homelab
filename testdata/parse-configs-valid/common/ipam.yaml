@@ -43,7 +43,10 @@ ipam:
     containerModeNetworks:
       - name: g3-c4
         priority: 1
-        containers:
+        container:
+          group: g3
+          container: c4
+        attachingContainers:
           - group: g3
             container: c5
           - group: g3

@@ -349,11 +349,16 @@ func validateIPAMConfig(ctx context.Context, config *IPAMConfig) (networkMap, ma
 		if n.Priority <= 0 {
 			return nil, nil, fmt.Errorf("network %s cannot have a non-positive priority %d", n.Name, n.Priority)
 		}
-		cmn := newContainerModeNetwork(n.Name, n.Priority)
+		if err := validateContainerReference(&n.Container); err != nil {
+			return nil, nil, fmt.Errorf("container reference of container mode network %s is invalid, reason: %w", n.Name, err)
+		}
+		cmn := newContainerModeNetwork(n.Name, n.Priority, &containerModeNetworkInfo{
+			container: n.Container,
+		})
 		networks[n.Name] = cmn
 
 		containers := make(map[ContainerReference]bool)
-		for _, ct := range n.Containers {
+		for _, ct := range n.AttachingContainers {
 			if err := validateContainerReference(&ct); err != nil {
 				return nil, nil, fmt.Errorf("container IP config within network %s has invalid container reference, reason: %w", n.Name, err)
 			}

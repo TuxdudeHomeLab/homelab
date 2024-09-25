@@ -72,9 +72,10 @@ type BridgeModeNetworkConfig struct {
 // ContainerModeNetworkConfig represents a container network meant to attach a
 // container to another container's network stack.
 type ContainerModeNetworkConfig struct {
-	Name       string               `yaml:"name,omitempty" json:"name,omitempty"`
-	Priority   int                  `yaml:"priority,omitempty" json:"priority,omitempty"`
-	Containers []ContainerReference `yaml:"containers,omitempty" json:"containers,omitempty"`
+	Name                string               `yaml:"name,omitempty" json:"name,omitempty"`
+	Priority            int                  `yaml:"priority,omitempty" json:"priority,omitempty"`
+	Container           ContainerReference   `yaml:"container,omitempty" json:"container,omitempty"`
+	AttachingContainers []ContainerReference `yaml:"attachingContainers,omitempty" json:"attachingContainers,omitempty"`
 }
 
 // ContainerIP represents the IP information for a container.
