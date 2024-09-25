@@ -380,6 +380,15 @@ func validateIPAMConfig(ctx context.Context, config *IPAMConfig) (networkMap, ma
 			continue
 		}
 
+		priorities := make(map[int]struct{})
+		for _, e := range endpoints {
+			p := e.network.bridgeModeInfo.priority
+			if _, found := priorities[p]; found {
+				return nil, nil, fmt.Errorf("container {Group:%s Container:%s} cannot have multiple bridge mode network endpoints whose networks have the same priority %d", ct.Group, ct.Container, p)
+			}
+			priorities[p] = struct{}{}
+		}
+
 		// Sort the networks for each container by priority (i.e. lowest
 		// priority is the primary network interface for the container).
 		sort.Slice(endpoints, func(i, j int) bool {
@@ -390,9 +399,6 @@ func validateIPAMConfig(ctx context.Context, config *IPAMConfig) (networkMap, ma
 			n1 := endpoints[i].network
 			n2 := endpoints[j].network
 
-			if n1.bridgeModeInfo.priority == n2.bridgeModeInfo.priority {
-				log(ctx).Fatalf("Container %s is connected to two bridge mode networks of same priority %d which is unsupported", ct, n1.bridgeModeInfo.priority)
-			}
 			return n1.bridgeModeInfo.priority < n2.bridgeModeInfo.priority
 		})
 	}

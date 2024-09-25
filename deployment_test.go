@@ -2545,6 +2545,48 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		want: `IP 172\.18\.100\.2 of container {Group:group1 Container:ct4} is already in use by another container in network net1`,
 	},
 	{
+		name: "Multiple Same Priority Bridge Mode Network Endpoints For Same Container",
+		config: HomelabConfig{
+			IPAM: IPAMConfig{
+				Networks: NetworksConfig{
+					BridgeModeNetworks: []BridgeModeNetworkConfig{
+						{
+							Name:              "net1",
+							HostInterfaceName: "docker-net1",
+							CIDR:              "172.18.100.0/24",
+							Priority:          1,
+							Containers: []ContainerIPConfig{
+								{
+									IP: "172.18.100.2",
+									Container: ContainerReference{
+										Group:     "group1",
+										Container: "ct1",
+									},
+								},
+							},
+						},
+						{
+							Name:              "net2",
+							HostInterfaceName: "docker-net2",
+							CIDR:              "172.18.101.0/24",
+							Priority:          1,
+							Containers: []ContainerIPConfig{
+								{
+									IP: "172.18.101.2",
+									Container: ContainerReference{
+										Group:     "group1",
+										Container: "ct1",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `container {Group:group1 Container:ct1} cannot have multiple bridge mode network endpoints whose networks have the same priority 1`,
+	},
+	{
 		name: "Empty Container Mode Network Name",
 		config: HomelabConfig{
 			IPAM: IPAMConfig{
