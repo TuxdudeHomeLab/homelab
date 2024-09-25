@@ -251,11 +251,11 @@ func (f *fakeDockerHost) ContainerKill(ctx context.Context, containerName, signa
 	case containerStateCreated, containerStateExited, containerStateDead, containerStateRemoving:
 		return fmt.Errorf("container in state %s on the fake docker host cannot be killed", ct.state)
 	case containerStateUnknown:
-		panic("ContainerRemove invoked on a container in an unknown state on the fake docker host, possibly indicating a bug")
+		panic("ContainerKill invoked on a container in an unknown state on the fake docker host, possibly indicating a bug")
 	case containerStateNotFound:
-		panic("ContainerRemove invoked on a container in a not found state on the fake docker host, possibly indicating a bug")
+		panic("ContainerKill invoked on a container in a not found state on the fake docker host, possibly indicating a bug")
 	default:
-		panic(fmt.Sprintf("ContainerRemove invoked on a container in %s state on the fake docker host, possibly indicating a bug", ct.state))
+		panic(fmt.Sprintf("ContainerKill invoked on a container in %s state on the fake docker host, possibly indicating a bug", ct.state))
 	}
 }
 
