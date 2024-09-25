@@ -376,23 +376,24 @@ func validateIPAMConfig(ctx context.Context, config *IPAMConfig) (networkMap, ma
 	}
 
 	for ct, ips := range containerRefIPs {
-		// Sort the networks by priority (i.e. lowest priority is the primary
-		// network interface for the container).
+		if len(ips) <= 1 {
+			continue
+		}
+
+		// Sort the networks for each container by priority (i.e. lowest
+		// priority is the primary network interface for the container).
 		sort.Slice(ips, func(i, j int) bool {
+			// These networks are all guaranteed to be bridge mode networks
+			// as we have already validated that a given container connects
+			// to at most one container mode network and doesn't connect
+			// to both bridge and container mode networks at the same time.
 			n1 := ips[i].network
 			n2 := ips[j].network
 
-			if n1.mode != n2.mode {
-				log(ctx).Fatalf("Container %s has networks of different types which is unsupported", ct)
+			if n1.bridgeModeInfo.priority == n2.bridgeModeInfo.priority {
+				log(ctx).Fatalf("Container %s is connected to two bridge mode networks of same priority %d which is unsupported", ct, n1.bridgeModeInfo.priority)
 			}
-			if n1.mode == networkModeBridge {
-				if n1.bridgeModeInfo.priority == n2.bridgeModeInfo.priority {
-					log(ctx).Fatalf("Container %s is connected to two bridge mode networks of same priority %d which is unsupported", ct, n1.bridgeModeInfo.priority)
-				}
-				return n1.bridgeModeInfo.priority < n2.bridgeModeInfo.priority
-			} else {
-				return n1.name() < n2.name()
-			}
+			return n1.bridgeModeInfo.priority < n2.bridgeModeInfo.priority
 		})
 	}
 
