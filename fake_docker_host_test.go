@@ -6,7 +6,6 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"io"
-	"strings"
 
 	"github.com/sasha-s/go-deadlock"
 
@@ -389,14 +388,21 @@ func (f *fakeDockerHost) ImageList(ctx context.Context, options dimage.ListOptio
 	}, nil
 }
 
-func (f *fakeDockerHost) ImagePull(ctx context.Context, refStr string, options dimage.PullOptions) (io.ReadCloser, error) {
+func (f *fakeDockerHost) ImagePull(ctx context.Context, imageName string, options dimage.PullOptions) (io.ReadCloser, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
-	if _, found := f.validImagesForPull[refStr]; !found {
-		return nil, fmt.Errorf("image %s not found or invalid and cannot be pulled by the fake docker host", refStr)
+	if _, found := f.validImagesForPull[imageName]; !found {
+		return nil, fmt.Errorf("image %s not found or invalid and cannot be pulled by the fake docker host", imageName)
 	}
-	return io.NopCloser(strings.NewReader("")), nil
+
+	return io.NopCloser(wrappedReader(func(p []byte) (int, error) {
+		f.mu.Lock()
+		defer f.mu.Unlock()
+
+		f.images[imageName] = newFakeImageInfo(imageName)
+		return 0, io.EOF
+	})), nil
 }
 
 func (f *fakeDockerHost) NetworkConnect(ctx context.Context, networkName, containerName string, config *dnetwork.EndpointSettings) error {

@@ -22,6 +22,12 @@ type testContextInfo struct {
 
 type testOSEnvMap map[string]string
 
+type wrappedReader func(p []byte) (int, error)
+
+func (actual wrappedReader) Read(p []byte) (int, error) {
+	return actual(p)
+}
+
 func newVanillaTestContext() context.Context {
 	return newTestContext(
 		&testContextInfo{

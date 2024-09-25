@@ -148,17 +148,17 @@ func newDockerClient(ctx context.Context, platform, arch string) (*dockerClient,
 }
 
 func (d *dockerClient) pullImage(ctx context.Context, imageName string) error {
-	progress, err := d.client.ImagePull(ctx, imageName, dimage.PullOptions{Platform: d.platform})
-	if err != nil {
-		return fmt.Errorf("failed to pull the image %s, reason: %w", imageName, err)
-	}
-	defer progress.Close()
-
 	// Store info about existing locally available image.
 	avail, id := d.queryLocalImage(ctx, imageName)
 	// Show verbose pull progress only if either in debug mode or
 	// there is no existing locally available image.
 	showPullProgress := d.debug || !avail
+
+	progress, err := d.client.ImagePull(ctx, imageName, dimage.PullOptions{Platform: d.platform})
+	if err != nil {
+		return fmt.Errorf("failed to pull the image %s, reason: %w", imageName, err)
+	}
+	defer progress.Close()
 
 	// Perform the actual image pull.
 	if showPullProgress {
@@ -176,10 +176,8 @@ func (d *dockerClient) pullImage(ctx context.Context, imageName string) error {
 		return fmt.Errorf("failed while pulling the image %s, reason: %w", imageName, err)
 	}
 
-	// If pull progress was already shown, no need to show the updates again.
 	if showPullProgress {
-		log(ctx).Debugf("Pulled image successfully: %s", imageName)
-		return nil
+		log(ctx).Debugf("Image pull for %s complete", imageName)
 	}
 
 	// Otherwise, determine if the image was updated and show the updated ID
@@ -188,6 +186,13 @@ func (d *dockerClient) pullImage(ctx context.Context, imageName string) error {
 	if !avail {
 		log(ctx).Fatalf("Image is expected to be available after pull, but is unavailable possibly indicating a bug or system failure!")
 	}
+
+	// If pull progress was already shown, no need to show the updates again.
+	if showPullProgress {
+		log(ctx).Debugf("Pulled image successfully: %s", imageName)
+		return nil
+	}
+
 	if newId != id {
 		log(ctx).Infof("Pulled newer version of image %s: %s", imageName, newId)
 	}

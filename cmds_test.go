@@ -268,6 +268,33 @@ Created network net2
 Started container g2-c3`,
 	},
 	{
+		name: "Homelab Command - Start - All Groups - One Existing Image",
+		args: []string{
+			"start",
+			"--all-groups",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/start-cmd", pwd()),
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{
+				existingImages: stringSet{
+					"abc/xyz3": {},
+				},
+				validImagesForPull: stringSet{
+					"abc/xyz":  {},
+					"abc/xyz3": {},
+				},
+			}),
+		},
+		want: `Pulling image: abc/xyz
+Created network net1
+Started container g1-c1
+Container g1-c2 not allowed to run on host FakeHost
+Pulled newer version of image abc/xyz3: [a-z0-9]{64}
+Created network net2
+Started container g2-c3`,
+	},
+	{
 		name: "Homelab Command - Start - All Groups With Multiple Same Order Containers",
 		args: []string{
 			"start",
