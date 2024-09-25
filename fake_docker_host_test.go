@@ -19,15 +19,18 @@ import (
 )
 
 type fakeDockerHost struct {
-	mu                  deadlock.RWMutex
-	containers          fakeContainerMap
-	networks            fakeNetworkMap
-	images              fakeImageMap
-	validImagesForPull  stringSet
-	failContainerCreate stringSet
-	failContainerStart  stringSet
-	failNetworkCreate   stringSet
-	failNetworkConnect  stringSet
+	mu                   deadlock.RWMutex
+	containers           fakeContainerMap
+	networks             fakeNetworkMap
+	images               fakeImageMap
+	validImagesForPull   stringSet
+	failContainerCreate  stringSet
+	failContainerInspect stringSet
+	failContainerRemove  stringSet
+	failContainerStart   stringSet
+	failContainerStop    stringSet
+	failNetworkCreate    stringSet
+	failNetworkConnect   stringSet
 }
 
 type fakeContainerInfo struct {
@@ -36,9 +39,6 @@ type fakeContainerInfo struct {
 	state                containerState
 	pendingRequiredStops int
 	pendingRequiredKills int
-	failInspect          bool
-	failRemove           bool
-	failStop             bool
 	containerConfig      *dcontainer.Config
 	hostConfig           *dcontainer.HostConfig
 	networkConfig        *dnetwork.NetworkingConfig
@@ -61,9 +61,6 @@ type fakeContainerInitInfo struct {
 	state              containerState
 	requiredExtraStops int
 	requiredExtraKills int
-	failInspect        bool
-	failRemove         bool
-	failStop           bool
 }
 
 type fakeNetworkInitInfo struct {
@@ -75,14 +72,17 @@ type fakeNetworkMap map[string]*fakeNetworkInfo
 type fakeImageMap map[string]*fakeImageInfo
 
 type fakeDockerHostInitInfo struct {
-	containers          []*fakeContainerInitInfo
-	networks            []*fakeNetworkInitInfo
-	existingImages      stringSet
-	validImagesForPull  stringSet
-	failContainerCreate stringSet
-	failContainerStart  stringSet
-	failNetworkCreate   stringSet
-	failNetworkConnect  stringSet
+	containers           []*fakeContainerInitInfo
+	networks             []*fakeNetworkInitInfo
+	existingImages       stringSet
+	validImagesForPull   stringSet
+	failContainerCreate  stringSet
+	failContainerInspect stringSet
+	failContainerRemove  stringSet
+	failContainerStart   stringSet
+	failContainerStop    stringSet
+	failNetworkCreate    stringSet
+	failNetworkConnect   stringSet
 }
 
 func fakeDockerHostFromContext(ctx context.Context) *fakeDockerHost {
@@ -103,14 +103,17 @@ func newEmptyFakeDockerHost() *fakeDockerHost {
 
 func newFakeDockerHost(initInfo *fakeDockerHostInitInfo) *fakeDockerHost {
 	f := &fakeDockerHost{
-		containers:          fakeContainerMap{},
-		networks:            fakeNetworkMap{},
-		images:              fakeImageMap{},
-		validImagesForPull:  stringSet{},
-		failContainerCreate: stringSet{},
-		failContainerStart:  stringSet{},
-		failNetworkCreate:   stringSet{},
-		failNetworkConnect:  stringSet{},
+		containers:           fakeContainerMap{},
+		networks:             fakeNetworkMap{},
+		images:               fakeImageMap{},
+		validImagesForPull:   stringSet{},
+		failContainerCreate:  stringSet{},
+		failContainerInspect: stringSet{},
+		failContainerRemove:  stringSet{},
+		failContainerStart:   stringSet{},
+		failContainerStop:    stringSet{},
+		failNetworkCreate:    stringSet{},
+		failNetworkConnect:   stringSet{},
 	}
 	if initInfo == nil {
 		return f
@@ -125,9 +128,6 @@ func newFakeDockerHost(initInfo *fakeDockerHostInitInfo) *fakeDockerHost {
 		ctInfo.state = ct.state
 		ctInfo.pendingRequiredStops = ct.requiredExtraStops
 		ctInfo.pendingRequiredKills = ct.requiredExtraKills
-		ctInfo.failInspect = ct.failInspect
-		ctInfo.failStop = ct.failStop
-		ctInfo.failRemove = ct.failRemove
 		f.containers[ct.name] = ctInfo
 	}
 	for _, n := range initInfo.networks {
@@ -140,8 +140,17 @@ func newFakeDockerHost(initInfo *fakeDockerHostInitInfo) *fakeDockerHost {
 	for c := range initInfo.failContainerCreate {
 		f.failContainerCreate[c] = struct{}{}
 	}
+	for c := range initInfo.failContainerInspect {
+		f.failContainerInspect[c] = struct{}{}
+	}
+	for c := range initInfo.failContainerRemove {
+		f.failContainerRemove[c] = struct{}{}
+	}
 	for c := range initInfo.failContainerStart {
 		f.failContainerStart[c] = struct{}{}
+	}
+	for c := range initInfo.failContainerStop {
+		f.failContainerStop[c] = struct{}{}
 	}
 	for n := range initInfo.failNetworkCreate {
 		f.failNetworkCreate[n] = struct{}{}
@@ -217,7 +226,7 @@ func (f *fakeDockerHost) ContainerInspect(ctx context.Context, containerName str
 		return dtypes.ContainerJSON{}, derrdefs.NotFound(fmt.Errorf("container %s not found on the fake docker host", containerName))
 	}
 
-	if ct.failInspect {
+	if _, found := f.failContainerInspect[containerName]; found {
 		return dtypes.ContainerJSON{}, fmt.Errorf("failed to inspect container %s on the fake docker host", containerName)
 	}
 
@@ -270,7 +279,7 @@ func (f *fakeDockerHost) ContainerRemove(ctx context.Context, containerName stri
 
 	switch ct.state {
 	case containerStateCreated, containerStateExited, containerStateDead:
-		if ct.failRemove {
+		if _, found := f.failContainerRemove[containerName]; found {
 			return fmt.Errorf("failed to remove container %s on the fake docker host", containerName)
 		}
 
@@ -319,7 +328,7 @@ func (f *fakeDockerHost) ContainerStop(ctx context.Context, containerName string
 
 	switch ct.state {
 	case containerStateRunning, containerStatePaused, containerStateRestarting:
-		if ct.failStop {
+		if _, found := f.failContainerStop[containerName]; found {
 			return fmt.Errorf("failed to stop container %s on the fake docker host", containerName)
 		}
 

@@ -419,11 +419,13 @@ var containerStartErrorTests = []struct {
 			dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{
 				containers: []*fakeContainerInitInfo{
 					{
-						name:        "g1-c1",
-						image:       "abc/xyz",
-						state:       containerStateRunning,
-						failInspect: true,
+						name:  "g1-c1",
+						image: "abc/xyz",
+						state: containerStateRunning,
 					},
+				},
+				failContainerInspect: stringSet{
+					"g1-c1": {},
 				},
 				validImagesForPull: stringSet{
 					"abc/xyz": {},
@@ -447,11 +449,13 @@ var containerStartErrorTests = []struct {
 			dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{
 				containers: []*fakeContainerInitInfo{
 					{
-						name:     "g1-c1",
-						image:    "abc/xyz",
-						state:    containerStateRunning,
-						failStop: true,
+						name:  "g1-c1",
+						image: "abc/xyz",
+						state: containerStateRunning,
 					},
+				},
+				failContainerStop: stringSet{
+					"g1-c1": {},
 				},
 				validImagesForPull: stringSet{
 					"abc/xyz": {},
@@ -475,11 +479,13 @@ var containerStartErrorTests = []struct {
 			dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{
 				containers: []*fakeContainerInitInfo{
 					{
-						name:       "g1-c1",
-						image:      "abc/xyz",
-						state:      containerStateRestarting,
-						failRemove: true,
+						name:  "g1-c1",
+						image: "abc/xyz",
+						state: containerStateRestarting,
 					},
+				},
+				failContainerRemove: stringSet{
+					"g1-c1": {},
 				},
 				validImagesForPull: stringSet{
 					"abc/xyz": {},
