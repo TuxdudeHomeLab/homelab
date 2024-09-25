@@ -25,11 +25,11 @@ type container struct {
 	config        *ContainerConfig
 	globalConfig  *GlobalConfig
 	group         *containerGroup
-	ips           networkContainerIPList
+	endpoints     networkEndpointList
 	allowedOnHost bool
 }
 
-type containerIP struct {
+type containerNetworkEndpoint struct {
 	network *network
 	ip      string
 }
@@ -40,18 +40,18 @@ type containerDockerConfigs struct {
 	NetworkConfig   *dnetwork.NetworkingConfig
 }
 
-type networkContainerIPList []*containerIP
+type networkEndpointList []*containerNetworkEndpoint
 type containerList []*container
 type containerSet map[ContainerReference]bool
 type containerMap map[ContainerReference]*container
 type containerDockerConfigMap map[ContainerReference]*containerDockerConfigs
 
-func newContainer(group *containerGroup, config *ContainerConfig, globalConfig *GlobalConfig, ips networkContainerIPList, allowedOnHost bool) *container {
+func newContainer(group *containerGroup, config *ContainerConfig, globalConfig *GlobalConfig, endpoints networkEndpointList, allowedOnHost bool) *container {
 	return &container{
 		config:        config,
 		globalConfig:  globalConfig,
 		group:         group,
-		ips:           ips,
+		endpoints:     endpoints,
 		allowedOnHost: allowedOnHost,
 	}
 }
@@ -166,14 +166,14 @@ func (c *container) startInternal(ctx context.Context, docker *dockerClient) err
 	// 4. For the primary network interface of the container, create
 	// the network for the container prior to creating the container
 	// attached to this network.
-	if len(c.ips) > 0 {
+	if len(c.endpoints) > 0 {
 		// network.create(...) gracefully handles the case for when the
 		// network exists already.
-		err := c.ips[0].network.create(ctx, docker)
+		err := c.endpoints[0].network.create(ctx, docker)
 		if err != nil {
 			return err
 		}
-		log(ctx).Debugf("Connecting container %s to network %s with IP %s at the time of container creation ...", c.name(), c.ips[0].network.name(), c.ips[0].ip)
+		log(ctx).Debugf("Connecting container %s to network %s with IP %s at the time of container creation ...", c.name(), c.endpoints[0].network.name(), c.endpoints[0].ip)
 	} else {
 		log(ctx).Warnf("Container %s has no network endpoints configured, this is uncommon!", c.name())
 	}
@@ -191,8 +191,8 @@ func (c *container) startInternal(ctx context.Context, docker *dockerClient) err
 	// 6. For each non-primary network interface of the container, create
 	// the network for the container if it doesn't exist already prior to
 	// connecting the container to the network.
-	for i := 1; i < len(c.ips); i++ {
-		ip := c.ips[i]
+	for i := 1; i < len(c.endpoints); i++ {
+		ip := c.endpoints[i]
 		err := ip.network.create(ctx, docker)
 		if err != nil {
 			return err
@@ -402,13 +402,13 @@ func (c *container) bindMounts() []string {
 }
 
 func (c *container) networkMode() dcontainer.NetworkMode {
-	if len(c.ips) == 0 {
+	if len(c.endpoints) == 0 {
 		return "none"
 	}
-	if c.ips[0].network.mode == networkModeContainer {
-		return dcontainer.NetworkMode(fmt.Sprintf("container:%s", c.ips[0].network))
+	if c.endpoints[0].network.mode == networkModeContainer {
+		return dcontainer.NetworkMode(fmt.Sprintf("container:%s", c.endpoints[0].network))
 	}
-	return dcontainer.NetworkMode(c.ips[0].network.name())
+	return dcontainer.NetworkMode(c.endpoints[0].network.name())
 }
 
 func (c *container) publishedPorts() (nat.PortMap, nat.PortSet) {
@@ -506,10 +506,10 @@ func (c *container) sysctls() map[string]string {
 
 func (c *container) primaryNetworkEndpoint() map[string]*dnetwork.EndpointSettings {
 	res := make(map[string]*dnetwork.EndpointSettings)
-	if len(c.ips) > 0 && c.ips[0].network.mode == networkModeBridge {
-		res[c.ips[0].network.name()] = &dnetwork.EndpointSettings{
+	if len(c.endpoints) > 0 && c.endpoints[0].network.mode == networkModeBridge {
+		res[c.endpoints[0].network.name()] = &dnetwork.EndpointSettings{
 			IPAMConfig: &dnetwork.EndpointIPAMConfig{
-				IPv4Address: c.ips[0].ip,
+				IPv4Address: c.endpoints[0].ip,
 			},
 		}
 	}

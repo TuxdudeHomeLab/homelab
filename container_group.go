@@ -21,8 +21,8 @@ func newContainerGroup(groupConfig *ContainerGroupConfig) *containerGroup {
 	}
 }
 
-func (c *containerGroup) addContainer(config *ContainerConfig, globalConfig *GlobalConfig, ips networkContainerIPList, isAllowedOnCurrentHost bool) {
-	ct := newContainer(c, config, globalConfig, ips, isAllowedOnCurrentHost)
+func (c *containerGroup) addContainer(config *ContainerConfig, globalConfig *GlobalConfig, endpoints networkEndpointList, isAllowedOnCurrentHost bool) {
+	ct := newContainer(c, config, globalConfig, endpoints, isAllowedOnCurrentHost)
 	c.containers[config.Info] = ct
 }
 

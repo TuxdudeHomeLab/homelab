@@ -248,12 +248,12 @@ func validateContainerRestartPolicy(config *ContainerRestartPolicyConfig, locati
 	return nil
 }
 
-func validateIPAMConfig(ctx context.Context, config *IPAMConfig) (networkMap, map[ContainerReference]networkContainerIPList, error) {
+func validateIPAMConfig(ctx context.Context, config *IPAMConfig) (networkMap, map[ContainerReference]networkEndpointList, error) {
 	networks := networkMap{}
 	hostInterfaces := stringSet{}
 	bridgeModeNetworks := config.Networks.BridgeModeNetworks
 	prefixes := make(map[netip.Prefix]string)
-	containerRefIPs := make(map[ContainerReference]networkContainerIPList)
+	containerEndpoints := make(map[ContainerReference]networkEndpointList)
 	allBridgeModeContainers := make(map[ContainerReference]struct{})
 
 	for _, n := range bridgeModeNetworks {
@@ -339,7 +339,7 @@ func validateIPAMConfig(ctx context.Context, config *IPAMConfig) (networkMap, ma
 			containers[ct] = struct{}{}
 			allBridgeModeContainers[ct] = struct{}{}
 			containerIPs[caddr] = struct{}{}
-			containerRefIPs[ct] = append(containerRefIPs[ct], newBridgeModeContainerIP(bmn, ip))
+			containerEndpoints[ct] = append(containerEndpoints[ct], newBridgeModeEndpoint(bmn, ip))
 		}
 	}
 
@@ -371,24 +371,24 @@ func validateIPAMConfig(ctx context.Context, config *IPAMConfig) (networkMap, ma
 				return nil, nil, fmt.Errorf("container {Group:%s Container:%s} is connected to both bridge mode and container mode network stacks", ct.Group, ct.Container)
 			}
 			allContainerModeContainers[ct] = struct{}{}
-			containerRefIPs[ct] = append(containerRefIPs[ct], newContainerModeContainerIP(cmn))
+			containerEndpoints[ct] = append(containerEndpoints[ct], newContainerModeEndpoint(cmn))
 		}
 	}
 
-	for ct, ips := range containerRefIPs {
-		if len(ips) <= 1 {
+	for ct, endpoints := range containerEndpoints {
+		if len(endpoints) <= 1 {
 			continue
 		}
 
 		// Sort the networks for each container by priority (i.e. lowest
 		// priority is the primary network interface for the container).
-		sort.Slice(ips, func(i, j int) bool {
+		sort.Slice(endpoints, func(i, j int) bool {
 			// These networks are all guaranteed to be bridge mode networks
 			// as we have already validated that a given container connects
 			// to at most one container mode network and doesn't connect
 			// to both bridge and container mode networks at the same time.
-			n1 := ips[i].network
-			n2 := ips[j].network
+			n1 := endpoints[i].network
+			n2 := endpoints[j].network
 
 			if n1.bridgeModeInfo.priority == n2.bridgeModeInfo.priority {
 				log(ctx).Fatalf("Container %s is connected to two bridge mode networks of same priority %d which is unsupported", ct, n1.bridgeModeInfo.priority)
@@ -397,7 +397,7 @@ func validateIPAMConfig(ctx context.Context, config *IPAMConfig) (networkMap, ma
 		})
 	}
 
-	return networks, containerRefIPs, nil
+	return networks, containerEndpoints, nil
 }
 
 func validateHostsConfig(hosts []HostConfig, currentHost *hostInfo) (containerSet, error) {
@@ -448,7 +448,7 @@ func validateGroupsConfig(groups []ContainerGroupConfig) (containerGroupMap, err
 	return containerGroups, nil
 }
 
-func validateContainersConfig(containersConfig []ContainerConfig, groups containerGroupMap, globalConfig *GlobalConfig, containerRefIPs map[ContainerReference]networkContainerIPList, allowedContainers containerSet) error {
+func validateContainersConfig(containersConfig []ContainerConfig, groups containerGroupMap, globalConfig *GlobalConfig, containerEndpoints map[ContainerReference]networkEndpointList, allowedContainers containerSet) error {
 	for _, ct := range containersConfig {
 		g, found := groups[ct.Info.Group]
 		if !found {
@@ -457,7 +457,7 @@ func validateContainersConfig(containersConfig []ContainerConfig, groups contain
 		if _, found := g.containers[ct.Info]; found {
 			return fmt.Errorf("container {Group:%s Container:%s} defined more than once in the containers config", ct.Info.Group, ct.Info.Container)
 		}
-		g.addContainer(&ct, globalConfig, containerRefIPs[ct.Info], allowedContainers[ct.Info])
+		g.addContainer(&ct, globalConfig, containerEndpoints[ct.Info], allowedContainers[ct.Info])
 
 		loc := fmt.Sprintf("container {Group: %s Container:%s} config", ct.Info.Group, ct.Info.Container)
 		if err := validateConfigEnv(ct.Config.Env, loc); err != nil {
@@ -537,10 +537,10 @@ func validateContainerReference(ref *ContainerReference) error {
 	return nil
 }
 
-func newBridgeModeContainerIP(network *network, ip string) *containerIP {
-	return &containerIP{network: network, ip: ip}
+func newBridgeModeEndpoint(network *network, ip string) *containerNetworkEndpoint {
+	return &containerNetworkEndpoint{network: network, ip: ip}
 }
 
-func newContainerModeContainerIP(network *network) *containerIP {
-	return &containerIP{network: network}
+func newContainerModeEndpoint(network *network) *containerNetworkEndpoint {
+	return &containerNetworkEndpoint{network: network}
 }

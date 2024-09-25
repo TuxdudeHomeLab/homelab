@@ -61,8 +61,8 @@ func buildDeploymentFromConfig(ctx context.Context, config *HomelabConfig) (*dep
 
 	// First build the networks as it will be looked up while building
 	// the container groups and containers within.
-	var containerRefIPs map[ContainerReference]networkContainerIPList
-	d.networks, containerRefIPs, err = validateIPAMConfig(ctx, &config.IPAM)
+	var containerEndpoints map[ContainerReference]networkEndpointList
+	d.networks, containerEndpoints, err = validateIPAMConfig(ctx, &config.IPAM)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func buildDeploymentFromConfig(ctx context.Context, config *HomelabConfig) (*dep
 	}
 	d.updateGroupsOrder()
 
-	err = validateContainersConfig(config.Containers, d.groups, &config.Global, containerRefIPs, d.allowedContainers)
+	err = validateContainersConfig(config.Containers, d.groups, &config.Global, containerEndpoints, d.allowedContainers)
 	if err != nil {
 		return nil, err
 	}
