@@ -1239,16 +1239,18 @@ func TestBuildDeploymentFromConfigsPathErrors(t *testing.T) {
 	}
 }
 
-var buildDeploymentFromConfigTests = []struct {
+var buildDeploymentFromConfigStringerTests = []struct {
 	name   string
 	config HomelabConfig
+	want   string
 }{
 	{
-		name:   "Valid Empty config",
+		name:   "Valid Empty Config",
 		config: HomelabConfig{},
+		want:   `Deployment{Groups:\[empty\], Networks:\[empty\]}`,
 	},
 	{
-		name: "Valid IPAM config",
+		name: "Valid IPAM Config",
 		config: HomelabConfig{
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
@@ -1279,16 +1281,103 @@ var buildDeploymentFromConfigTests = []struct {
 				},
 			},
 		},
+		want: `Deployment{Groups:\[empty\], Networks:\[{Network \(Bridge\) Name: net1}, {Network \(Bridge\) Name: net2}, {Network \(Container\) Name: net3}, {Network \(Container\) Name: net4}\]}`,
+	},
+	{
+		name: "Valid Containers Without Hosts And IPAM Configs",
+		config: HomelabConfig{
+			Groups: []ContainerGroupConfig{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+				{
+					Name:  "g2",
+					Order: 2,
+				},
+				{
+					Name:  "g3",
+					Order: 3,
+				},
+				{
+					Name:  "g4",
+					Order: 4,
+				},
+			},
+			Containers: []ContainerConfig{
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+				},
+				{
+					Info: ContainerReference{
+						Group:     "g1",
+						Container: "c2",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar2:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+				},
+				{
+					Info: ContainerReference{
+						Group:     "g2",
+						Container: "c3",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar3:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+				},
+				{
+					Info: ContainerReference{
+						Group:     "g4",
+						Container: "c4",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar4:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+				},
+				{
+					Info: ContainerReference{
+						Group:     "g4",
+						Container: "c5",
+					},
+					Image: ContainerImageConfig{
+						Image: "foo/bar5:123",
+					},
+					Lifecycle: ContainerLifecycleConfig{
+						Order: 1,
+					},
+				},
+			},
+		},
+		want: `Deployment{Groups:\[Group{Name:g1 Containers:\[Container{Name:g1-c1}, Container{Name:g1-c2}\]}, Group{Name:g2 Containers:\[Container{Name:g2-c3}\]}, Group{Name:g3 Containers:\[empty\]}, Group{Name:g4 Containers:\[Container{Name:g4-c4}, Container{Name:g4-c5}\]}\], Networks:\[empty\]}`,
 	},
 }
 
-func TestBuildDeploymentFromConfig(t *testing.T) {
-	for _, test := range buildDeploymentFromConfigTests {
+func TestBuildDeploymentFromConfigStringer(t *testing.T) {
+	for _, test := range buildDeploymentFromConfigStringerTests {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, gotErr := buildDeploymentFromConfig(newVanillaTestContext(), &tc.config)
+			dep, gotErr := buildDeploymentFromConfig(newVanillaTestContext(), &tc.config)
 			if gotErr != nil {
 				t.Errorf(
 					"buildDeploymentFromConfig()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v",
@@ -1296,7 +1385,19 @@ func TestBuildDeploymentFromConfig(t *testing.T) {
 				return
 			}
 
-			// TODO: Validate the built deployment.
+			got := dep.String()
+			match, err := regexp.MatchString(fmt.Sprintf("^%s$", tc.want), got)
+			if err != nil {
+				t.Errorf(
+					"buildDeploymentFromConfig()\nTest Case: %q\nFailure: unexpected exception while matching against deployment string representation\nReason: error = %v", tc.name, err)
+				return
+			}
+
+			if !match {
+				t.Errorf(
+					"buildDeploymentFromConfig()\nTest Case: %q\nFailure: got did not match the want regex\nReason:\n\ngot:\n%s\nwant:\n%s", tc.name, got, tc.want)
+			}
+
 		})
 	}
 }

@@ -1,10 +1,15 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"sort"
+	"strings"
+)
 
 type containerGroup struct {
-	config     *ContainerGroupConfig
-	containers containerMap
+	config          *ContainerGroupConfig
+	containers      containerMap
+	containersOrder []ContainerReference
 }
 
 type containerGroupMap map[string]*containerGroup
@@ -25,10 +30,30 @@ func (c *containerGroup) name() string {
 	return c.config.Name
 }
 
-func (c *containerGroup) String() string {
-	return fmt.Sprintf("Group{Name:%s Containers:%s}", c.name(), c.containers)
+func (c *containerGroup) updateContainersOrder() {
+	c.containersOrder = make([]ContainerReference, 0)
+	for ct := range c.containers {
+		c.containersOrder = append(c.containersOrder, ct)
+	}
+	sort.Slice(c.containersOrder, func(i, j int) bool {
+		ct1 := c.containersOrder[i]
+		ct2 := c.containersOrder[j]
+		return ct1.Container < ct2.Container
+	})
 }
 
-func (c containerGroupMap) String() string {
-	return stringifyMap(c)
+func (c *containerGroup) String() string {
+	var sb strings.Builder
+	sb.WriteString(fmt.Sprintf("Group{Name:%s Containers:[", c.name()))
+	if len(c.containersOrder) == 0 {
+		sb.WriteString("empty]}")
+		return sb.String()
+	}
+
+	sb.WriteString(c.containers[c.containersOrder[0]].String())
+	for i := 1; i < len(c.containersOrder); i++ {
+		sb.WriteString(fmt.Sprintf(", %s", c.containers[c.containersOrder[i]]))
+	}
+	sb.WriteString("]}")
+	return sb.String()
 }

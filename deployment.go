@@ -4,12 +4,16 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"sort"
+	"strings"
 )
 
 type deployment struct {
 	config                 *HomelabConfig
 	groups                 containerGroupMap
+	groupsOrder            []string
 	networks               networkMap
+	networksOrder          []string
 	host                   *hostInfo
 	allowedContainers      containerSet
 	containerDockerConfigs containerDockerConfigMap
@@ -62,11 +66,13 @@ func buildDeploymentFromConfig(ctx context.Context, config *HomelabConfig) (*dep
 	if err != nil {
 		return nil, err
 	}
+	d.updateNetworksOrder()
 
 	d.groups, err = validateGroupsConfig(config.Groups)
 	if err != nil {
 		return nil, err
 	}
+	d.updateGroupsOrder()
 
 	err = validateContainersConfig(config.Containers, d.groups, &config.Global, containerRefIPs, d.allowedContainers)
 	if err != nil {
@@ -74,6 +80,7 @@ func buildDeploymentFromConfig(ctx context.Context, config *HomelabConfig) (*dep
 	}
 
 	for _, g := range d.groups {
+		g.updateContainersOrder()
 		for _, ct := range g.containers {
 			cConfig, hConfig, nConfig, err := ct.generateDockerConfigs()
 			if err != nil {
@@ -147,6 +154,53 @@ func (d *deployment) queryContainers(ctx context.Context, allGroups bool, group,
 	return nil, nil
 }
 
+func (d *deployment) updateGroupsOrder() {
+	d.groupsOrder = make([]string, 0)
+	for g := range d.groups {
+		d.groupsOrder = append(d.groupsOrder, g)
+	}
+	sort.Slice(d.groupsOrder, func(i, j int) bool {
+		g1 := d.groupsOrder[i]
+		g2 := d.groupsOrder[j]
+		return g1 < g2
+	})
+}
+
+func (d *deployment) updateNetworksOrder() {
+	d.networksOrder = make([]string, 0)
+	for n := range d.networks {
+		d.networksOrder = append(d.networksOrder, n)
+	}
+	sort.Slice(d.networksOrder, func(i, j int) bool {
+		n1 := d.networksOrder[i]
+		n2 := d.networksOrder[j]
+		return n1 < n2
+	})
+}
+
 func (d *deployment) String() string {
-	return fmt.Sprintf("Deployment{Groups:%s, Networks:%s}", d.groups, d.networks)
+	var sb strings.Builder
+
+	sb.WriteString("Deployment{Groups:[")
+	if len(d.groupsOrder) == 0 {
+		sb.WriteString("empty")
+	} else {
+		sb.WriteString(d.groups[d.groupsOrder[0]].String())
+		for i := 1; i < len(d.groupsOrder); i++ {
+			sb.WriteString(fmt.Sprintf(", %s", d.groups[d.groupsOrder[i]]))
+		}
+	}
+
+	sb.WriteString("], Networks:[")
+	if len(d.networksOrder) == 0 {
+		sb.WriteString("empty]}")
+	} else {
+		sb.WriteString(d.networks[d.networksOrder[0]].String())
+		for i := 1; i < len(d.networksOrder); i++ {
+			sb.WriteString(fmt.Sprintf(", %s", d.networks[d.networksOrder[i]]))
+		}
+		sb.WriteString("]}")
+	}
+	return sb.String()
+
 }

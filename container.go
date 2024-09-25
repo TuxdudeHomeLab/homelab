@@ -523,10 +523,6 @@ func (c *container) String() string {
 	return fmt.Sprintf("Container{Name:%s}", c.name())
 }
 
-func (c containerMap) String() string {
-	return stringifyMap(c)
-}
-
 func containerName(ct *ContainerReference) string {
 	return fmt.Sprintf("%s-%s", ct.Group, ct.Container)
 }

@@ -140,7 +140,3 @@ func (n *network) String() string {
 		panic("unknown network mode, possibly indicating a bug in the code!")
 	}
 }
-
-func (n networkMap) String() string {
-	return stringifyMap(n)
-}
