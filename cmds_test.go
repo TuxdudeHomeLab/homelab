@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/tuxdude/zzzlog"
 )
 
 var executeHomelabCmdTests = []struct {
@@ -405,7 +407,7 @@ func TestExecHomelabCmd(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			out, gotErr := execHomelabCmdTest(tc.ctxInfo, tc.args...)
+			out, gotErr := execHomelabCmdTest(tc.ctxInfo, nil, tc.args...)
 			if gotErr != nil {
 				t.Errorf(
 					"execHomelabCmd()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v\n\nOut:\n%v",
@@ -423,6 +425,139 @@ func TestExecHomelabCmd(t *testing.T) {
 			if !match {
 				t.Errorf(
 					"execHomelabCmd()\nTest Case: %q\nFailure: output did not match the want regex\nReason:\n\nOut:\n%s\nwant:\n%s\n", tc.name, out, tc.want)
+			}
+		})
+	}
+}
+
+var executeHomelabCmdLogLevelTests = []struct {
+	name     string
+	args     []string
+	ctxInfo  *testContextInfo
+	logLevel *zzzlog.Level
+}{
+	{
+		name: "Homelab Command - Start - All Groups - Trace Log Level",
+		args: []string{
+			"start",
+			"--all-groups",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/start-cmd", pwd()),
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{
+				validImagesForPull: stringSet{
+					"abc/xyz":  {},
+					"abc/xyz3": {},
+				},
+			}),
+		},
+		logLevel: newLogLevel(zzzlog.LvlTrace),
+	},
+	{
+		name: "Homelab Command - Start - All Groups - Debug Log Level",
+		args: []string{
+			"start",
+			"--all-groups",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/start-cmd", pwd()),
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{
+				validImagesForPull: stringSet{
+					"abc/xyz":  {},
+					"abc/xyz3": {},
+				},
+			}),
+		},
+		logLevel: newLogLevel(zzzlog.LvlDebug),
+	},
+	{
+		name: "Homelab Command - Start - All Groups - Info Log Level",
+		args: []string{
+			"start",
+			"--all-groups",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/start-cmd", pwd()),
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{
+				validImagesForPull: stringSet{
+					"abc/xyz":  {},
+					"abc/xyz3": {},
+				},
+			}),
+		},
+		logLevel: newLogLevel(zzzlog.LvlInfo),
+	},
+	{
+		name: "Homelab Command - Start - All Groups - Warn Log Level",
+		args: []string{
+			"start",
+			"--all-groups",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/start-cmd", pwd()),
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{
+				validImagesForPull: stringSet{
+					"abc/xyz":  {},
+					"abc/xyz3": {},
+				},
+			}),
+		},
+		logLevel: newLogLevel(zzzlog.LvlWarn),
+	},
+	{
+		name: "Homelab Command - Start - All Groups - Error Log Level",
+		args: []string{
+			"start",
+			"--all-groups",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/start-cmd", pwd()),
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{
+				validImagesForPull: stringSet{
+					"abc/xyz":  {},
+					"abc/xyz3": {},
+				},
+			}),
+		},
+		logLevel: newLogLevel(zzzlog.LvlError),
+	},
+	{
+		name: "Homelab Command - Start - All Groups - Fatal Log Level",
+		args: []string{
+			"start",
+			"--all-groups",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/start-cmd", pwd()),
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{
+				validImagesForPull: stringSet{
+					"abc/xyz":  {},
+					"abc/xyz3": {},
+				},
+			}),
+		},
+		logLevel: newLogLevel(zzzlog.LvlFatal),
+	},
+}
+
+func TestExecHomelabCmdLogLevel(t *testing.T) {
+	for _, test := range executeHomelabCmdLogLevelTests {
+		tc := test
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			out, gotErr := execHomelabCmdTest(tc.ctxInfo, tc.logLevel, tc.args...)
+			if gotErr != nil {
+				t.Errorf(
+					"execHomelabCmd()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v\n\nOut:\n%v",
+					tc.name, gotErr, out)
+				return
 			}
 		})
 	}
@@ -666,7 +801,7 @@ func TestExecHomelabCmdErrors(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, gotErr := execHomelabCmdTest(tc.ctxInfo, tc.args...)
+			_, gotErr := execHomelabCmdTest(tc.ctxInfo, nil, tc.args...)
 			if gotErr == nil {
 				t.Errorf(
 					"execHomelabCmd()\nTest Case: %q\nFailure: gotErr == nil\nReason: want = %q",
@@ -739,7 +874,7 @@ func TestExecHomelabCmdOSEnvErrors(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			setTestEnv(tc.envs)
 
-			_, gotErr := execHomelabCmdTest(tc.ctxInfo, tc.args...)
+			_, gotErr := execHomelabCmdTest(tc.ctxInfo, nil, tc.args...)
 			if gotErr == nil {
 				t.Errorf(
 					"execHomelabCmd()\nTest Case: %q\nFailure: gotErr == nil\nReason: want = %q",
@@ -772,9 +907,13 @@ func initPkgVersionInfoForTest() {
 	pkgTimestamp = "my-pkg-timestamp"
 }
 
-func execHomelabCmdTest(ctxInfo *testContextInfo, args ...string) (string, error) {
+func execHomelabCmdTest(ctxInfo *testContextInfo, logLevel *zzzlog.Level, args ...string) (string, error) {
 	buf := new(bytes.Buffer)
-	ctxInfo.logger = newCapturingVanillaTestLogger(buf)
+	lvl := zzzlog.LvlInfo
+	if logLevel != nil {
+		lvl = *logLevel
+	}
+	ctxInfo.logger = newCapturingVanillaTestLogger(lvl, buf)
 	ctx := newTestContext(ctxInfo)
 	err := execHomelabCmd(ctx, buf, buf, args...)
 	return buf.String(), err

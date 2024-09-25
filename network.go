@@ -64,7 +64,6 @@ func (n *network) create(ctx context.Context, docker *dockerClient) error {
 	// exactly the same properties if we choose to reuse the existing
 	// network, and display a warning when they differ.
 	if !docker.networkExists(ctx, n.name()) {
-		log(ctx).Debugf("Creating network %s ...", n.name())
 		err := docker.createNetwork(ctx, n.name(), n.createOptions())
 		if err != nil {
 			return err

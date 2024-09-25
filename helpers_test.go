@@ -66,8 +66,9 @@ func newCapturingTestLogger(w io.Writer) zzzlogi.Logger {
 	return zzzlog.NewLogger(config)
 }
 
-func newCapturingVanillaTestLogger(w io.Writer) zzzlogi.Logger {
+func newCapturingVanillaTestLogger(lvl zzzlog.Level, w io.Writer) zzzlogi.Logger {
 	config := zzzlog.NewVanillaLoggerConfig()
+	config.MaxLevel = lvl
 	config.Dest = w
 	config.PanicInFatal = true
 	return zzzlog.NewLogger(config)
@@ -101,4 +102,8 @@ func pwd() string {
 
 func newInt(i int) *int {
 	return &i
+}
+
+func newLogLevel(lvl zzzlog.Level) *zzzlog.Level {
+	return &lvl
 }
