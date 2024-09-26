@@ -6,8 +6,10 @@ import (
 	"io"
 	"os"
 	"regexp"
+	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/tuxdude/zzzlog"
 	"github.com/tuxdude/zzzlogi"
 )
@@ -96,7 +98,94 @@ func clearTestEnv(envs testOSEnvMap) {
 	}
 }
 
-func testPanicWithOutput(t *testing.T, methodUnderTest string, testCase string, out fmt.Stringer, wantPanic string) {
+func testLogErrorNotNil(t *testing.T, methodUnderTest string, testCase string, gotErr error) {
+	t.Errorf(
+		"%s\nTest Case: %q\nFailure: gotErr != nil\nReason: %v",
+		methodUnderTest, testCase, gotErr)
+}
+
+func testLogErrorNotNilWithOutput(t *testing.T, methodUnderTest string, testCase string, out fmt.Stringer, gotErr error) {
+	t.Errorf(
+		"%s\nTest Case: %q\nFailure: gotErr != nil\n\nOut:\n%s\nReason: %v",
+		methodUnderTest, testCase, out.String(), gotErr)
+}
+
+func testLogErrorNil(t *testing.T, methodUnderTest string, testCase string, want string) {
+	t.Errorf(
+		"%s\nTest Case: %q\nFailure: gotErr == nil\nReason: want = %q",
+		methodUnderTest, testCase, want)
+}
+
+func testLogErrorNilWithOutput(t *testing.T, methodUnderTest string, testCase string, out fmt.Stringer, want string) {
+	t.Errorf(
+		"%s\nTest Case: %q\nFailure: gotErr == nil\n\nOut:\n%s\nReason: want = %q",
+		methodUnderTest, testCase, out.String(), want)
+}
+
+func testLogCustomWithOutput(t *testing.T, methodUnderTest string, testCase string, out fmt.Stringer, custom string) {
+	t.Errorf(
+		"%s\nTest Case: %q\n\nOut:\n%s\nReason: %s",
+		methodUnderTest, testCase, out.String(), custom)
+}
+
+func testRegexMatch(t *testing.T, methodUnderTest string, testCase string, desc string, want string, got string) bool {
+	match, err := regexp.MatchString(fmt.Sprintf("^%s$", want), got)
+	if err != nil {
+		t.Errorf(
+			"%s\nTest Case: %q\nFailure: unexpected exception while matching against %s\nReason: error = %v",
+			methodUnderTest, testCase, desc, err)
+		return false
+	}
+
+	if !match {
+		t.Errorf(
+			"%s\nTest Case: %q\nFailure: %s did not match the want regex\nReason:\n\nGot:\n%s\nWant:\n%s",
+			methodUnderTest, testCase, desc, got, want)
+		return false
+	}
+
+	return true
+}
+
+func testRegexMatchWithOutput(t *testing.T, methodUnderTest string, testCase string, out fmt.Stringer, desc string, want string, got string) bool {
+	match, err := regexp.MatchString(fmt.Sprintf("^%s$", want), got)
+	if err != nil {
+		t.Errorf(
+			"%s\nTest Case: %q\nFailure: unexpected exception while matching against %s\n\nOut:\n%s\nReason: error = %v",
+			methodUnderTest, testCase, desc, out.String(), err)
+		return false
+	}
+
+	if !match {
+		t.Errorf(
+			"%s\nTest Case: %q\nFailure: %s did not match the want regex\n\nOut:\n%s\nReason:\n\nGot:\n%s\nWant:\n%s",
+			methodUnderTest, testCase, desc, out.String(), got, want)
+		return false
+	}
+
+	return true
+}
+
+func testRegexMatchJoinNewLines(t *testing.T, methodUnderTest string, testCase string, desc string, want string, got string) bool {
+	multiNewLineRegex, err := regexp.Compile(`\n+`)
+	if err != nil {
+		panic(err)
+	}
+	got = strings.TrimSpace(multiNewLineRegex.ReplaceAllString(got, "\n"))
+	return testRegexMatch(t, methodUnderTest, testCase, desc, want, got)
+}
+
+func testCmpDiff(t *testing.T, methodUnderTest string, testCase string, desc string, want interface{}, got interface{}) bool {
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf(
+			"%s\nTest Case: %q\nFailure: %s - got did not match the want\nDiff(-want +got): %s",
+			methodUnderTest, testCase, desc, diff)
+		return false
+	}
+	return true
+}
+
+func testExpectPanicWithOutput(t *testing.T, methodUnderTest string, testCase string, out fmt.Stringer, wantPanic string) {
 	gotR := recover()
 	if gotR == nil {
 		t.Errorf(

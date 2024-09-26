@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"regexp"
 	"testing"
 	"time"
 
@@ -357,26 +356,19 @@ func TestContainerStart(t *testing.T) {
 
 			dep, gotErr := buildDeploymentFromConfig(ctx, &tc.config)
 			if gotErr != nil {
-				t.Errorf(
-					"buildDeploymentFromConfig()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v",
-					tc.name, gotErr)
+				testLogErrorNotNil(t, "buildDeploymentFromConfig()", tc.name, gotErr)
 				return
 			}
 
 			dockerClient, gotErr := newDockerClient(ctx, dep.host.dockerPlatform, dep.host.arch)
 			if gotErr != nil {
-				t.Errorf(
-					"newDockerClient()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v",
-					tc.name, gotErr)
-				return
+				testLogErrorNotNil(t, "newDockerClient()", tc.name, gotErr)
 			}
 			defer dockerClient.close()
 
 			ct, gotErr := dep.queryContainer(tc.cRef)
 			if gotErr != nil {
-				t.Errorf(
-					"deployment.queryContainer()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v",
-					tc.name, gotErr)
+				testLogErrorNotNil(t, "deployment.queryContainer()", tc.name, gotErr)
 				return
 			}
 
@@ -386,24 +378,18 @@ func TestContainerStart(t *testing.T) {
 
 			gotStarted, gotErr := ct.start(ctx, dockerClient)
 			if gotErr != nil {
-				t.Errorf(
-					"container.start()\nTest Case: %q\nFailure: gotErr != nil\n\nOut:\n%s\nReason: %v",
-					tc.name, buf.String(), gotErr)
+				testLogErrorNotNilWithOutput(t, "container.start()", tc.name, buf, gotErr)
 				return
 			}
 			wantStarted := !tc.wantNotStarted
 			if gotStarted != wantStarted {
-				t.Errorf(
-					"container.start()\nTest Case: %q\n\nOut:\n%s\nReason: gotStarted (%t) != wantStarted (%t)",
-					tc.name, buf.String(), gotStarted, wantStarted)
+				testLogCustomWithOutput(t, "container.start()", tc.name, buf, fmt.Sprintf("gotStarted (%t) != wantStarted (%t)", gotStarted, wantStarted))
 			}
 
 			docker := fakeDockerHostFromContext(ctx)
 			gotState := docker.getContainerState(fmt.Sprintf("%s-%s", tc.cRef.Group, tc.cRef.Container))
 			if gotState != containerStateRunning {
-				t.Errorf(
-					"Container State after container.start()\nTest Case: %q\n\nOut:\n%s\nReason: gotState (%s) != containerStateRunning",
-					tc.name, buf.String(), gotState)
+				testLogCustomWithOutput(t, "Container state after container.start()", tc.name, buf, fmt.Sprintf("gotState (%s) != containerStateRunning", gotState))
 			}
 		})
 	}
@@ -837,57 +823,40 @@ func TestContainerStartErrors(t *testing.T) {
 			ctx := newTestContext(tc.ctxInfo)
 
 			if tc.wantPanic {
-				defer testPanicWithOutput(t, "container.start()", tc.name, buf, tc.want)
+				defer testExpectPanicWithOutput(t, "container.start()", tc.name, buf, tc.want)
 			}
 
 			dep, gotErr := buildDeploymentFromConfig(ctx, &tc.config)
 			if gotErr != nil {
-				t.Errorf(
-					"buildDeploymentFromConfig()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v",
-					tc.name, gotErr)
+				testLogErrorNotNil(t, "buildDeploymentFromConfig()", tc.name, gotErr)
 				return
 			}
 
 			dockerClient, gotErr := newDockerClient(ctx, dep.host.dockerPlatform, dep.host.arch)
 			if gotErr != nil {
-				t.Errorf(
-					"newDockerClient()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v",
-					tc.name, gotErr)
+				testLogErrorNotNil(t, "newDockerClient()", tc.name, gotErr)
 				return
 			}
 			defer dockerClient.close()
 
 			ct, gotErr := dep.queryContainer(tc.cRef)
 			if gotErr != nil {
-				t.Errorf(
-					"deployment.queryContainer()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v",
-					tc.name, gotErr)
+				testLogErrorNotNil(t, "deployment.queryContainer()", tc.name, gotErr)
 				return
 			}
 
 			gotStarted, gotErr := ct.start(ctx, dockerClient)
 			if gotErr == nil {
-				t.Errorf(
-					"container.start()\nTest Case: %q\nFailure: gotErr == nil\n\nOut:\n%s\nReason: want = %q",
-					tc.name, buf.String(), tc.want)
+				testLogErrorNilWithOutput(t, "container.start()", tc.name, buf, tc.want)
 				return
 			}
 			if gotStarted {
-				t.Errorf(
-					"container.start()\nTest Case: %q\n\nOut:\n%s\nReason: gotStarted (%t) != wantStarted (false)",
-					tc.name, buf.String(), gotStarted)
-			}
-
-			match, err := regexp.MatchString(fmt.Sprintf("^%s$", tc.want), gotErr.Error())
-			if err != nil {
-				t.Errorf(
-					"container.start()\nTest Case: %q\nFailure: unexpected exception while matching against gotErr error string\n\nOut:\n%s\nReason: error = %v", tc.name, buf.String(), err)
+				testLogCustomWithOutput(t, "container.start()", tc.name, buf, "gotStarted (true) != wantStarted (false)")
 				return
 			}
 
-			if !match {
-				t.Errorf(
-					"container.start()\nTest Case: %q\nFailure: gotErr did not match the want regex\n\nOut:\n%s\nReason:\n\ngotErr = %q\n\twant = %q", tc.name, buf.String(), gotErr, tc.want)
+			if !testRegexMatchWithOutput(t, "container.start()", tc.name, buf, "gotErr error string", tc.want, gotErr.Error()) {
+				return
 			}
 		})
 	}

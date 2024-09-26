@@ -3,8 +3,6 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"regexp"
-	"strings"
 	"testing"
 
 	"github.com/tuxdude/zzzlog"
@@ -458,10 +456,6 @@ Started container g1-c1`,
 
 func TestExecHomelabCmd(t *testing.T) {
 	initPkgVersionInfoForTest()
-	multiNewLineRegex, err := regexp.Compile(`\n+`)
-	if err != nil {
-		panic(err)
-	}
 	for _, test := range executeHomelabCmdTests {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {
@@ -469,22 +463,12 @@ func TestExecHomelabCmd(t *testing.T) {
 
 			out, gotErr := execHomelabCmdTest(tc.ctxInfo, nil, tc.args...)
 			if gotErr != nil {
-				t.Errorf(
-					"execHomelabCmd()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v\n\nOut:\n%v",
-					tc.name, gotErr, out)
+				testLogErrorNotNilWithOutput(t, "execHomelabCmd()", tc.name, out, gotErr)
 				return
 			}
 
-			match, err := regexp.MatchString(fmt.Sprintf("^%s$", tc.want), strings.TrimSpace(multiNewLineRegex.ReplaceAllString(out, "\n")))
-			if err != nil {
-				t.Errorf(
-					"execHomelabCmd()\nTest Case: %q\nFailure: unexpected exception while matching against gotErr error string\nReason: error = %v", tc.name, err)
+			if !testRegexMatchJoinNewLines(t, "execHomelabCmd()", tc.name, "command output", tc.want, out.String()) {
 				return
-			}
-
-			if !match {
-				t.Errorf(
-					"execHomelabCmd()\nTest Case: %q\nFailure: output did not match the want regex\nReason:\n\nOut:\n%s\nwant:\n%s\n", tc.name, out, tc.want)
 			}
 		})
 	}
@@ -614,9 +598,7 @@ func TestExecHomelabCmdLogLevel(t *testing.T) {
 
 			out, gotErr := execHomelabCmdTest(tc.ctxInfo, tc.logLevel, tc.args...)
 			if gotErr != nil {
-				t.Errorf(
-					"execHomelabCmd()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v\n\nOut:\n%v",
-					tc.name, gotErr, out)
+				testLogErrorNotNilWithOutput(t, "execHomelabCmd()", tc.name, out, gotErr)
 				return
 			}
 		})
@@ -863,22 +845,12 @@ func TestExecHomelabCmdErrors(t *testing.T) {
 
 			_, gotErr := execHomelabCmdTest(tc.ctxInfo, nil, tc.args...)
 			if gotErr == nil {
-				t.Errorf(
-					"execHomelabCmd()\nTest Case: %q\nFailure: gotErr == nil\nReason: want = %q",
-					tc.name, tc.want)
+				testLogErrorNil(t, "execHomelabCmd()", tc.name, tc.want)
 				return
 			}
 
-			match, err := regexp.MatchString(fmt.Sprintf("^%s$", tc.want), gotErr.Error())
-			if err != nil {
-				t.Errorf(
-					"execHomelabCmd()\nTest Case: %q\nFailure: unexpected exception while matching against gotErr error string\nReason: error = %v", tc.name, err)
+			if !testRegexMatch(t, "execHomelabCmd()", tc.name, "gotErr error string", tc.want, gotErr.Error()) {
 				return
-			}
-
-			if !match {
-				t.Errorf(
-					"execHomelabCmd()\nTest Case: %q\nFailure: gotErr did not match the want regex\nReason:\n\ngotErr = %q\n\twant = %q", tc.name, gotErr, tc.want)
 			}
 		})
 	}
@@ -936,22 +908,12 @@ func TestExecHomelabCmdOSEnvErrors(t *testing.T) {
 
 			_, gotErr := execHomelabCmdTest(tc.ctxInfo, nil, tc.args...)
 			if gotErr == nil {
-				t.Errorf(
-					"execHomelabCmd()\nTest Case: %q\nFailure: gotErr == nil\nReason: want = %q",
-					tc.name, tc.want)
+				testLogErrorNil(t, "execHomelabCmd()", tc.name, tc.want)
 				return
 			}
 
-			match, err := regexp.MatchString(fmt.Sprintf("^%s$", tc.want), gotErr.Error())
-			if err != nil {
-				t.Errorf(
-					"execHomelabCmd()\nTest Case: %q\nFailure: unexpected exception while matching against gotErr error string\nReason: error = %v", tc.name, err)
+			if !testRegexMatch(t, "execHomelabCmd()", tc.name, "gotErr error string", tc.want, gotErr.Error()) {
 				return
-			}
-
-			if !match {
-				t.Errorf(
-					"execHomelabCmd()\nTest Case: %q\nFailure: gotErr did not match the want regex\nReason:\n\ngotErr = %q\n\twant = %q", tc.name, gotErr, tc.want)
 			}
 
 			t.Cleanup(func() {
@@ -967,7 +929,7 @@ func initPkgVersionInfoForTest() {
 	pkgTimestamp = "my-pkg-timestamp"
 }
 
-func execHomelabCmdTest(ctxInfo *testContextInfo, logLevel *zzzlog.Level, args ...string) (string, error) {
+func execHomelabCmdTest(ctxInfo *testContextInfo, logLevel *zzzlog.Level, args ...string) (fmt.Stringer, error) {
 	buf := new(bytes.Buffer)
 	lvl := zzzlog.LvlInfo
 	if logLevel != nil {
@@ -976,5 +938,5 @@ func execHomelabCmdTest(ctxInfo *testContextInfo, logLevel *zzzlog.Level, args .
 	ctxInfo.logger = newCapturingVanillaTestLogger(lvl, buf)
 	ctx := newTestContext(ctxInfo)
 	err := execHomelabCmd(ctx, buf, buf, args...)
-	return buf.String(), err
+	return buf, err
 }

@@ -2,14 +2,12 @@ package main
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 	"testing"
 
 	dcontainer "github.com/docker/docker/api/types/container"
 	dnetwork "github.com/docker/docker/api/types/network"
 	"github.com/docker/go-connections/nat"
-	"github.com/google/go-cmp/cmp"
 )
 
 var buildDeploymentUsingReaderTests = []struct {
@@ -810,20 +808,16 @@ func TestBuildDeploymentUsingReader(t *testing.T) {
 			input := strings.NewReader(tc.config)
 			got, gotErr := buildDeployment(newVanillaTestContext(), input)
 			if gotErr != nil {
-				t.Errorf(
-					"buildDeployment()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v",
-					tc.name, gotErr)
+				testLogErrorNotNil(t, "buildDeployment()", tc.name, gotErr)
 				return
 			}
 
-			if diff := cmp.Diff(tc.want, got.config); diff != "" {
-				t.Errorf(
-					"buildDeployment()\nTest Case: %q\nFailure: got did not match the want config\nDiff(-want +got): %s", tc.name, diff)
+			if !testCmpDiff(t, "buildDeployment()", tc.name, "config", tc.want, got.config) {
+				return
 			}
 
-			if diff := cmp.Diff(tc.wantDockerConfigs, got.containerDockerConfigs); diff != "" {
-				t.Errorf(
-					"buildDeployment()\nTest Case: %q\nFailure: docker configs got did not match the want config\nDiff(-want +got): %s", tc.name, diff)
+			if !testCmpDiff(t, "buildDeployment()", tc.name, "docker configs", tc.wantDockerConfigs, got.containerDockerConfigs) {
+				return
 			}
 		})
 	}
@@ -1152,20 +1146,16 @@ func TestBuildDeploymentFromConfigsPath(t *testing.T) {
 			p := fmt.Sprintf("%s/testdata/%s", pwd(), tc.configsPath)
 			got, gotErr := buildDeploymentFromConfigsPath(newVanillaTestContext(), p)
 			if gotErr != nil {
-				t.Errorf(
-					"buildDeploymentFromConfigsPath()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v",
-					tc.name, gotErr)
+				testLogErrorNotNil(t, "buildDeploymentFromConfigsPath()", tc.name, gotErr)
 				return
 			}
 
-			if diff := cmp.Diff(tc.want, got.config); diff != "" {
-				t.Errorf(
-					"buildDeploymentFromConfigsPath()\nTest Case: %q\nFailure: got did not match the want config\nDiff(-want +got): %s", tc.name, diff)
+			if !testCmpDiff(t, "buildDeploymentFromConfigsPath()", tc.name, "config", tc.want, got.config) {
+				return
 			}
 
-			if diff := cmp.Diff(tc.wantDockerConfigs, got.containerDockerConfigs); diff != "" {
-				t.Errorf(
-					"buildDeploymentFromConfigsPath()\nTest Case: %q\nFailure: docker configs got did not match the want config\nDiff(-want +got): %s", tc.name, diff)
+			if !testCmpDiff(t, "buildDeploymentFromConfigsPath()", tc.name, "docker configs", tc.wantDockerConfigs, got.containerDockerConfigs) {
+				return
 			}
 		})
 	}
@@ -1226,22 +1216,12 @@ func TestBuildDeploymentFromConfigsPathErrors(t *testing.T) {
 
 			_, gotErr := buildDeploymentFromConfigsPath(newVanillaTestContext(), p)
 			if gotErr == nil {
-				t.Errorf(
-					"buildDeploymentFromConfigsPath()\nTest Case: %q\nFailure: gotErr == nil\nReason: want = %q",
-					tc.name, tc.want)
+				testLogErrorNil(t, "buildDeploymentFromConfigsPath()", tc.name, tc.want)
 				return
 			}
 
-			match, err := regexp.MatchString(fmt.Sprintf("^%s$", tc.want), gotErr.Error())
-			if err != nil {
-				t.Errorf(
-					"buildDeploymentFromConfigsPath()\nTest Case: %q\nFailure: unexpected exception while matching against gotErr error string\nReason: error = %v", tc.name, err)
+			if !testRegexMatch(t, "buildDeploymentFromConfigsPath()", tc.name, "gotErr error string", tc.want, gotErr.Error()) {
 				return
-			}
-
-			if !match {
-				t.Errorf(
-					"buildDeploymentFromConfigsPath()\nTest Case: %q\nFailure: gotErr did not match the want regex\nReason:\n\ngotErr = %q\n\twant = %q", tc.name, gotErr, tc.want)
 			}
 		})
 	}
@@ -1393,23 +1373,13 @@ func TestBuildDeploymentFromConfigStringer(t *testing.T) {
 
 			dep, gotErr := buildDeploymentFromConfig(newVanillaTestContext(), &tc.config)
 			if gotErr != nil {
-				t.Errorf(
-					"buildDeploymentFromConfig()\nTest Case: %q\nFailure: gotErr != nil\nReason: %v",
-					tc.name, gotErr)
+				testLogErrorNotNil(t, "buildDeploymentFromConfig()", tc.name, gotErr)
 				return
 			}
 
 			got := dep.String()
-			match, err := regexp.MatchString(fmt.Sprintf("^%s$", tc.want), got)
-			if err != nil {
-				t.Errorf(
-					"buildDeploymentFromConfig()\nTest Case: %q\nFailure: unexpected exception while matching against deployment string representation\nReason: error = %v", tc.name, err)
+			if !testRegexMatch(t, "buildDeploymentFromConfig()", tc.name, "deployment string representation", tc.want, got) {
 				return
-			}
-
-			if !match {
-				t.Errorf(
-					"buildDeploymentFromConfig()\nTest Case: %q\nFailure: got did not match the want regex\nReason:\n\ngot:\n%s\nwant:\n%s", tc.name, got, tc.want)
 			}
 
 		})
@@ -4776,22 +4746,12 @@ func TestBuildDeploymentFromConfigErrors(t *testing.T) {
 
 			_, gotErr := buildDeploymentFromConfig(newVanillaTestContext(), &tc.config)
 			if gotErr == nil {
-				t.Errorf(
-					"HomelabConfig.validate()\nTest Case: %q\nFailure: gotErr == nil\nReason: want = %q",
-					tc.name, tc.want)
+				testLogErrorNil(t, "HomelabConfig.validate()", tc.name, tc.want)
 				return
 			}
 
-			match, err := regexp.MatchString(fmt.Sprintf("^%s$", tc.want), gotErr.Error())
-			if err != nil {
-				t.Errorf(
-					"HomelabConfig.validate()\nTest Case: %q\nFailure: unexpected exception while matching against gotErr error string\nReason: error = %v", tc.name, err)
+			if !testRegexMatch(t, "HomelabConfig.validate()", tc.name, "gotErr error string", tc.want, gotErr.Error()) {
 				return
-			}
-
-			if !match {
-				t.Errorf(
-					"HomelabConfig.validate()\nTest Case: %q\nFailure: gotErr did not match the want regex\nReason:\n\ngotErr = %q\n\twant = %q", tc.name, gotErr, tc.want)
 			}
 		})
 	}
