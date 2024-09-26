@@ -12,6 +12,12 @@ import (
 	"github.com/tuxdude/zzzlogi"
 )
 
+const (
+	homelabInspectLevelEnvVar   = "HOMELAB_INSPECT_LEVEL"
+	homelabInspectLevelEnvDebug = "debug"
+	homelabInspectLevelEnvTrace = "trace"
+)
+
 var (
 	// The package information will be populated by the build system.
 	pkgVersion   = "unset"
@@ -19,25 +25,39 @@ var (
 	pkgTimestamp = "unset"
 )
 
-func buildLogger(dest io.Writer) zzzlogi.Logger {
+func buildLogger(ctx context.Context, dest io.Writer) zzzlogi.Logger {
 	config := zzzlog.NewConsoleLoggerConfig()
 	config.Dest = dest
-	if isLogLevelTrace() {
+	lvl := homelabInspectLevelFromContext(ctx)
+	switch lvl {
+	case homelabInspectLevelTrace:
 		config.MaxLevel = zzzlog.LvlTrace
 		config.SkipCallerInfo = false
-	} else if isLogLevelDebug() {
+	case homelabInspectLevelDebug:
 		config.MaxLevel = zzzlog.LvlDebug
 		config.SkipCallerInfo = false
-	} else {
+	default:
 		config.MaxLevel = zzzlog.LvlInfo
 		config.SkipCallerInfo = true
 	}
 	return zzzlog.NewLogger(config)
 }
 
+func updateHomelabInspectLevel(ctx context.Context) context.Context {
+	val, isVarSet := os.LookupEnv(homelabInspectLevelEnvVar)
+	if isVarSet {
+		if val == homelabInspectLevelEnvTrace {
+			return withHomelabInspectLevel(ctx, homelabInspectLevelTrace)
+		} else if val == homelabInspectLevelEnvDebug {
+			return withHomelabInspectLevel(ctx, homelabInspectLevelDebug)
+		}
+	}
+	return ctx
+}
+
 func run(ctx context.Context, outW io.Writer, errW io.Writer, args ...string) int {
-	logger := buildLogger(outW)
-	ctx = withLogger(ctx, logger)
+	ctx = updateHomelabInspectLevel(ctx)
+	ctx = withLogger(ctx, buildLogger(ctx, outW))
 	err := execHomelabCmd(ctx, outW, errW, args...)
 	if err == nil {
 		return 0
@@ -48,7 +68,7 @@ func run(ctx context.Context, outW io.Writer, errW io.Writer, args ...string) in
 	// along with the usage.
 	hre := &homelabRuntimeError{}
 	if errors.As(err, &hre) {
-		logger.Errorf("%s", hre)
+		log(ctx).Errorf("%s", hre)
 	}
 	return 1
 }

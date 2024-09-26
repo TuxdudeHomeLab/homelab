@@ -903,9 +903,8 @@ var executeHomelabCmdOSEnvErrorTests = []struct {
 
 func TestExecHomelabCmdOSEnvErrors(t *testing.T) {
 	for _, tc := range executeHomelabCmdOSEnvErrorTests {
+		setTestEnv(tc.envs)
 		t.Run(tc.name, func(t *testing.T) {
-			setTestEnv(tc.envs)
-
 			_, gotErr := execHomelabCmdTest(tc.ctxInfo, nil, tc.args...)
 			if gotErr == nil {
 				testLogErrorNil(t, "execHomelabCmd()", tc.name, tc.want)
@@ -915,10 +914,9 @@ func TestExecHomelabCmdOSEnvErrors(t *testing.T) {
 			if !testRegexMatch(t, "execHomelabCmd()", tc.name, "gotErr error string", tc.want, gotErr.Error()) {
 				return
 			}
-
-			t.Cleanup(func() {
-				clearTestEnv(tc.envs)
-			})
+		})
+		t.Cleanup(func() {
+			clearTestEnv(tc.envs)
 		})
 	}
 }

@@ -7,6 +7,7 @@ import (
 )
 
 type testContextInfo struct {
+	inspectLevel    homelabInspectLevel
 	logger          zzzlogi.Logger
 	dockerHost      dockerAPIClient
 	useRealHostInfo bool
@@ -21,6 +22,9 @@ func newVanillaTestContext() context.Context {
 
 func newTestContext(info *testContextInfo) context.Context {
 	ctx := context.Background()
+	if info.inspectLevel != homelabInspectLevelNone {
+		ctx = withHomelabInspectLevel(ctx, info.inspectLevel)
+	}
 	if info.logger != nil {
 		ctx = withLogger(ctx, info.logger)
 	} else {

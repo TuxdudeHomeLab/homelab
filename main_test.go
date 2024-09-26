@@ -27,6 +27,32 @@ Usage:
 Use "homelab \[command\] --help" for more information about a command\.`,
 	},
 	{
+		name: "Main - Missing Subcommand - Debug Inspect Level",
+		args: []string{},
+		ctxInfo: &testContextInfo{
+			inspectLevel: homelabInspectLevelDebug,
+			dockerHost:   newEmptyFakeDockerHost(),
+		},
+		wantStatus: 1,
+		wantOutput: `(?s)Error: homelab sub-command is required
+Usage:
+.+
+Use "homelab \[command\] --help" for more information about a command\.`,
+	},
+	{
+		name: "Main - Missing Subcommand - Trace Inspect Level",
+		args: []string{},
+		ctxInfo: &testContextInfo{
+			inspectLevel: homelabInspectLevelTrace,
+			dockerHost:   newEmptyFakeDockerHost(),
+		},
+		wantStatus: 1,
+		wantOutput: `(?s)Error: homelab sub-command is required
+Usage:
+.+
+Use "homelab \[command\] --help" for more information about a command\.`,
+	},
+	{
 		name: "Main - Start - All Groups",
 		args: []string{
 			"start",

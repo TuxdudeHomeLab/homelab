@@ -3,30 +3,41 @@ package main
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/tuxdude/zzzlogi"
 
 	"github.com/clarketm/json"
 )
 
-const (
-	logLevelEnvVar   = "HOMELAB_LOG_LEVEL"
-	logLevelEnvDebug = "debug"
-	logLevelEnvTrace = "trace"
+var (
+	homelabInspectLevelKey = ctxKeyHomelabInspectLevel{}
+	loggerKey              = ctxKeyLogger{}
+	dockerAPIClientKey     = ctxKeyDockerAPIClient{}
+	hostInfoKey            = ctxKeyHostInfo{}
 )
 
-var (
-	loggerKey          = ctxKeyLogger{}
-	dockerAPIClientKey = ctxKeyDockerAPIClient{}
-	hostInfoKey        = ctxKeyHostInfo{}
+const (
+	homelabInspectLevelNone = iota
+	homelabInspectLevelDebug
+	homelabInspectLevelTrace
 )
+
+type homelabInspectLevel uint8
 
 type stringSet map[string]struct{}
 
+type ctxKeyHomelabInspectLevel struct{}
 type ctxKeyLogger struct{}
 type ctxKeyDockerAPIClient struct{}
 type ctxKeyHostInfo struct{}
+
+func homelabInspectLevelFromContext(ctx context.Context) homelabInspectLevel {
+	lvl, ok := ctx.Value(homelabInspectLevelKey).(homelabInspectLevel)
+	if !ok {
+		return homelabInspectLevelNone
+	}
+	return lvl
+}
 
 func log(ctx context.Context) zzzlogi.Logger {
 	logger, ok := ctx.Value(loggerKey).(zzzlogi.Logger)
@@ -44,6 +55,10 @@ func dockerAPIClientFromContext(ctx context.Context) (dockerAPIClient, bool) {
 func hostInfoFromContext(ctx context.Context) (*hostInfo, bool) {
 	client, ok := ctx.Value(hostInfoKey).(*hostInfo)
 	return client, ok
+}
+
+func withHomelabInspectLevel(ctx context.Context, lvl homelabInspectLevel) context.Context {
+	return context.WithValue(ctx, homelabInspectLevelKey, lvl)
 }
 
 func withLogger(ctx context.Context, logger zzzlogi.Logger) context.Context {
@@ -83,19 +98,6 @@ func logToWarnAndReturn(ctx context.Context, format string, args ...interface{})
 	log(ctx).Warnf(format, args...)
 	log(ctx).WarnEmpty()
 	return fmt.Errorf(format, args...)
-}
-
-func isLogLevelDebug() bool {
-	return isEnvValue(logLevelEnvVar, logLevelEnvDebug)
-}
-
-func isLogLevelTrace() bool {
-	return isEnvValue(logLevelEnvVar, logLevelEnvTrace)
-}
-
-func isEnvValue(envVar string, envValue string) bool {
-	val, isVarSet := os.LookupEnv(envVar)
-	return isVarSet && val == envValue
 }
 
 func newBool(b bool) *bool {

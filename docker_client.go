@@ -140,11 +140,12 @@ func newDockerClient(ctx context.Context, platform, arch string) (*dockerClient,
 	if err != nil {
 		return nil, fmt.Errorf("failed to create a new docker API client, reason: %w", err)
 	}
+	lvl := homelabInspectLevelFromContext(ctx)
 	return &dockerClient{
 		client:      client,
 		platform:    platform,
 		ociPlatform: ocispec.Platform{Architecture: arch},
-		debug:       isLogLevelDebug() || isLogLevelTrace(),
+		debug:       lvl == homelabInspectLevelDebug || lvl == homelabInspectLevelTrace,
 	}, nil
 }
 
