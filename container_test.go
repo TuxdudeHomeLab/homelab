@@ -40,6 +40,29 @@ var containerStartTests = []struct {
 		},
 	},
 	{
+		name: "Container Start - Doesn't Exist Already - Existing Image",
+		config: buildSingleContainerConfig(
+			ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz"),
+		cRef: ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{
+				existingImages: stringSet{
+					"abc/xyz": {},
+				},
+				validImagesForPull: stringSet{
+					"abc/xyz": {},
+				},
+			}),
+		},
+	},
+	{
 		name: "Container Start - Doesn't Exist Already - No Network Endpoints",
 		config: buildSingleContainerNoNetworkConfig(
 			ContainerReference{
