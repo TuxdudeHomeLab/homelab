@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"reflect"
+	"strings"
 
 	dtypes "github.com/docker/docker/api/types"
 	dcontainer "github.com/docker/docker/api/types/container"
@@ -229,7 +230,11 @@ func (d *dockerClient) createContainer(ctx context.Context, containerName string
 
 	log(ctx).Debugf("Container %s created successfully - %s", containerName, resp.ID)
 	if len(resp.Warnings) > 0 {
-		log(ctx).Warnf("Warnings encountered while creating the container %s\n%s", containerName, prettyPrintJSON(resp.Warnings))
+		var sb strings.Builder
+		for i, w := range resp.Warnings {
+			sb.WriteString(fmt.Sprintf("\n%d - %s", i+1, w))
+		}
+		log(ctx).Warnf("Warnings encountered while creating the container %s%s", containerName, sb.String())
 	}
 	return nil
 }
@@ -304,7 +309,7 @@ func (d *dockerClient) createNetwork(ctx context.Context, networkName string, op
 
 	log(ctx).Debugf("Network %s created successfully - %s", networkName, resp.ID)
 	if len(resp.Warning) > 0 {
-		log(ctx).Warnf("Warnings encountered while creating the network %s\n%s", networkName, resp.Warning)
+		log(ctx).Warnf("Warning encountered while creating the network %s\n%s", networkName, resp.Warning)
 	}
 	return nil
 }

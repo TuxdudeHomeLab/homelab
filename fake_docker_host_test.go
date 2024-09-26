@@ -22,6 +22,7 @@ type fakeDockerHost struct {
 	containers           fakeContainerMap
 	networks             fakeNetworkMap
 	images               fakeImageMap
+	warnContainerCreate  stringSet
 	failContainerCreate  stringSet
 	failContainerInspect stringSet
 	failContainerKill    stringSet
@@ -31,6 +32,7 @@ type fakeDockerHost struct {
 	validImagesForPull   stringSet
 	failImagePull        stringSet
 	noImageAfterPull     stringSet
+	warnNetworkCreate    stringSet
 	failNetworkCreate    stringSet
 	failNetworkConnect   stringSet
 }
@@ -77,6 +79,7 @@ type fakeDockerHostInitInfo struct {
 	containers           []*fakeContainerInitInfo
 	networks             []*fakeNetworkInitInfo
 	existingImages       stringSet
+	warnContainerCreate  stringSet
 	failContainerCreate  stringSet
 	failContainerInspect stringSet
 	failContainerKill    stringSet
@@ -86,6 +89,7 @@ type fakeDockerHostInitInfo struct {
 	validImagesForPull   stringSet
 	failImagePull        stringSet
 	noImageAfterPull     stringSet
+	warnNetworkCreate    stringSet
 	failNetworkCreate    stringSet
 	failNetworkConnect   stringSet
 }
@@ -111,6 +115,7 @@ func newFakeDockerHost(initInfo *fakeDockerHostInitInfo) *fakeDockerHost {
 		containers:           fakeContainerMap{},
 		networks:             fakeNetworkMap{},
 		images:               fakeImageMap{},
+		warnContainerCreate:  stringSet{},
 		failContainerCreate:  stringSet{},
 		failContainerInspect: stringSet{},
 		failContainerKill:    stringSet{},
@@ -120,6 +125,7 @@ func newFakeDockerHost(initInfo *fakeDockerHostInitInfo) *fakeDockerHost {
 		validImagesForPull:   stringSet{},
 		failImagePull:        stringSet{},
 		noImageAfterPull:     stringSet{},
+		warnNetworkCreate:    stringSet{},
 		failNetworkCreate:    stringSet{},
 		failNetworkConnect:   stringSet{},
 	}
@@ -143,6 +149,9 @@ func newFakeDockerHost(initInfo *fakeDockerHostInitInfo) *fakeDockerHost {
 	}
 	for img := range initInfo.existingImages {
 		f.images[img] = newFakeImageInfo(img)
+	}
+	for c := range initInfo.warnContainerCreate {
+		f.warnContainerCreate[c] = struct{}{}
 	}
 	for c := range initInfo.failContainerCreate {
 		f.failContainerCreate[c] = struct{}{}
@@ -170,6 +179,9 @@ func newFakeDockerHost(initInfo *fakeDockerHostInitInfo) *fakeDockerHost {
 	}
 	for i := range initInfo.noImageAfterPull {
 		f.noImageAfterPull[i] = struct{}{}
+	}
+	for n := range initInfo.warnNetworkCreate {
+		f.warnNetworkCreate[n] = struct{}{}
 	}
 	for n := range initInfo.failNetworkCreate {
 		f.failNetworkCreate[n] = struct{}{}
@@ -233,6 +245,15 @@ func (f *fakeDockerHost) ContainerCreate(ctx context.Context, cConfig *dcontaine
 	ct := newFakeContainerInfo(containerName, cConfig, hConfig, nConfig)
 	f.containers[containerName] = ct
 	resp.ID = ct.id
+
+	if _, found := f.warnContainerCreate[containerName]; found {
+		resp.Warnings = []string{
+			fmt.Sprintf("first warning generated during container create for %s on the fake docker host", containerName),
+			fmt.Sprintf("second warning generated during container create for %s on the fake docker host", containerName),
+			fmt.Sprintf("third warning generated during container create for %s on the fake docker host", containerName),
+		}
+	}
+
 	return resp, nil
 }
 
@@ -469,6 +490,9 @@ func (f *fakeDockerHost) NetworkCreate(ctx context.Context, networkName string, 
 	n.options = &options
 	f.networks[networkName] = n
 	resp.ID = n.id
+	if _, found := f.warnNetworkCreate[networkName]; found {
+		resp.Warning = fmt.Sprintf("warning generated during network create for network %s on the fake docker host", networkName)
+	}
 	return resp, nil
 }
 

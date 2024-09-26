@@ -270,6 +270,66 @@ Created network net2
 Started container g2-c3`,
 	},
 	{
+		name: "Homelab Command - Start - All Groups - Container Create Warning",
+		args: []string{
+			"start",
+			"--all-groups",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/start-cmd", pwd()),
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{
+				validImagesForPull: stringSet{
+					"abc/xyz":  {},
+					"abc/xyz3": {},
+				},
+				warnContainerCreate: stringSet{
+					"g1-c1": {},
+				},
+			}),
+		},
+		want: `Pulling image: abc/xyz
+Created network net1
+Warnings encountered while creating the container g1-c1
+1 - first warning generated during container create for g1-c1 on the fake docker host
+2 - second warning generated during container create for g1-c1 on the fake docker host
+3 - third warning generated during container create for g1-c1 on the fake docker host
+Started container g1-c1
+Container g1-c2 not allowed to run on host FakeHost
+Pulling image: abc/xyz3
+Created network net2
+Started container g2-c3`,
+	},
+	{
+		name: "Homelab Command - Start - All Groups - Network Create Warning",
+		args: []string{
+			"start",
+			"--all-groups",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/start-cmd", pwd()),
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{
+				validImagesForPull: stringSet{
+					"abc/xyz":  {},
+					"abc/xyz3": {},
+				},
+				warnNetworkCreate: stringSet{
+					"net1": {},
+				},
+			}),
+		},
+		want: `Pulling image: abc/xyz
+Warning encountered while creating the network net1
+warning generated during network create for network net1 on the fake docker host
+Created network net1
+Started container g1-c1
+Container g1-c2 not allowed to run on host FakeHost
+Pulling image: abc/xyz3
+Created network net2
+Started container g2-c3`,
+	},
+	{
 		name: "Homelab Command - Start - All Groups - One Existing Image",
 		args: []string{
 			"start",
