@@ -78,7 +78,7 @@ func (n *network) create(ctx context.Context, docker *dockerClient) error {
 
 // TODO: Remove this after this function is used.
 // nolint (unused)
-func (n *network) delete(ctx context.Context, docker *dockerClient) error {
+func (n *network) remove(ctx context.Context, docker *dockerClient) error {
 	if docker.networkExists(ctx, n.name()) {
 		err := docker.removeNetwork(ctx, n.name())
 		if err != nil {
