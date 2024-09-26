@@ -837,33 +837,7 @@ func TestContainerStartErrors(t *testing.T) {
 			ctx := newTestContext(tc.ctxInfo)
 
 			if tc.wantPanic {
-				defer func() {
-					gotR := recover()
-					if gotR == nil {
-						t.Errorf(
-							"container.start()\nTest Case: %q\nFailure: gotR == nil (i.e. panic expected but did not see one)\n\nOut:\n%s\nReason: want = %q",
-							tc.name, buf.String(), tc.want)
-					}
-
-					gotPanicStr, ok := gotR.(string)
-					if !ok {
-						t.Errorf(
-							"container.start()\nTest Case: %q\nFailure: gotR is not of type string\n\nOut:\n%s\nReason: want = %q",
-							tc.name, buf.String(), tc.want)
-					}
-
-					match, err := regexp.MatchString(fmt.Sprintf("^%s$", tc.want), gotPanicStr)
-					if err != nil {
-						t.Errorf(
-							"container.start()\nTest Case: %q\nFailure: unexpected exception while matching against gotErr error string\n\nOut:\n%s\nReason: error = %v", tc.name, buf.String(), err)
-						return
-					}
-
-					if !match {
-						t.Errorf(
-							"container.start()\nTest Case: %q\nFailure: gotErr did not match the want regex\n\nOut:\n%s\nReason:\n\ngotPanicStr = %q\n\twant = %q", tc.name, buf.String(), gotPanicStr, tc.want)
-					}
-				}()
+				defer testPanicWithOutput(t, "container.start()", tc.name, buf, tc.want)
 			}
 
 			dep, gotErr := buildDeploymentFromConfig(ctx, &tc.config)

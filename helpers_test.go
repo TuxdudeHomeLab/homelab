@@ -2,8 +2,11 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
+	"regexp"
+	"testing"
 
 	"github.com/tuxdude/zzzlog"
 	"github.com/tuxdude/zzzlogi"
@@ -90,6 +93,38 @@ func clearTestEnv(envs testOSEnvMap) {
 		if err != nil {
 			panic(err)
 		}
+	}
+}
+
+func testPanicWithOutput(t *testing.T, methodUnderTest string, testCase string, out fmt.Stringer, wantPanic string) {
+	gotR := recover()
+	if gotR == nil {
+		t.Errorf(
+			"%s\nTest Case: %q\nFailure: panic expected but did not encounter one\n\nOut:\n%s\nReason: want panic = %q",
+			methodUnderTest, testCase, out.String(), wantPanic)
+		return
+	}
+
+	gotPanic, ok := gotR.(string)
+	if !ok {
+		t.Errorf(
+			"%s\nTest Case: %q\nFailure: recovered interface from panic is not of type string\n\nOut:\n%s\nReason: want = %q",
+			methodUnderTest, testCase, out.String(), wantPanic)
+		return
+	}
+
+	match, err := regexp.MatchString(fmt.Sprintf("^%s$", wantPanic), gotPanic)
+	if err != nil {
+		t.Errorf(
+			"%s\nTest Case: %q\nFailure: unexpected exception while matching against gotPanic\n\nOut:\n%s\nReason: error = %v",
+			methodUnderTest, testCase, out.String(), err)
+		return
+	}
+
+	if !match {
+		t.Errorf(
+			"%s\nTest Case: %q\nFailure: gotPanic did not match the wantPanic regex\n\nOut:\n%s\nReason:\n\ngotPanic = %q\n\twant = %q",
+			methodUnderTest, testCase, out.String(), gotPanic, wantPanic)
 	}
 }
 
