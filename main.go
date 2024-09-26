@@ -5,6 +5,7 @@ package main
 import (
 	"context"
 	"errors"
+	"io"
 	"os"
 
 	"github.com/tuxdude/zzzlog"
@@ -18,8 +19,9 @@ var (
 	pkgTimestamp = "unset"
 )
 
-func buildLogger() zzzlogi.Logger {
+func buildLogger(dest io.Writer) zzzlogi.Logger {
 	config := zzzlog.NewConsoleLoggerConfig()
+	config.Dest = dest
 	if isLogLevelTrace() {
 		config.MaxLevel = zzzlog.LvlTrace
 		config.SkipCallerInfo = false
@@ -33,10 +35,10 @@ func buildLogger() zzzlogi.Logger {
 	return zzzlog.NewLogger(config)
 }
 
-func run() int {
-	logger := buildLogger()
-	ctx := withLogger(context.Background(), logger)
-	err := execHomelabCmd(ctx, os.Stdout, os.Stderr, os.Args[1:]...)
+func run(ctx context.Context, outW io.Writer, errW io.Writer, args ...string) int {
+	logger := buildLogger(outW)
+	ctx = withLogger(ctx, logger)
+	err := execHomelabCmd(ctx, outW, errW, args...)
 	if err == nil {
 		return 0
 	}
@@ -52,5 +54,6 @@ func run() int {
 }
 
 func main() {
-	os.Exit(run())
+	status := run(context.Background(), os.Stdout, os.Stderr, os.Args[1:]...)
+	os.Exit(status)
 }
