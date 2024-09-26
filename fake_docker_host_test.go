@@ -22,12 +22,15 @@ type fakeDockerHost struct {
 	containers           fakeContainerMap
 	networks             fakeNetworkMap
 	images               fakeImageMap
-	validImagesForPull   stringSet
 	failContainerCreate  stringSet
 	failContainerInspect stringSet
+	failContainerKill    stringSet
 	failContainerRemove  stringSet
 	failContainerStart   stringSet
 	failContainerStop    stringSet
+	validImagesForPull   stringSet
+	failImagePull        stringSet
+	noImageAfterPull     stringSet
 	failNetworkCreate    stringSet
 	failNetworkConnect   stringSet
 }
@@ -74,12 +77,15 @@ type fakeDockerHostInitInfo struct {
 	containers           []*fakeContainerInitInfo
 	networks             []*fakeNetworkInitInfo
 	existingImages       stringSet
-	validImagesForPull   stringSet
 	failContainerCreate  stringSet
 	failContainerInspect stringSet
+	failContainerKill    stringSet
 	failContainerRemove  stringSet
 	failContainerStart   stringSet
 	failContainerStop    stringSet
+	validImagesForPull   stringSet
+	failImagePull        stringSet
+	noImageAfterPull     stringSet
 	failNetworkCreate    stringSet
 	failNetworkConnect   stringSet
 }
@@ -105,12 +111,15 @@ func newFakeDockerHost(initInfo *fakeDockerHostInitInfo) *fakeDockerHost {
 		containers:           fakeContainerMap{},
 		networks:             fakeNetworkMap{},
 		images:               fakeImageMap{},
-		validImagesForPull:   stringSet{},
 		failContainerCreate:  stringSet{},
 		failContainerInspect: stringSet{},
+		failContainerKill:    stringSet{},
 		failContainerRemove:  stringSet{},
 		failContainerStart:   stringSet{},
 		failContainerStop:    stringSet{},
+		validImagesForPull:   stringSet{},
+		failImagePull:        stringSet{},
+		noImageAfterPull:     stringSet{},
 		failNetworkCreate:    stringSet{},
 		failNetworkConnect:   stringSet{},
 	}
@@ -135,12 +144,14 @@ func newFakeDockerHost(initInfo *fakeDockerHostInitInfo) *fakeDockerHost {
 	for img := range initInfo.existingImages {
 		f.images[img] = newFakeImageInfo(img)
 	}
-	f.validImagesForPull = initInfo.validImagesForPull
 	for c := range initInfo.failContainerCreate {
 		f.failContainerCreate[c] = struct{}{}
 	}
 	for c := range initInfo.failContainerInspect {
 		f.failContainerInspect[c] = struct{}{}
+	}
+	for c := range initInfo.failContainerKill {
+		f.failContainerKill[c] = struct{}{}
 	}
 	for c := range initInfo.failContainerRemove {
 		f.failContainerRemove[c] = struct{}{}
@@ -150,6 +161,15 @@ func newFakeDockerHost(initInfo *fakeDockerHostInitInfo) *fakeDockerHost {
 	}
 	for c := range initInfo.failContainerStop {
 		f.failContainerStop[c] = struct{}{}
+	}
+	for i := range initInfo.validImagesForPull {
+		f.validImagesForPull[i] = struct{}{}
+	}
+	for i := range initInfo.failImagePull {
+		f.failImagePull[i] = struct{}{}
+	}
+	for i := range initInfo.noImageAfterPull {
+		f.noImageAfterPull[i] = struct{}{}
 	}
 	for n := range initInfo.failNetworkCreate {
 		f.failNetworkCreate[n] = struct{}{}
@@ -232,7 +252,7 @@ func (f *fakeDockerHost) ContainerInspect(ctx context.Context, containerName str
 	return dtypes.ContainerJSON{
 		ContainerJSONBase: &dtypes.ContainerJSONBase{
 			ID:    ct.id,
-			State: dockerContainerState(ct.state),
+			State: fakeDockerContainerState(ct.state),
 			Image: ct.containerConfig.Image,
 			Name:  ct.name,
 		},
@@ -253,6 +273,10 @@ func (f *fakeDockerHost) ContainerKill(ctx context.Context, containerName, signa
 		if ct.pendingRequiredKills > 0 {
 			ct.pendingRequiredKills--
 		} else {
+			if _, found := f.failContainerKill[containerName]; found {
+				return fmt.Errorf("failed to kill container %s on the fake docker host", containerName)
+			}
+
 			ct.state = containerStateExited
 		}
 		return nil
@@ -400,7 +424,13 @@ func (f *fakeDockerHost) ImagePull(ctx context.Context, imageName string, option
 		f.mu.Lock()
 		defer f.mu.Unlock()
 
-		f.images[imageName] = newFakeImageInfo(imageName)
+		if _, found := f.failImagePull[imageName]; found {
+			return 0, fmt.Errorf("failed to pull image %s on the fake docker host", imageName)
+		}
+
+		if _, found := f.noImageAfterPull[imageName]; !found {
+			f.images[imageName] = newFakeImageInfo(imageName)
+		}
 		return 0, io.EOF
 	})), nil
 }
@@ -501,7 +531,7 @@ func (f *fakeDockerHost) getContainerState(containerName string) containerState 
 	return ct.state
 }
 
-func dockerContainerState(state containerState) *dtypes.ContainerState {
+func fakeDockerContainerState(state containerState) *dtypes.ContainerState {
 	st := &dtypes.ContainerState{}
 	switch state {
 	case containerStateCreated:
@@ -521,10 +551,12 @@ func dockerContainerState(state containerState) *dtypes.ContainerState {
 		st.Status = "exited"
 	case containerStateDead:
 		st.Status = "dead"
+	// We allow these unsupported values just because this is fake docker host
+	// and we want to cover a few additional edge cases in our tests.
 	case containerStateUnknown:
-		panic("Unknown container state on fake docker host")
+		st.Status = "unknown"
 	case containerStateNotFound:
-		panic("Cannot handle Not found container state while building container state info on fake docker host, possibly indicating a bug in the code")
+		st.Status = "notFound"
 	default:
 		panic("Invalid scenario while building container state on fake docker host, possibly indicating a bug in the code")
 	}

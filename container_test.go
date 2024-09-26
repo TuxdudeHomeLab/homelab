@@ -414,12 +414,110 @@ func TestContainerStart(t *testing.T) {
 }
 
 var containerStartErrorTests = []struct {
-	name    string
-	config  HomelabConfig
-	cRef    ContainerReference
-	ctxInfo *testContextInfo
-	want    string
+	name      string
+	config    HomelabConfig
+	cRef      ContainerReference
+	ctxInfo   *testContextInfo
+	wantPanic bool
+	want      string
 }{
+	{
+		name: "Container Start - Image Not Available",
+		config: buildSingleContainerConfig(
+			ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz"),
+		cRef: ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newEmptyFakeDockerHost(),
+		},
+		want: `Failed to start container g1-c1, reason:failed to pull the image abc/xyz, reason: image abc/xyz not found or invalid and cannot be pulled by the fake docker host`,
+	},
+	{
+		name: "Container Start - Image Pull Failure",
+		config: buildSingleContainerConfig(
+			ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz"),
+		cRef: ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{
+				validImagesForPull: stringSet{
+					"abc/xyz": {},
+				},
+				failImagePull: stringSet{
+					"abc/xyz": {},
+				},
+			}),
+		},
+		want: `Failed to start container g1-c1, reason:failed while pulling the image abc/xyz, reason: failed to pull image abc/xyz on the fake docker host`,
+	},
+	{
+		name: "Container Start - No Local Image After Pull",
+		config: buildSingleContainerConfig(
+			ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz"),
+		cRef: ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{
+				validImagesForPull: stringSet{
+					"abc/xyz": {},
+				},
+				noImageAfterPull: stringSet{
+					"abc/xyz": {},
+				},
+			}),
+		},
+		want: `Failed to start container g1-c1, reason:image abc/xyz not available locally after a successful pull, possibly indicating a bug or a system failure!`,
+	},
+	{
+		name: "Container Start - Kill Existing Container Fails",
+		config: buildSingleContainerConfig(
+			ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz"),
+		cRef: ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{
+				containers: []*fakeContainerInitInfo{
+					{
+						name:               "g1-c1",
+						image:              "abc/xyz",
+						state:              containerStateRunning,
+						requiredExtraStops: 1000,
+					},
+				},
+				failContainerKill: stringSet{
+					"g1-c1": {},
+				},
+				validImagesForPull: stringSet{
+					"abc/xyz": {},
+				},
+			}),
+		},
+		want: `Failed to start container g1-c1, reason:failed to stop and remove container g1-c1 after 6 attempts`,
+	},
 	{
 		name: "Container Start - Unkillable Existing Container",
 		config: buildSingleContainerConfig(
@@ -449,6 +547,35 @@ var containerStartErrorTests = []struct {
 			}),
 		},
 		want: `Failed to start container g1-c1, reason:failed to stop and remove container g1-c1 after 6 attempts`,
+	},
+	{
+		name: "Container Start - Container State Unknown",
+		config: buildSingleContainerConfig(
+			ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz"),
+		cRef: ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{
+				containers: []*fakeContainerInitInfo{
+					{
+						name:  "g1-c1",
+						image: "abc/xyz",
+						state: containerStateUnknown,
+					},
+				},
+				validImagesForPull: stringSet{
+					"abc/xyz": {},
+				},
+			}),
+		},
+		wantPanic: true,
+		want:      `container g1-c1 is in an unsupported state Unknown, possibly indicating a bug in the code`,
 	},
 	{
 		name: "Container Start - Inspect Existing Container Failure",
@@ -708,6 +835,36 @@ func TestContainerStartErrors(t *testing.T) {
 			buf := new(bytes.Buffer)
 			tc.ctxInfo.logger = newCapturingTestLogger(zzzlog.LvlDebug, buf)
 			ctx := newTestContext(tc.ctxInfo)
+
+			if tc.wantPanic {
+				defer func() {
+					gotR := recover()
+					if gotR == nil {
+						t.Errorf(
+							"container.start()\nTest Case: %q\nFailure: gotR == nil (i.e. panic expected but did not see one)\n\nOut:\n%s\nReason: want = %q",
+							tc.name, buf.String(), tc.want)
+					}
+
+					gotPanicStr, ok := gotR.(string)
+					if !ok {
+						t.Errorf(
+							"container.start()\nTest Case: %q\nFailure: gotR is not of type string\n\nOut:\n%s\nReason: want = %q",
+							tc.name, buf.String(), tc.want)
+					}
+
+					match, err := regexp.MatchString(fmt.Sprintf("^%s$", tc.want), gotPanicStr)
+					if err != nil {
+						t.Errorf(
+							"container.start()\nTest Case: %q\nFailure: unexpected exception while matching against gotErr error string\n\nOut:\n%s\nReason: error = %v", tc.name, buf.String(), err)
+						return
+					}
+
+					if !match {
+						t.Errorf(
+							"container.start()\nTest Case: %q\nFailure: gotErr did not match the want regex\n\nOut:\n%s\nReason:\n\ngotPanicStr = %q\n\twant = %q", tc.name, buf.String(), gotPanicStr, tc.want)
+					}
+				}()
+			}
 
 			dep, gotErr := buildDeploymentFromConfig(ctx, &tc.config)
 			if gotErr != nil {

@@ -184,7 +184,7 @@ func (d *dockerClient) pullImage(ctx context.Context, imageName string) error {
 	// of the image.
 	avail, newId := d.queryLocalImage(ctx, imageName)
 	if !avail {
-		log(ctx).Fatalf("Image is expected to be available after pull, but is unavailable possibly indicating a bug or system failure!")
+		return fmt.Errorf("image %s not available locally after a successful pull, possibly indicating a bug or a system failure!", imageName)
 	}
 
 	// If pull progress was already shown, no need to show the updates again.
