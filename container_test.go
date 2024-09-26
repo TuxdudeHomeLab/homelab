@@ -319,6 +319,11 @@ var containerStartTests = []struct {
 }
 
 func TestContainerStart(t *testing.T) {
+	envs := testOSEnvMap{
+		"HOMELAB_LOG_LEVEL": "debug",
+	}
+	setTestEnv(envs)
+
 	for _, test := range containerStartTests {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {
@@ -379,6 +384,10 @@ func TestContainerStart(t *testing.T) {
 			}
 		})
 	}
+
+	t.Cleanup(func() {
+		clearTestEnv(envs)
+	})
 }
 
 var containerStartErrorTests = []struct {
