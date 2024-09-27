@@ -11,10 +11,8 @@ var configEnvTests = []struct {
 	test    func(*testing.T, context.Context, string, *configEnv)
 }{
 	{
-		name: "Config Env - New",
-		ctxInfo: &testContextInfo{
-			dockerHost: newEmptyFakeDockerHost(),
-		},
+		name:    "Config Env - New",
+		ctxInfo: &testContextInfo{},
 		test: func(t *testing.T, ctx context.Context, tc string, env *configEnv) {
 			wantEnvMap := envMap{
 				"$$HOST_IP$$":                  "10.76.77.78",
@@ -36,10 +34,8 @@ var configEnvTests = []struct {
 		},
 	},
 	{
-		name: "Config Env - Override - No overlap",
-		ctxInfo: &testContextInfo{
-			dockerHost: newEmptyFakeDockerHost(),
-		},
+		name:    "Config Env - Override - No overlap",
+		ctxInfo: &testContextInfo{},
 		test: func(t *testing.T, ctx context.Context, tc string, env *configEnv) {
 			override := envMap{
 				"FOO1": "foo1",
@@ -78,10 +74,8 @@ var configEnvTests = []struct {
 		},
 	},
 	{
-		name: "Config Env - Override - With overlap",
-		ctxInfo: &testContextInfo{
-			dockerHost: newEmptyFakeDockerHost(),
-		},
+		name:    "Config Env - Override - With overlap",
+		ctxInfo: &testContextInfo{},
 		test: func(t *testing.T, ctx context.Context, tc string, env *configEnv) {
 			override := envMap{
 				"FOO1":                     "foo1",
