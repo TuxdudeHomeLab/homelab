@@ -53,8 +53,8 @@ func dockerAPIClientFromContext(ctx context.Context) (dockerAPIClient, bool) {
 }
 
 func hostInfoFromContext(ctx context.Context) (*hostInfo, bool) {
-	client, ok := ctx.Value(hostInfoKey).(*hostInfo)
-	return client, ok
+	host, ok := ctx.Value(hostInfoKey).(*hostInfo)
+	return host, ok
 }
 
 func withHomelabInspectLevel(ctx context.Context, lvl homelabInspectLevel) context.Context {
