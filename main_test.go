@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-var executeMainTests = []struct {
+var mainTests = []struct {
 	name       string
 	args       []string
 	ctxInfo    *testContextInfo
@@ -94,8 +94,68 @@ Use "homelab \[command\] --help" for more information about a command\.`,
 }
 
 func TestMain(t *testing.T) {
-	for _, tc := range executeMainTests {
+	for _, tc := range mainTests {
 		t.Run(tc.name, func(t *testing.T) {
+			buf := new(bytes.Buffer)
+			ctx := newTestContext(tc.ctxInfo)
+
+			gotStatus := run(ctx, buf, buf, tc.args...)
+			if gotStatus != tc.wantStatus {
+				testLogCustomWithOutput(t, "run()", tc.name, buf, fmt.Sprintf("gotStatus (%d) != wantStatus (%d)", gotStatus, tc.wantStatus))
+				return
+			}
+
+			if !testRegexMatch(t, "run()", tc.name, "output", tc.wantOutput, strings.TrimSpace(buf.String())) {
+				return
+			}
+		})
+	}
+}
+
+var mainEnvTests = []struct {
+	name       string
+	args       []string
+	ctxInfo    *testContextInfo
+	envs       testEnvMap
+	wantStatus int
+	wantOutput string
+}{
+	{
+		name: "Main - Missing Subcommand - Debug Inspect Level Using Env",
+		args: []string{},
+		ctxInfo: &testContextInfo{
+			dockerHost: newEmptyFakeDockerHost(),
+		},
+		envs: testEnvMap{
+			"HOMELAB_INSPECT_LEVEL": "debug",
+		},
+		wantStatus: 1,
+		wantOutput: `(?s)Error: homelab sub-command is required
+Usage:
+.+
+Use "homelab \[command\] --help" for more information about a command\.`,
+	},
+	{
+		name: "Main - Missing Subcommand - Trace Inspect Level Using Env",
+		args: []string{},
+		ctxInfo: &testContextInfo{
+			dockerHost: newEmptyFakeDockerHost(),
+		},
+		envs: testEnvMap{
+			"HOMELAB_INSPECT_LEVEL": "trace",
+		},
+		wantStatus: 1,
+		wantOutput: `(?s)Error: homelab sub-command is required
+Usage:
+.+
+Use "homelab \[command\] --help" for more information about a command\.`,
+	},
+}
+
+func TestMainEnv(t *testing.T) {
+	for _, tc := range mainEnvTests {
+		t.Run(tc.name, func(t *testing.T) {
+			setTestEnv(t, tc.envs)
 			buf := new(bytes.Buffer)
 			ctx := newTestContext(tc.ctxInfo)
 
