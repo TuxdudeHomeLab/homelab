@@ -104,6 +104,38 @@ func testCmpDiff(t *testing.T, methodUnderTest string, testCase string, desc str
 	return true
 }
 
+func testExpectPanic(t *testing.T, methodUnderTest string, testCase string, wantPanic string) {
+	gotR := recover()
+	if gotR == nil {
+		t.Errorf(
+			"%s\nTest Case: %q\nFailure: panic expected but did not encounter one\nReason: want panic = %q",
+			methodUnderTest, testCase, wantPanic)
+		return
+	}
+
+	gotPanic, ok := gotR.(string)
+	if !ok {
+		t.Errorf(
+			"%s\nTest Case: %q\nFailure: recovered interface from panic is not of type string\nReason: want = %q",
+			methodUnderTest, testCase, wantPanic)
+		return
+	}
+
+	match, err := regexp.MatchString(fmt.Sprintf("^%s$", wantPanic), gotPanic)
+	if err != nil {
+		t.Errorf(
+			"%s\nTest Case: %q\nFailure: unexpected exception while matching against gotPanic\nReason: error = %v",
+			methodUnderTest, testCase, err)
+		return
+	}
+
+	if !match {
+		t.Errorf(
+			"%s\nTest Case: %q\nFailure: gotPanic did not match the wantPanic regex\nReason:\ngotPanic = %q\nwant = %q",
+			methodUnderTest, testCase, gotPanic, wantPanic)
+	}
+}
+
 func testExpectPanicWithOutput(t *testing.T, methodUnderTest string, testCase string, out fmt.Stringer, wantPanic string) {
 	gotR := recover()
 	if gotR == nil {
@@ -131,7 +163,7 @@ func testExpectPanicWithOutput(t *testing.T, methodUnderTest string, testCase st
 
 	if !match {
 		t.Errorf(
-			"%s\nTest Case: %q\nFailure: gotPanic did not match the wantPanic regex\n\nOut:\n%s\nReason:\n\ngotPanic = %q\n\twant = %q",
+			"%s\nTest Case: %q\nFailure: gotPanic did not match the wantPanic regex\n\nOut:\n%s\nReason:\ngotPanic = %q\nwant = %q",
 			methodUnderTest, testCase, out.String(), gotPanic, wantPanic)
 	}
 }
