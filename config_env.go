@@ -18,7 +18,12 @@ type configEnv struct {
 
 type envMap map[string]string
 
-func newConfigEnv(host *hostInfo) *configEnv {
+func newConfigEnv(ctx context.Context) *configEnv {
+	host, found := hostInfoFromContext(ctx)
+	if !found {
+		log(ctx).Fatalf("Unable to find host info in context")
+	}
+
 	c := configEnv{
 		env: envMap{
 			configEnvSearchKey(configEnvHostIP):                host.ip.String(),
@@ -34,8 +39,10 @@ func newConfigEnv(host *hostInfo) *configEnv {
 	return &c
 }
 
-// nolint: unused
 func (c *configEnv) override(ctx context.Context, override envMap, order []string) *configEnv {
+	if len(override) != len(order) {
+		log(ctx).Fatalf("Override map (len:%d) and order slice (len:%d) are of unequal lengths", len(override), len(order))
+	}
 	res := configEnv{
 		env:         envMap{},
 		envKeyOrder: make([]string, 0),
@@ -51,7 +58,7 @@ func (c *configEnv) override(ctx context.Context, override envMap, order []strin
 		}
 		sk := configEnvSearchKey(k)
 		if _, found := res.env[sk]; !found {
-			res.envKeyOrder = append(res.envKeyOrder, k)
+			res.envKeyOrder = append(res.envKeyOrder, sk)
 		}
 		res.env[sk] = newVal
 	}

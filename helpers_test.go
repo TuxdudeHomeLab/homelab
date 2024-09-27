@@ -9,11 +9,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-var (
-	// TODO: Remove this after configEnv gets actually used in the code.
-	_ = newConfigEnv(newFakeHostInfo())
-)
-
 type testEnvMap map[string]string
 
 func setTestEnv(t *testing.T, envs testEnvMap) {
