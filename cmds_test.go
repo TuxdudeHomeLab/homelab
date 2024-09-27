@@ -856,11 +856,11 @@ func TestExecHomelabCmdErrors(t *testing.T) {
 	}
 }
 
-var executeHomelabCmdOSEnvErrorTests = []struct {
+var executeHomelabCmdEnvErrorTests = []struct {
 	name    string
 	args    []string
 	ctxInfo *testContextInfo
-	envs    testOSEnvMap
+	envs    testEnvMap
 	want    string
 }{
 	{
@@ -869,7 +869,7 @@ var executeHomelabCmdOSEnvErrorTests = []struct {
 			"show-config",
 		},
 		ctxInfo: &testContextInfo{},
-		envs: testOSEnvMap{
+		envs: testEnvMap{
 			"HOME": "",
 		},
 		want: `show-config failed while determining the configs path, reason: failed to obtain the user's home directory for reading the homelab CLI config, reason: \$HOME is not defined`,
@@ -880,7 +880,7 @@ var executeHomelabCmdOSEnvErrorTests = []struct {
 			"show-config",
 		},
 		ctxInfo: &testContextInfo{},
-		envs: testOSEnvMap{
+		envs: testEnvMap{
 			"HOME": "/foo/bar",
 		},
 		want: `show-config failed while determining the configs path, reason: failed to open homelab CLI config file, reason: open /foo/bar/\.homelab/config\.yaml: no such file or directory`,
@@ -894,17 +894,18 @@ var executeHomelabCmdOSEnvErrorTests = []struct {
 			fmt.Sprintf("%s/testdata/start-cmd", pwd()),
 		},
 		ctxInfo: &testContextInfo{},
-		envs: testOSEnvMap{
+		envs: testEnvMap{
 			"DOCKER_HOST": "/var/run/foobar-docker.sock",
 		},
 		want: "failed to create a new docker API client, reason: unable to parse docker host `/var/run/foobar-docker\\.sock`",
 	},
 }
 
-func TestExecHomelabCmdOSEnvErrors(t *testing.T) {
-	for _, tc := range executeHomelabCmdOSEnvErrorTests {
-		setTestEnv(tc.envs)
+func TestExecHomelabCmdEnvErrors(t *testing.T) {
+	for _, tc := range executeHomelabCmdEnvErrorTests {
 		t.Run(tc.name, func(t *testing.T) {
+			setTestEnv(t, tc.envs)
+
 			_, gotErr := execHomelabCmdTest(tc.ctxInfo, nil, tc.args...)
 			if gotErr == nil {
 				testLogErrorNil(t, "execHomelabCmd()", tc.name, tc.want)
@@ -914,9 +915,6 @@ func TestExecHomelabCmdOSEnvErrors(t *testing.T) {
 			if !testRegexMatch(t, "execHomelabCmd()", tc.name, "gotErr error string", tc.want, gotErr.Error()) {
 				return
 			}
-		})
-		t.Cleanup(func() {
-			clearTestEnv(tc.envs)
 		})
 	}
 }

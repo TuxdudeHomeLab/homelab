@@ -14,6 +14,14 @@ var (
 	_ = newConfigEnv(newFakeHostInfo())
 )
 
+type testEnvMap map[string]string
+
+func setTestEnv(t *testing.T, envs testEnvMap) {
+	for k, v := range envs {
+		t.Setenv(k, v)
+	}
+}
+
 func testLogErrorNotNil(t *testing.T, methodUnderTest string, testCase string, gotErr error) {
 	t.Errorf(
 		"%s\nTest Case: %q\nFailure: gotErr != nil\nReason: %v",
