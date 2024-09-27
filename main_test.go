@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-var mainTests = []struct {
+var mainRunTests = []struct {
 	name       string
 	args       []string
 	ctxInfo    *testContextInfo
@@ -15,7 +15,7 @@ var mainTests = []struct {
 	wantOutput string
 }{
 	{
-		name: "Main - Missing Subcommand",
+		name: "Main - run() - Missing Subcommand",
 		args: []string{},
 		ctxInfo: &testContextInfo{
 			dockerHost: newEmptyFakeDockerHost(),
@@ -40,7 +40,7 @@ Usage:
 Use "homelab \[command\] --help" for more information about a command\.`,
 	},
 	{
-		name: "Main - Missing Subcommand - Trace Inspect Level",
+		name: "Main - run() - Missing Subcommand - Trace Inspect Level",
 		args: []string{},
 		ctxInfo: &testContextInfo{
 			inspectLevel: homelabInspectLevelTrace,
@@ -53,7 +53,7 @@ Usage:
 Use "homelab \[command\] --help" for more information about a command\.`,
 	},
 	{
-		name: "Main - Start - All Groups",
+		name: "Main - run() - Start - All Groups",
 		args: []string{
 			"start",
 			"--all-groups",
@@ -93,8 +93,8 @@ Use "homelab \[command\] --help" for more information about a command\.`,
 	},
 }
 
-func TestMain(t *testing.T) {
-	for _, tc := range mainTests {
+func TestMainRun(t *testing.T) {
+	for _, tc := range mainRunTests {
 		t.Run(tc.name, func(t *testing.T) {
 			buf := new(bytes.Buffer)
 			ctx := newTestContext(tc.ctxInfo)
@@ -112,7 +112,7 @@ func TestMain(t *testing.T) {
 	}
 }
 
-var mainEnvTests = []struct {
+var mainRunEnvTests = []struct {
 	name       string
 	args       []string
 	ctxInfo    *testContextInfo
@@ -121,7 +121,7 @@ var mainEnvTests = []struct {
 	wantOutput string
 }{
 	{
-		name: "Main - Missing Subcommand - Debug Inspect Level Using Env",
+		name: "Main - run() - Missing Subcommand - Debug Inspect Level Using Env",
 		args: []string{},
 		ctxInfo: &testContextInfo{
 			dockerHost: newEmptyFakeDockerHost(),
@@ -136,7 +136,7 @@ Usage:
 Use "homelab \[command\] --help" for more information about a command\.`,
 	},
 	{
-		name: "Main - Missing Subcommand - Trace Inspect Level Using Env",
+		name: "Main - run() - Missing Subcommand - Trace Inspect Level Using Env",
 		args: []string{},
 		ctxInfo: &testContextInfo{
 			dockerHost: newEmptyFakeDockerHost(),
@@ -152,8 +152,8 @@ Use "homelab \[command\] --help" for more information about a command\.`,
 	},
 }
 
-func TestMainEnv(t *testing.T) {
-	for _, tc := range mainEnvTests {
+func TestMainRunEnv(t *testing.T) {
+	for _, tc := range mainRunEnvTests {
 		t.Run(tc.name, func(t *testing.T) {
 			setTestEnv(t, tc.envs)
 			buf := new(bytes.Buffer)
