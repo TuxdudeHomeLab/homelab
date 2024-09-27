@@ -81,7 +81,6 @@ var containerStartTests = []struct {
 			}),
 		},
 	},
-
 	{
 		name: "Container Start - Exists Already In Created State",
 		config: buildSingleContainerConfig(
@@ -332,6 +331,30 @@ var containerStartTests = []struct {
 						requiredExtraKills: 4,
 					},
 				},
+				validImagesForPull: stringSet{
+					"abc/xyz": {},
+				},
+			}),
+		},
+	},
+	{
+		name: "Container Start - Doesn't Exist Already - Container Mode Network",
+		config: buildSingleContainerWithContainerModeNetworkConfig(
+			ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz",
+			ContainerReference{
+				Group:     "g1",
+				Container: "c2",
+			}),
+		cRef: ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testContextInfo{
+			dockerHost: newFakeDockerHost(&fakeDockerHostInitInfo{
 				validImagesForPull: stringSet{
 					"abc/xyz": {},
 				},
@@ -887,6 +910,24 @@ func buildSingleContainerConfig(ct ContainerReference, image string) HomelabConf
 							IP:        "172.18.201.11",
 							Container: ct,
 						},
+					},
+				},
+			},
+		},
+	}
+	return config
+}
+
+func buildSingleContainerWithContainerModeNetworkConfig(ct ContainerReference, image string, connectTo ContainerReference) HomelabConfig {
+	config := buildSingleContainerNoNetworkConfig(ct, image)
+	config.IPAM = IPAMConfig{
+		Networks: NetworksConfig{
+			ContainerModeNetworks: []ContainerModeNetworkConfig{
+				{
+					Name:      "net1",
+					Container: connectTo,
+					AttachingContainers: []ContainerReference{
+						ct,
 					},
 				},
 			},

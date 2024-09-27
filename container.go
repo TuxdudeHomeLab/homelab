@@ -409,10 +409,11 @@ func (c *container) networkMode() dcontainer.NetworkMode {
 	if len(c.endpoints) == 0 {
 		return "none"
 	}
-	if c.endpoints[0].network.mode == networkModeContainer {
-		return dcontainer.NetworkMode(fmt.Sprintf("container:%s", c.endpoints[0].network))
+	n := c.endpoints[0].network
+	if n.mode == networkModeContainer {
+		return dcontainer.NetworkMode(fmt.Sprintf("container:%s-%s", n.containerModeInfo.container.Group, n.containerModeInfo.container.Container))
 	}
-	return dcontainer.NetworkMode(c.endpoints[0].network.name())
+	return dcontainer.NetworkMode(n.name())
 }
 
 func (c *container) publishedPorts() (nat.PortMap, nat.PortSet) {
