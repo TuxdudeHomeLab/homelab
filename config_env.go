@@ -24,19 +24,19 @@ func newConfigEnv(ctx context.Context) *configEnv {
 		log(ctx).Fatalf("Unable to find host info in context")
 	}
 
-	c := configEnv{
-		env: envMap{
-			configEnvSearchKey(configEnvHostIP):                host.ip.String(),
-			configEnvSearchKey(configEnvHostName):              host.hostName,
-			configEnvSearchKey(configEnvHumanFriendlyHostName): host.humanFriendlyHostName,
+	c := configEnv{}
+	return c.override(
+		ctx,
+		envMap{
+			configEnvHostIP:                host.ip.String(),
+			configEnvHostName:              host.hostName,
+			configEnvHumanFriendlyHostName: host.humanFriendlyHostName,
 		},
-		envKeyOrder: []string{
-			configEnvSearchKey(configEnvHostIP),
-			configEnvSearchKey(configEnvHostName),
-			configEnvSearchKey(configEnvHumanFriendlyHostName),
-		},
-	}
-	return &c
+		[]string{
+			configEnvHostIP,
+			configEnvHostName,
+			configEnvHumanFriendlyHostName,
+		})
 }
 
 func (c *configEnv) override(ctx context.Context, override envMap, order []string) *configEnv {
