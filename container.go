@@ -17,7 +17,11 @@ const (
 	// five times in the worst case before giving up. The one
 	// remaining attempt is to remove the container which has been
 	// terminated.
-	stopAndRemoveAttempts  = 6
+	stopAndRemoveAttempts = 6
+)
+
+// Make this a var just to allow us to change this value in tests.
+var (
 	stopAndRemoveKillDelay = 1 * time.Second
 )
 

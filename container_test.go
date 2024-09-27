@@ -218,7 +218,7 @@ var containerStartTests = []struct {
 		},
 		preExec: func(ctx context.Context) {
 			go func() {
-				time.Sleep(2 * time.Second)
+				time.Sleep(200 * time.Millisecond)
 				docker := fakeDockerHostFromContext(ctx)
 				err := docker.forceRemoveContainer("g1-c1")
 				if err != nil {
@@ -341,6 +341,8 @@ var containerStartTests = []struct {
 }
 
 func TestContainerStart(t *testing.T) {
+	// Reduce this delay to keep the tests executing quickly.
+	stopAndRemoveKillDelay = 100 * time.Millisecond
 	for _, test := range containerStartTests {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {
