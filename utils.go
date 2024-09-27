@@ -92,14 +92,6 @@ func logToErrorAndReturn(ctx context.Context, format string, args ...interface{}
 	return fmt.Errorf(format, args...)
 }
 
-// TODO: Remove this after this function is used.
-// nolint (unused)
-func logToWarnAndReturn(ctx context.Context, format string, args ...interface{}) error {
-	log(ctx).Warnf(format, args...)
-	log(ctx).WarnEmpty()
-	return fmt.Errorf(format, args...)
-}
-
 func newBool(b bool) *bool {
 	return &b
 }
