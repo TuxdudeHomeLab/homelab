@@ -641,7 +641,7 @@ containers:
 							},
 							{
 								Var:   "MY_ENV_3",
-								Value: "SomeHostName.$$HUMAN_FRIENDLY_HOST_NAME$$.SomeDomainName",
+								Value: "SomeHostName.FakeHost.SomeDomainName",
 							},
 						},
 						Entrypoint: []string{
@@ -678,7 +678,7 @@ containers:
 						"MY_CONTAINER_ENV_VAR_3=",
 						"MY_ENV=MY_ENV_VALUE",
 						"MY_ENV_2=",
-						"MY_ENV_3=SomeHostName.$$HUMAN_FRIENDLY_HOST_NAME$$.SomeDomainName",
+						"MY_ENV_3=SomeHostName.FakeHost.SomeDomainName",
 					},
 					Cmd: []string{
 						"foo",

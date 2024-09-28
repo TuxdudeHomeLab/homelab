@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"strings"
 )
 
 var (
@@ -14,6 +15,7 @@ var (
 type configEnv struct {
 	env         envMap
 	envKeyOrder []string
+	replacer    *strings.Replacer
 }
 
 type envMap map[string]string
@@ -48,7 +50,8 @@ func (c *configEnv) override(ctx context.Context, override envMap, order []strin
 		envKeyOrder: make([]string, 0),
 	}
 	for _, k := range c.envKeyOrder {
-		res.env[k] = c.env[k]
+		v := c.env[k]
+		res.env[k] = v
 		res.envKeyOrder = append(res.envKeyOrder, k)
 	}
 	for _, k := range order {
@@ -62,7 +65,16 @@ func (c *configEnv) override(ctx context.Context, override envMap, order []strin
 		}
 		res.env[sk] = newVal
 	}
+	var repl []string
+	for _, k := range res.envKeyOrder {
+		repl = append(repl, k, res.env[k])
+	}
+	res.replacer = strings.NewReplacer(repl...)
 	return &res
+}
+
+func (c *configEnv) apply(input string) string {
+	return c.replacer.Replace(input)
 }
 
 func configEnvSearchKey(env string) string {

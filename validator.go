@@ -10,41 +10,49 @@ import (
 	"github.com/docker/go-units"
 )
 
-func validateGlobalConfig(config *GlobalConfig) error {
-	if err := validateConfigEnv(config.Env, "global config"); err != nil {
-		return err
+func validateGlobalConfig(ctx context.Context, parentEnv *configEnv, config *GlobalConfig) (*configEnv, error) {
+	newEnv, err := validateConfigEnv(ctx, parentEnv, config.Env, "global config")
+	if err != nil {
+		return nil, err
 	}
 
 	if err := validateMountsConfig(config.MountDefs, nil, nil, "global config mount defs"); err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := validateGlobalContainerConfig(&config.Container, config.MountDefs); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return newEnv, nil
 }
 
-func validateConfigEnv(config []ConfigEnv, location string) error {
-	envs := stringSet{}
+func validateConfigEnv(ctx context.Context, parentEnv *configEnv, config []ConfigEnv, location string) (*configEnv, error) {
+	envs := envMap{}
+	envOrder := make([]string, 0)
 	for _, e := range config {
 		if len(e.Var) == 0 {
-			return fmt.Errorf("empty env var in %s", location)
+			return nil, fmt.Errorf("empty env var in %s", location)
 		}
 		if _, found := envs[e.Var]; found {
-			return fmt.Errorf("env var %s specified more than once in %s", e.Var, location)
+			return nil, fmt.Errorf("env var %s specified more than once in %s", e.Var, location)
 		}
-		envs[e.Var] = struct{}{}
 
 		if len(e.Value) == 0 && len(e.ValueCommand) == 0 {
-			return fmt.Errorf("neither value nor valueCommand specified for env var %s in %s", e.Var, location)
+			return nil, fmt.Errorf("neither value nor valueCommand specified for env var %s in %s", e.Var, location)
 		}
 		if len(e.Value) > 0 && len(e.ValueCommand) > 0 {
-			return fmt.Errorf("exactly one of value or valueCommand must be specified for env var %s in %s", e.Var, location)
+			return nil, fmt.Errorf("exactly one of value or valueCommand must be specified for env var %s in %s", e.Var, location)
 		}
+
+		if len(e.Value) > 0 {
+			envs[e.Var] = e.Value
+		} else {
+			envs[e.Var] = e.ValueCommand
+		}
+		envOrder = append(envOrder, e.Var)
 	}
-	return nil
+	return parentEnv.override(ctx, envs, envOrder), nil
 }
 
 func validateContainerEnv(config []ContainerEnv, location string) error {
@@ -454,7 +462,7 @@ func validateGroupsConfig(groups []ContainerGroupConfig) (containerGroupMap, err
 	return containerGroups, nil
 }
 
-func validateContainersConfig(containersConfig []ContainerConfig, groups containerGroupMap, globalConfig *GlobalConfig, containerEndpoints map[ContainerReference]networkEndpointList, allowedContainers containerSet) error {
+func validateContainersConfig(ctx context.Context, parentEnv *configEnv, containersConfig []ContainerConfig, groups containerGroupMap, globalConfig *GlobalConfig, containerEndpoints map[ContainerReference]networkEndpointList, allowedContainers containerSet) error {
 	for _, ct := range containersConfig {
 		g, found := groups[ct.Info.Group]
 		if !found {
@@ -463,12 +471,13 @@ func validateContainersConfig(containersConfig []ContainerConfig, groups contain
 		if _, found := g.containers[ct.Info]; found {
 			return fmt.Errorf("container {Group:%s Container:%s} defined more than once in the containers config", ct.Info.Group, ct.Info.Container)
 		}
-		g.addContainer(&ct, globalConfig, containerEndpoints[ct.Info], allowedContainers[ct.Info])
 
 		loc := fmt.Sprintf("container {Group: %s Container:%s} config", ct.Info.Group, ct.Info.Container)
-		if err := validateConfigEnv(ct.Config.Env, loc); err != nil {
+		ctConfigEnv, err := validateConfigEnv(ctx, parentEnv, ct.Config.Env, loc)
+		if err != nil {
 			return err
 		}
+		ct.applyConfigEnv(ctConfigEnv)
 
 		if len(ct.Image.Image) == 0 {
 			return fmt.Errorf("image cannot be empty in %s", loc)
@@ -528,6 +537,8 @@ func validateContainersConfig(containersConfig []ContainerConfig, groups contain
 		if err := validateContainerEnv(ct.Runtime.Env, loc); err != nil {
 			return err
 		}
+
+		g.addContainer(&ct, globalConfig, containerEndpoints[ct.Info], allowedContainers[ct.Info])
 	}
 
 	return nil

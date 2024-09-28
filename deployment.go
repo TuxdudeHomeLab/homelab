@@ -41,15 +41,16 @@ func buildDeploymentFromConfig(ctx context.Context, config *HomelabConfig) (*dep
 	host, found := hostInfoFromContext(ctx)
 	if !found {
 		host = newHostInfo(ctx)
+		ctx = withHostInfo(ctx, host)
 	}
 	d := deployment{
 		config:                 config,
 		host:                   host,
 		containerDockerConfigs: containerDockerConfigMap{},
 	}
-	// env := newConfigEnv(host)
 
-	err := validateGlobalConfig(&config.Global)
+	env := newConfigEnv(ctx)
+	envWithGlobal, err := validateGlobalConfig(ctx, env, &config.Global)
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +60,7 @@ func buildDeploymentFromConfig(ctx context.Context, config *HomelabConfig) (*dep
 		return nil, err
 	}
 
-	// First build the networks as it will be looked up while building
+	// First build the networks as they will be looked up while building
 	// the container groups and containers within.
 	var containerEndpoints map[ContainerReference]networkEndpointList
 	d.networks, containerEndpoints, err = validateIPAMConfig(ctx, &config.IPAM)
@@ -74,7 +75,7 @@ func buildDeploymentFromConfig(ctx context.Context, config *HomelabConfig) (*dep
 	}
 	d.updateGroupsOrder()
 
-	err = validateContainersConfig(config.Containers, d.groups, &config.Global, containerEndpoints, d.allowedContainers)
+	err = validateContainersConfig(ctx, envWithGlobal, config.Containers, d.groups, &config.Global, containerEndpoints, d.allowedContainers)
 	if err != nil {
 		return nil, err
 	}

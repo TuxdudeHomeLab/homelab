@@ -268,3 +268,40 @@ func (h *HomelabConfig) parse(ctx context.Context, r io.Reader) error {
 	log(ctx).Tracef("Homelab Config:\n%v\n", prettyPrintJSON(h))
 	return nil
 }
+
+func (c *ContainerConfig) applyConfigEnv(env *configEnv) {
+	c.Lifecycle.StartPreHook = env.apply(c.Lifecycle.StartPreHook)
+	c.User.User = env.apply(c.User.User)
+	c.User.PrimaryGroup = env.apply(c.User.PrimaryGroup)
+	for i, g := range c.User.AdditionalGroups {
+		c.User.AdditionalGroups[i] = env.apply(g)
+	}
+	for i, m := range c.Filesystem.Mounts {
+		c.Filesystem.Mounts[i].Src = env.apply(m.Src)
+		c.Filesystem.Mounts[i].Dst = env.apply(m.Dst)
+		c.Filesystem.Mounts[i].Options = env.apply(m.Options)
+	}
+	for i, d := range c.Filesystem.Devices {
+		c.Filesystem.Devices[i].Src = env.apply(d.Src)
+		c.Filesystem.Devices[i].Dst = env.apply(d.Dst)
+	}
+	c.Network.HostName = env.apply(c.Network.HostName)
+	c.Network.DomainName = env.apply(c.Network.DomainName)
+	for i, d := range c.Network.DNSServers {
+		c.Network.DNSServers[i] = env.apply(d)
+	}
+	for i, d := range c.Network.DNSOptions {
+		c.Network.DNSOptions[i] = env.apply(d)
+	}
+	for i, d := range c.Network.DNSSearch {
+		c.Network.DNSSearch[i] = env.apply(d)
+	}
+	for i, p := range c.Network.PublishedPorts {
+		c.Network.PublishedPorts[i].HostIP = env.apply(p.HostIP)
+	}
+	for i, e := range c.Runtime.Env {
+		c.Runtime.Env[i].Var = env.apply(e.Var)
+		c.Runtime.Env[i].Value = env.apply(e.Value)
+		c.Runtime.Env[i].ValueCommand = env.apply(e.ValueCommand)
+	}
+}
