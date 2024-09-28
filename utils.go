@@ -13,6 +13,7 @@ var (
 	homelabInspectLevelKey = ctxKeyHomelabInspectLevel{}
 	loggerKey              = ctxKeyLogger{}
 	dockerAPIClientKey     = ctxKeyDockerAPIClient{}
+	userInfoKey            = ctxKeyUserInfo{}
 	hostInfoKey            = ctxKeyHostInfo{}
 )
 
@@ -29,6 +30,7 @@ type stringSet map[string]struct{}
 type ctxKeyHomelabInspectLevel struct{}
 type ctxKeyLogger struct{}
 type ctxKeyDockerAPIClient struct{}
+type ctxKeyUserInfo struct{}
 type ctxKeyHostInfo struct{}
 
 func homelabInspectLevelFromContext(ctx context.Context) homelabInspectLevel {
@@ -57,6 +59,11 @@ func hostInfoFromContext(ctx context.Context) (*hostInfo, bool) {
 	return host, ok
 }
 
+func userInfoFromContext(ctx context.Context) (*userInfo, bool) {
+	user, ok := ctx.Value(userInfoKey).(*userInfo)
+	return user, ok
+}
+
 func withHomelabInspectLevel(ctx context.Context, lvl homelabInspectLevel) context.Context {
 	return context.WithValue(ctx, homelabInspectLevelKey, lvl)
 }
@@ -67,6 +74,10 @@ func withLogger(ctx context.Context, logger zzzlogi.Logger) context.Context {
 
 func withDockerAPIClient(ctx context.Context, client dockerAPIClient) context.Context {
 	return context.WithValue(ctx, dockerAPIClientKey, client)
+}
+
+func withUserInfo(ctx context.Context, user *userInfo) context.Context {
+	return context.WithValue(ctx, userInfoKey, user)
 }
 
 func withHostInfo(ctx context.Context, host *hostInfo) context.Context {

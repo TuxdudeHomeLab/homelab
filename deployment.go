@@ -38,6 +38,14 @@ func buildDeployment(ctx context.Context, reader io.Reader) (*deployment, error)
 }
 
 func buildDeploymentFromConfig(ctx context.Context, config *HomelabConfig) (*deployment, error) {
+	user, found := userInfoFromContext(ctx)
+	if !found {
+		user = newUserInfo(ctx)
+		ctx = withUserInfo(ctx, user)
+	}
+	// TODO: Actually use the userInfo.
+	_ = user
+
 	host, found := hostInfoFromContext(ctx)
 	if !found {
 		host = newHostInfo(ctx)
