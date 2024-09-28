@@ -42,7 +42,7 @@ func homelabInspectLevelFromContext(ctx context.Context) homelabInspectLevel {
 func log(ctx context.Context) zzzlogi.Logger {
 	logger, ok := ctx.Value(loggerKey).(zzzlogi.Logger)
 	if !ok {
-		panic("Unable to retriever logger from context")
+		panic("Unable to retrieve logger from context")
 	}
 	return logger
 }
