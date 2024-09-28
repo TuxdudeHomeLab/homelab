@@ -65,14 +65,10 @@ func withLogger(ctx context.Context, logger zzzlogi.Logger) context.Context {
 	return context.WithValue(ctx, loggerKey, logger)
 }
 
-// This is used purely by tests.
-// nolint:unused
 func withDockerAPIClient(ctx context.Context, client dockerAPIClient) context.Context {
 	return context.WithValue(ctx, dockerAPIClientKey, client)
 }
 
-// This is used purely by tests.
-// nolint:unused
 func withHostInfo(ctx context.Context, host *hostInfo) context.Context {
 	return context.WithValue(ctx, hostInfoKey, host)
 }
