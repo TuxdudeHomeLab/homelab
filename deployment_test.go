@@ -20,6 +20,7 @@ var buildDeploymentUsingReaderTests = []struct {
 		name: "Valid extensive config",
 		config: `
 global:
+  baseDir: testdata/dummy-base-dir
   env:
     - var: MY_CONFIG_VAR_1
       value: MY_CONFIG_VAR_1_VALUE
@@ -261,6 +262,7 @@ containers:
         - baz`,
 		want: &HomelabConfig{
 			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
 				Env: []ConfigEnv{
 					{
 						Var:   "MY_CONFIG_VAR_1",
@@ -772,6 +774,8 @@ containers:
 	{
 		name: "Valid Groups Only config",
 		config: `
+global:
+  baseDir: testdata/dummy-base-dir
 groups:
   - name: group1
     order: 1
@@ -780,6 +784,9 @@ groups:
   - name: group3
     order: 2`,
 		want: &HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: "testdata/dummy-base-dir",
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "group1",
@@ -834,6 +841,7 @@ var buildDeploymentFromConfigsPathTests = []struct {
 		configsPath: "parse-configs-valid",
 		want: &HomelabConfig{
 			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
 				Env: []ConfigEnv{
 					{
 						Var:   "MY_GLOBAL_FOO",
@@ -1233,13 +1241,20 @@ var buildDeploymentFromConfigStringerTests = []struct {
 	want   string
 }{
 	{
-		name:   "Valid Empty Config",
-		config: HomelabConfig{},
-		want:   `Deployment{Groups:\[empty\], Networks:\[empty\]}`,
+		name: "Valid Empty Config",
+		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
+		},
+		want: `Deployment{Groups:\[empty\], Networks:\[empty\]}`,
 	},
 	{
 		name: "Valid IPAM Config",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					BridgeModeNetworks: []BridgeModeNetworkConfig{
@@ -1280,6 +1295,9 @@ var buildDeploymentFromConfigStringerTests = []struct {
 	{
 		name: "Valid Containers Without Hosts And IPAM Configs",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -1392,9 +1410,33 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	want   string
 }{
 	{
+		name:   "Empty Base Dir",
+		config: HomelabConfig{},
+		want:   `homelab base directory cannot be empty`,
+	},
+	{
+		name: "Non-Existing Base Dir Path",
+		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: "/foo/bar",
+			},
+		},
+		want: `os.Stat\(\) failed on homelab base directory path, reason: stat /foo/bar: no such file or directory`,
+	},
+	{
+		name: "Base Dir Path Points To A File",
+		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: "testdata/dummy-base-dir/.empty",
+			},
+		},
+		want: `homelab base directory path testdata/dummy-base-dir/\.empty must be a directory`,
+	},
+	{
 		name: "Empty Global Config Env Var",
 		config: HomelabConfig{
 			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
 				Env: []ConfigEnv{
 					{
 						Value: "foo-bar",
@@ -1408,6 +1450,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		name: "Duplicate Global Config Env Var",
 		config: HomelabConfig{
 			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
 				Env: []ConfigEnv{
 					{
 						Var:   "FOO",
@@ -1430,6 +1473,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		name: "Global Config Env Var Without Value And ValueCommand",
 		config: HomelabConfig{
 			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
 				Env: []ConfigEnv{
 					{
 						Var: "FOO",
@@ -1443,6 +1487,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		name: "Global Config Env Var With Both Value And ValueCommand",
 		config: HomelabConfig{
 			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
 				Env: []ConfigEnv{
 					{
 						Var:          "FOO",
@@ -1458,6 +1503,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		name: "Global Config Empty Mount Def Name",
 		config: HomelabConfig{
 			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
 				MountDefs: []MountConfig{
 					{
 						Type:     "bind",
@@ -1474,6 +1520,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		name: "Global Config Duplicate Mount Defs",
 		config: HomelabConfig{
 			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
 				MountDefs: []MountConfig{
 					{
 						Name: "mount-foo1",
@@ -1502,6 +1549,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		name: "Global Config Mount Def With Invalid Mount Type",
 		config: HomelabConfig{
 			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
 				MountDefs: []MountConfig{
 					{
 						Name: "foo",
@@ -1518,6 +1566,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		name: "Global Config Mount Def With Empty Src",
 		config: HomelabConfig{
 			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
 				MountDefs: []MountConfig{
 					{
 						Name: "foo",
@@ -1533,6 +1582,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		name: "Global Config Mount Def With Empty Dst",
 		config: HomelabConfig{
 			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
 				MountDefs: []MountConfig{
 					{
 						Name: "foo",
@@ -1548,6 +1598,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		name: "Global Config Bind Mount Def With Options",
 		config: HomelabConfig{
 			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
 				MountDefs: []MountConfig{
 					{
 						Name:    "foo",
@@ -1565,6 +1616,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		name: "Global Container Config Negative Stop Timeout",
 		config: HomelabConfig{
 			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
 				Container: GlobalContainerConfig{
 					StopTimeout: -1,
 				},
@@ -1576,6 +1628,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		name: "Global Container Config Restart Policy MaxRetryCount Set With Non-On-Failure Mode",
 		config: HomelabConfig{
 			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
 				Container: GlobalContainerConfig{
 					RestartPolicy: ContainerRestartPolicyConfig{
 						Mode:          "always",
@@ -1590,6 +1643,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		name: "Global Container Config Invalid Restart Policy Mode",
 		config: HomelabConfig{
 			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
 				Container: GlobalContainerConfig{
 					RestartPolicy: ContainerRestartPolicyConfig{
 						Mode: "garbage",
@@ -1603,6 +1657,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		name: "Global Container Config Negative Restart Policy MaxRetryCount",
 		config: HomelabConfig{
 			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
 				Container: GlobalContainerConfig{
 					RestartPolicy: ContainerRestartPolicyConfig{
 						Mode:          "on-failure",
@@ -1617,6 +1672,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		name: "Empty Global Container Config Env Var",
 		config: HomelabConfig{
 			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
 				Container: GlobalContainerConfig{
 					Env: []ContainerEnv{
 						{
@@ -1632,6 +1688,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		name: "Duplicate Global Container Config Env Var",
 		config: HomelabConfig{
 			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
 				Container: GlobalContainerConfig{
 					Env: []ContainerEnv{
 						{
@@ -1656,6 +1713,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		name: "Global Container Config Env Var Without Value And ValueCommand",
 		config: HomelabConfig{
 			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
 				Container: GlobalContainerConfig{
 					Env: []ContainerEnv{
 						{
@@ -1671,6 +1729,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		name: "Global Container Config Env Var With Both Value And ValueCommand",
 		config: HomelabConfig{
 			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
 				Container: GlobalContainerConfig{
 					Env: []ContainerEnv{
 						{
@@ -1688,6 +1747,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		name: "Global Container Config Empty Mount Name",
 		config: HomelabConfig{
 			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
 				Container: GlobalContainerConfig{
 					Mounts: []MountConfig{
 						{
@@ -1706,6 +1766,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		name: "Global Container Config Duplicate Mounts",
 		config: HomelabConfig{
 			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
 				Container: GlobalContainerConfig{
 					Mounts: []MountConfig{
 						{
@@ -1736,6 +1797,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		name: "Global Container Config Mount With Invalid Mount Type",
 		config: HomelabConfig{
 			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
 				Container: GlobalContainerConfig{
 					Mounts: []MountConfig{
 						{
@@ -1754,6 +1816,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		name: "Global Container Config Mount With Empty Src",
 		config: HomelabConfig{
 			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
 				Container: GlobalContainerConfig{
 					Mounts: []MountConfig{
 						{
@@ -1771,6 +1834,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		name: "Global Container Config Mount With Empty Dst",
 		config: HomelabConfig{
 			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
 				Container: GlobalContainerConfig{
 					Mounts: []MountConfig{
 						{
@@ -1788,6 +1852,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		name: "Global Container Config Bind Mount With Options",
 		config: HomelabConfig{
 			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
 				Container: GlobalContainerConfig{
 					Mounts: []MountConfig{
 						{
@@ -1807,6 +1872,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		name: "Global Container Config Mount Def Reference Not Found",
 		config: HomelabConfig{
 			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
 				MountDefs: []MountConfig{
 					{
 						Name: "foo",
@@ -1830,6 +1896,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		name: "Empty Global Container Config Label Name",
 		config: HomelabConfig{
 			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
 				Container: GlobalContainerConfig{
 					Labels: []LabelConfig{
 						{
@@ -1845,6 +1912,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		name: "Duplicate Global Container Config Label Name",
 		config: HomelabConfig{
 			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
 				Container: GlobalContainerConfig{
 					Labels: []LabelConfig{
 						{
@@ -1869,6 +1937,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		name: "Global Container Config Empty Label Value",
 		config: HomelabConfig{
 			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
 				Container: GlobalContainerConfig{
 					Labels: []LabelConfig{
 						{
@@ -1883,6 +1952,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Empty Bridge Mode Network Name",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					BridgeModeNetworks: []BridgeModeNetworkConfig{
@@ -1900,6 +1972,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Duplicate Bridge Mode Network",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					BridgeModeNetworks: []BridgeModeNetworkConfig{
@@ -1924,6 +1999,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Empty Host Interface Name",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					BridgeModeNetworks: []BridgeModeNetworkConfig{
@@ -1941,6 +2019,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Duplicate Network Host Interface Names",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					BridgeModeNetworks: []BridgeModeNetworkConfig{
@@ -1965,6 +2046,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Empty Bridge Mode Network Priority",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					BridgeModeNetworks: []BridgeModeNetworkConfig{
@@ -1982,6 +2066,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Invalid CIDR - Empty",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					BridgeModeNetworks: []BridgeModeNetworkConfig{
@@ -1999,6 +2086,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Invalid CIDR - Unparsable",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					BridgeModeNetworks: []BridgeModeNetworkConfig{
@@ -2017,6 +2107,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Invalid CIDR - Missing /",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					BridgeModeNetworks: []BridgeModeNetworkConfig{
@@ -2035,6 +2128,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Invalid CIDR - Wrong Prefix Length",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					BridgeModeNetworks: []BridgeModeNetworkConfig{
@@ -2053,6 +2149,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Invalid CIDR - IPv6",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					BridgeModeNetworks: []BridgeModeNetworkConfig{
@@ -2071,6 +2170,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Invalid CIDR - Octets Out Of Range",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					BridgeModeNetworks: []BridgeModeNetworkConfig{
@@ -2089,6 +2191,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Invalid CIDR - Not A Network Address",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					BridgeModeNetworks: []BridgeModeNetworkConfig{
@@ -2107,6 +2212,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Invalid CIDR - Long Prefix 31",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					BridgeModeNetworks: []BridgeModeNetworkConfig{
@@ -2125,6 +2233,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Invalid CIDR - Long Prefix 32",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					BridgeModeNetworks: []BridgeModeNetworkConfig{
@@ -2143,6 +2254,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Non-RFC1918 CIDR - Public IPv4",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					BridgeModeNetworks: []BridgeModeNetworkConfig{
@@ -2161,6 +2275,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Non-RFC1918 CIDR - Link Local",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					BridgeModeNetworks: []BridgeModeNetworkConfig{
@@ -2179,6 +2296,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Non-RFC1918 CIDR - Multicast",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					BridgeModeNetworks: []BridgeModeNetworkConfig{
@@ -2197,6 +2317,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Overlapping CIDR",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					BridgeModeNetworks: []BridgeModeNetworkConfig{
@@ -2221,6 +2344,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Bridge Mode Network Invalid Container Reference - Empty Group",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					BridgeModeNetworks: []BridgeModeNetworkConfig{
@@ -2247,6 +2373,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Bridge Mode Network Invalid Container Reference - Empty Container",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					BridgeModeNetworks: []BridgeModeNetworkConfig{
@@ -2273,6 +2402,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Invalid Container IP - Unparsable",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					BridgeModeNetworks: []BridgeModeNetworkConfig{
@@ -2300,6 +2432,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Invalid Container IP - Too Short",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					BridgeModeNetworks: []BridgeModeNetworkConfig{
@@ -2327,6 +2462,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Invalid Container IP - Too Long",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					BridgeModeNetworks: []BridgeModeNetworkConfig{
@@ -2354,6 +2492,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container IP Not Within Network CIDR",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					BridgeModeNetworks: []BridgeModeNetworkConfig{
@@ -2381,6 +2522,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container IP same as Network Address",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					BridgeModeNetworks: []BridgeModeNetworkConfig{
@@ -2408,6 +2552,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container IP same as Gateway Address",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					BridgeModeNetworks: []BridgeModeNetworkConfig{
@@ -2435,6 +2582,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Multiple Endpoints For Same Container Within A Bridge Mode Network",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					BridgeModeNetworks: []BridgeModeNetworkConfig{
@@ -2469,6 +2619,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Duplicate Container IPs",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					BridgeModeNetworks: []BridgeModeNetworkConfig{
@@ -2517,6 +2670,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Multiple Same Priority Bridge Mode Network Endpoints For Same Container",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					BridgeModeNetworks: []BridgeModeNetworkConfig{
@@ -2559,6 +2715,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Empty Container Mode Network Name",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					ContainerModeNetworks: []ContainerModeNetworkConfig{
@@ -2577,6 +2736,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Duplicate Container Mode Network Name",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					ContainerModeNetworks: []ContainerModeNetworkConfig{
@@ -2603,6 +2765,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Duplicate Bridge/Container Mode Networks",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					BridgeModeNetworks: []BridgeModeNetworkConfig{
@@ -2630,6 +2795,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Mode Network Invalid Container Reference - Empty Group",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					ContainerModeNetworks: []ContainerModeNetworkConfig{
@@ -2648,6 +2816,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Mode Network Invalid Container Reference - Empty Container",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					ContainerModeNetworks: []ContainerModeNetworkConfig{
@@ -2666,6 +2837,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Mode Network Invalid Attaching Container Reference - Empty Group",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					ContainerModeNetworks: []ContainerModeNetworkConfig{
@@ -2690,6 +2864,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Mode Network Invalid Attaching Container Reference - Empty Container",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					ContainerModeNetworks: []ContainerModeNetworkConfig{
@@ -2714,6 +2891,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Multiple Container Mode Network Stacks For Same Container Within Same Network Stack",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					ContainerModeNetworks: []ContainerModeNetworkConfig{
@@ -2751,6 +2931,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Multiple Container Mode Network Stacks For Same Container Across Network Stacks",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					ContainerModeNetworks: []ContainerModeNetworkConfig{
@@ -2793,6 +2976,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Connected To Both Bridge Mode and Container Mode Networks",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			IPAM: IPAMConfig{
 				Networks: NetworksConfig{
 					BridgeModeNetworks: []BridgeModeNetworkConfig{
@@ -2835,6 +3021,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Empty Host Name In Hosts Config",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Hosts: []HostConfig{
 				{
 					AllowedContainers: []ContainerReference{
@@ -2851,6 +3040,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Duplicate Host Name In Hosts Config",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Hosts: []HostConfig{
 				{
 					Name: "h1",
@@ -2885,6 +3077,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Invalid Container Reference Within Host Config - Empty Group",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Hosts: []HostConfig{
 				{
 					Name: "h1",
@@ -2901,6 +3096,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Invalid Container Reference Within Host Config - Empty Container",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Hosts: []HostConfig{
 				{
 					Name: "h1",
@@ -2917,6 +3115,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Duplicate Container Within Host Config",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Hosts: []HostConfig{
 				{
 					Name: "h1",
@@ -2946,6 +3147,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Empty Group Name In Groups Config",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Order: 1,
@@ -2957,6 +3161,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Duplicate Container Group Name",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -2981,6 +3188,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Group Without Order",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name: "g1",
@@ -2992,6 +3202,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Group With Zero Order",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -3004,6 +3217,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Group With Negative Order",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -3016,6 +3232,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Group Definition Missing",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Containers: []ContainerConfig{
 				{
 					Info: ContainerReference{
@@ -3033,6 +3252,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Duplicate Container Definition",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -3083,6 +3305,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Empty Container Config Env Var",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -3116,6 +3341,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Duplicate Container Config Env Var",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -3158,6 +3386,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Config Env Var Without Value And ValueCommand",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -3191,6 +3422,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Config Env Var With Both Value And ValueCommand",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -3226,6 +3460,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Empty Container Config Image",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -3249,6 +3486,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Config SkipImagePull And IgnoreImagePullFailures Both Set To True",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -3277,6 +3517,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Config SkipImagePull And PullImageBeforeStop Both Set To True",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -3305,6 +3548,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Empty Container Config Label Name",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -3338,6 +3584,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Duplicate Container Config Label Name",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -3380,6 +3629,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Config Empty Label Value",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -3413,6 +3665,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Config Empty Order",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -3436,6 +3691,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Config Negative Order",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -3462,6 +3720,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Config Restart Policy MaxRetryCount Set With Non-On-Failure Mode",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -3492,6 +3753,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Config Invalid Restart Policy Mode",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -3521,6 +3785,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Config Negative Restart Policy MaxRetryCount",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -3551,6 +3818,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Config Negative StopTimeout",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -3578,6 +3848,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Config PrimaryUserGroup Without User",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -3607,6 +3880,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Config Device Missing Src And Dst",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -3638,6 +3914,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Config Device Missing Src",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -3671,6 +3950,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Config Empty Mount Name",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -3707,6 +3989,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Config Duplicate Mounts Within Container Config",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -3756,6 +4041,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		name: "Container Config Duplicate Mounts Within Container And Global Configs Combined",
 		config: HomelabConfig{
 			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
 				Container: GlobalContainerConfig{
 					Mounts: []MountConfig{
 						{
@@ -3815,6 +4101,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Config Mount With Invalid Mount Type",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -3851,6 +4140,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Config Mount With Empty Src",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -3886,6 +4178,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Config Mount With Empty Dst",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -3921,6 +4216,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Config Bind Mount With Options",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -3959,6 +4257,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		name: "Container Config Mount Def Reference Not Found",
 		config: HomelabConfig{
 			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
 				MountDefs: []MountConfig{
 					{
 						Name: "foo",
@@ -4001,6 +4300,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Config Published Port - Container Port Empty",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -4036,6 +4338,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Config Published Port - Container Port Negative",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -4072,6 +4377,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Config Published Port - Protocol Empty",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -4107,6 +4415,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Config Published Port - Protocol Invalid",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -4143,6 +4454,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Config Published Port - Host IP Empty",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -4178,6 +4492,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Config Published Port - Host IP Invalid",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -4214,6 +4531,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Config Published Port - Host Port Empty",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -4249,6 +4569,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Config Published Port - Host Port Negative",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -4285,6 +4608,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Empty Container Config Sysctl Key",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -4318,6 +4644,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Duplicate Container Config Sysctl Key",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -4360,6 +4689,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Config Empty Sysctl Value",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -4393,6 +4725,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Health Config - Negative Retries",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -4422,6 +4757,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Health Config - Invalid Interval",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -4451,6 +4789,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Health Config - Invalid Timeout",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -4480,6 +4821,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Health Config - Invalid StartPeriod",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -4509,6 +4853,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Health Config - Invalid StartInterval",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -4538,6 +4885,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container ShmSize Invalid Unit",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -4567,6 +4917,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container ShmSize Invalid Value",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -4596,6 +4949,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Empty Container Env Var",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -4629,6 +4985,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Duplicate Container Env Var",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -4671,6 +5030,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Env Var Without Value And ValueCommand",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",
@@ -4704,6 +5066,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	{
 		name: "Container Env Var With Both Value And ValueCommand",
 		config: HomelabConfig{
+			Global: GlobalConfig{
+				BaseDir: testHomelabBaseDir(),
+			},
 			Groups: []ContainerGroupConfig{
 				{
 					Name:  "g1",

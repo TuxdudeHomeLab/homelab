@@ -50,6 +50,9 @@ Use "homelab \[command\] --help" for more information about a command\.`,
 		},
 		want: `Homelab config:
 {
+  "global": {
+    "baseDir": "testdata/dummy-base-dir"
+  },
   "ipam": {
     "networks": {
       "bridgeModeNetworks": \[
@@ -169,6 +172,9 @@ Use "homelab \[command\] --help" for more information about a command\.`,
 		},
 		want: `Homelab config:
 {
+  "global": {
+    "baseDir": "testdata/dummy-base-dir"
+  },
   "ipam": {
     "networks": {
       "bridgeModeNetworks": \[

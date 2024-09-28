@@ -938,6 +938,9 @@ func buildSingleContainerWithContainerModeNetworkConfig(ct ContainerReference, i
 
 func buildSingleContainerNoNetworkConfig(ct ContainerReference, image string) HomelabConfig {
 	return HomelabConfig{
+		Global: GlobalConfig{
+			BaseDir: testHomelabBaseDir(),
+		},
 		Hosts: []HostConfig{
 			{
 				Name: fakeHostName,

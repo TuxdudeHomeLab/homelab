@@ -20,6 +20,7 @@ type HomelabConfig struct {
 // GlobalConfig represents the configuration that will be applied
 // across the entire homelab deployment.
 type GlobalConfig struct {
+	BaseDir   string                `yaml:"baseDir,omitempty" json:"baseDir,omitempty"`
 	Env       []ConfigEnv           `yaml:"env,omitempty" json:"env,omitempty"`
 	MountDefs []MountConfig         `yaml:"mountDefs,omitempty" json:"mountDefs,omitempty"`
 	Container GlobalContainerConfig `yaml:"container,omitempty" json:"container,omitempty"`

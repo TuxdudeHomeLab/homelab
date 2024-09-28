@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/netip"
+	"os"
 	"sort"
 	"time"
 
@@ -11,6 +12,10 @@ import (
 )
 
 func validateGlobalConfig(ctx context.Context, parentEnv *configEnv, config *GlobalConfig) (*configEnv, error) {
+	if err := validateBaseDir(config.BaseDir); err != nil {
+		return nil, err
+	}
+
 	newEnv, err := validateConfigEnv(ctx, parentEnv, config.Env, "global config")
 	if err != nil {
 		return nil, err
@@ -25,6 +30,20 @@ func validateGlobalConfig(ctx context.Context, parentEnv *configEnv, config *Glo
 	}
 
 	return newEnv, nil
+}
+
+func validateBaseDir(baseDir string) error {
+	if len(baseDir) == 0 {
+		return fmt.Errorf("homelab base directory cannot be empty")
+	}
+	pathStat, err := os.Stat(baseDir)
+	if err != nil {
+		return fmt.Errorf("os.Stat() failed on homelab base directory path, reason: %w", err)
+	}
+	if !pathStat.IsDir() {
+		return fmt.Errorf("homelab base directory path %s must be a directory", baseDir)
+	}
+	return nil
 }
 
 func validateConfigEnv(ctx context.Context, parentEnv *configEnv, config []ConfigEnv, location string) (*configEnv, error) {
