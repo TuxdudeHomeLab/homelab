@@ -120,6 +120,74 @@ var configEnvTests = []struct {
 		},
 	},
 	{
+		name:    "Config Env - Apply - No Match",
+		ctxInfo: &testContextInfo{},
+		test: func(t *testing.T, ctx context.Context, tc string) {
+			input := "host_ip=$HOST_IP$$;host_name=$$HOST_NAME$;friendly=HUMAN_FRIENDLY_HOST_NAME"
+			want := "host_ip=$HOST_IP$$;host_name=$$HOST_NAME$;friendly=HUMAN_FRIENDLY_HOST_NAME"
+
+			env := newConfigEnv(ctx)
+			got := env.apply(input)
+			if !testCmpDiff(t, "configEnv.apply()", tc, "apply result", want, got) {
+				return
+			}
+		},
+	},
+	{
+		name:    "Config Env - Apply - Single Match",
+		ctxInfo: &testContextInfo{},
+		test: func(t *testing.T, ctx context.Context, tc string) {
+			input := "host_ip=$HOST_IP$$;host_name=$$HOST_NAME$$;friendly=HUMAN_FRIENDLY_HOST_NAME"
+			want := "host_ip=$HOST_IP$$;host_name=fakehost;friendly=HUMAN_FRIENDLY_HOST_NAME"
+
+			env := newConfigEnv(ctx)
+			got := env.apply(input)
+			if !testCmpDiff(t, "configEnv.apply()", tc, "apply result", want, got) {
+				return
+			}
+		},
+	},
+	{
+		name:    "Config Env - Apply - Multi Match",
+		ctxInfo: &testContextInfo{},
+		test: func(t *testing.T, ctx context.Context, tc string) {
+			input := "host_ip=$$HOST_IP$$;host_name=$$HOST_NAME$$;friendly=$$HUMAN_FRIENDLY_HOST_NAME$$"
+			want := "host_ip=10.76.77.78;host_name=fakehost;friendly=FakeHost"
+
+			env := newConfigEnv(ctx)
+			got := env.apply(input)
+			if !testCmpDiff(t, "configEnv.apply()", tc, "apply result", want, got) {
+				return
+			}
+		},
+	},
+	{
+		name:    "Config Env - Apply - Recursive Match",
+		ctxInfo: &testContextInfo{},
+		test: func(t *testing.T, ctx context.Context, tc string) {
+			input := "foo=$$FOO$$"
+			want := "foo=$$BAR$$"
+
+			env := newConfigEnv(ctx).override(
+				ctx,
+				envMap{
+					"FOO": "$$BAR$$",
+					"BAR": "$$BAZ$$",
+					"BAZ": "baz1",
+				},
+				[]string{
+					"FOO",
+					"BAR",
+					"BAZ",
+				},
+			)
+			got := env.apply(input)
+			if !testCmpDiff(t, "configEnv.apply()", tc, "apply result", want, got) {
+				return
+			}
+		},
+	},
+	{
 		name:    "Config Env - New - Missing Host Info",
 		ctxInfo: &testContextInfo{},
 		test: func(t *testing.T, _ context.Context, tc string) {
