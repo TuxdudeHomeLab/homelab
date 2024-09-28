@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"testing"
+
+	"github.com/tuxdude/zzzlog"
 )
 
 var configEnvTests = []struct {
@@ -121,7 +124,8 @@ var configEnvTests = []struct {
 		ctxInfo: &testContextInfo{},
 		test: func(t *testing.T, _ context.Context, tc string) {
 			want := `Unable to find host info in context`
-			ctx := withLogger(context.Background(), newTestLogger())
+			logger := newCapturingTestLogger(zzzlog.LvlInfo, new(bytes.Buffer))
+			ctx := withLogger(context.Background(), logger)
 
 			defer testExpectPanic(t, "newConfigEnv", tc, want)
 			_ = newConfigEnv(ctx)
@@ -139,6 +143,8 @@ var configEnvTests = []struct {
 			overrideOrder := []string{
 				"FOO1",
 			}
+			logger := newCapturingTestLogger(zzzlog.LvlInfo, new(bytes.Buffer))
+			ctx = withLogger(ctx, logger)
 			env := newConfigEnv(ctx)
 
 			defer testExpectPanic(t, "configEnv.override()", tc, want)
@@ -158,6 +164,8 @@ var configEnvTests = []struct {
 				"FOO1",
 				"BAZ1",
 			}
+			logger := newCapturingTestLogger(zzzlog.LvlInfo, new(bytes.Buffer))
+			ctx = withLogger(ctx, logger)
 			env := newConfigEnv(ctx)
 
 			defer testExpectPanic(t, "configEnv.override()", tc, want)
