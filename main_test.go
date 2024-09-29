@@ -21,7 +21,7 @@ var mainRunTests = []struct {
 	wantOutput string
 }{
 	{
-		name: "Main - run() - Missing Subcommand",
+		name: "Main - runWithContext() - Missing Subcommand",
 		args: []string{},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
@@ -46,7 +46,7 @@ Usage:
 Use "homelab \[command\] --help" for more information about a command\.`,
 	},
 	{
-		name: "Main - run() - Missing Subcommand - Trace Inspect Level",
+		name: "Main - runWithContext() - Missing Subcommand - Trace Inspect Level",
 		args: []string{},
 		ctxInfo: &testutils.TestContextInfo{
 			InspectLevel: inspect.HomelabInspectLevelTrace,
@@ -59,7 +59,7 @@ Usage:
 Use "homelab \[command\] --help" for more information about a command\.`,
 	},
 	{
-		name: "Main - run() - Start - All Groups",
+		name: "Main - runWithContext() - Start - All Groups",
 		args: []string{
 			"start",
 			"--all-groups",
@@ -105,13 +105,13 @@ func TestMainRun(t *testing.T) {
 			buf := new(bytes.Buffer)
 			ctx := testutils.NewTestContext(tc.ctxInfo)
 
-			gotStatus := run(ctx, buf, buf, tc.args...)
+			gotStatus := runWithContext(ctx, buf, buf, tc.args...)
 			if gotStatus != tc.wantStatus {
-				testhelpers.LogCustomWithOutput(t, "run()", tc.name, buf, fmt.Sprintf("gotStatus (%d) != wantStatus (%d)", gotStatus, tc.wantStatus))
+				testhelpers.LogCustomWithOutput(t, "runWithContext()", tc.name, buf, fmt.Sprintf("gotStatus (%d) != wantStatus (%d)", gotStatus, tc.wantStatus))
 				return
 			}
 
-			if !testhelpers.RegexMatch(t, "run()", tc.name, "output", tc.wantOutput, strings.TrimSpace(buf.String())) {
+			if !testhelpers.RegexMatch(t, "runWithContext()", tc.name, "output", tc.wantOutput, strings.TrimSpace(buf.String())) {
 				return
 			}
 		})
@@ -127,7 +127,7 @@ var mainRunEnvTests = []struct {
 	wantOutput string
 }{
 	{
-		name: "Main - run() - Missing Subcommand - Debug Inspect Level Using Env",
+		name: "Main - runWithContext() - Missing Subcommand - Debug Inspect Level Using Env",
 		args: []string{},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
@@ -142,7 +142,7 @@ Usage:
 Use "homelab \[command\] --help" for more information about a command\.`,
 	},
 	{
-		name: "Main - run() - Missing Subcommand - Trace Inspect Level Using Env",
+		name: "Main - runWithContext() - Missing Subcommand - Trace Inspect Level Using Env",
 		args: []string{},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
@@ -165,13 +165,13 @@ func TestMainRunEnv(t *testing.T) {
 			buf := new(bytes.Buffer)
 			ctx := testutils.NewTestContext(tc.ctxInfo)
 
-			gotStatus := run(ctx, buf, buf, tc.args...)
+			gotStatus := runWithContext(ctx, buf, buf, tc.args...)
 			if gotStatus != tc.wantStatus {
-				testhelpers.LogCustomWithOutput(t, "run()", tc.name, buf, fmt.Sprintf("gotStatus (%d) != wantStatus (%d)", gotStatus, tc.wantStatus))
+				testhelpers.LogCustomWithOutput(t, "runWithContext()", tc.name, buf, fmt.Sprintf("gotStatus (%d) != wantStatus (%d)", gotStatus, tc.wantStatus))
 				return
 			}
 
-			if !testhelpers.RegexMatch(t, "run()", tc.name, "output", tc.wantOutput, strings.TrimSpace(buf.String())) {
+			if !testhelpers.RegexMatch(t, "runWithContext()", tc.name, "output", tc.wantOutput, strings.TrimSpace(buf.String())) {
 				return
 			}
 		})

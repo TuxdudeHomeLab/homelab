@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/tuxdudehomelab/homelab/internal/cli/clicommon"
 	"github.com/tuxdudehomelab/homelab/internal/cli/cmds"
+	"github.com/tuxdudehomelab/homelab/internal/cli/version"
 )
 
 const (
@@ -15,14 +16,25 @@ const (
 
 	cliConfigFlagStr  = "cli-config"
 	configsDirFlagStr = "configs-dir"
+
+	defaultPkgVersion   = "unset"
+	defaultPkgCommit    = "unset"
+	defaultPkgTimestamp = "unset"
 )
 
+func versionInfo(ctx context.Context) *version.VersionInfo {
+	ver, ok := version.VersionInfoFromContext(ctx)
+	if ok {
+		return ver
+	}
+	return version.NewVersionInfo(defaultPkgVersion, defaultPkgCommit, defaultPkgTimestamp)
+}
+
 func buildHomelabCmd(ctx context.Context, opt *clicommon.GlobalCmdOptions) *cobra.Command {
+	ver := versionInfo(ctx)
 	h := &cobra.Command{
-		Use:     homelabCmdStr,
-		Version: "[TODO]",
-		// TODO: Retrieve this info from the context.
-		// Version:       fmt.Sprintf("%s [Revision: %s @ %s]", pkgVersion, pkgCommit, pkgTimestamp),
+		Use:           homelabCmdStr,
+		Version:       fmt.Sprintf("%s [Revision: %s @ %s]", ver.PackageVersion, ver.PackageCommit, ver.PackageTimestamp),
 		SilenceUsage:  false,
 		SilenceErrors: false,
 		Short:         "Homelab is a CLI for managing configuration and deployment of docket containers.",

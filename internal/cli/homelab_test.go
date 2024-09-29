@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/tuxdude/zzzlog"
+	"github.com/tuxdudehomelab/homelab/internal/cli/version"
 	"github.com/tuxdudehomelab/homelab/internal/docker/fakedocker"
 	"github.com/tuxdudehomelab/homelab/internal/testhelpers"
 	"github.com/tuxdudehomelab/homelab/internal/testutils"
@@ -24,11 +25,10 @@ var executeHomelabCmdTests = []struct {
 			"--version",
 		},
 		ctxInfo: &testutils.TestContextInfo{
+			Version:    version.NewVersionInfo("my-pkg-version", "my-pkg-commit", "my-pkg-timestamp"),
 			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
 		},
-		want: `homelab version \[TODO\]`,
-		// TODO: Revert to this after fixing passing the version through context.
-		// want: `homelab version my-pkg-version \[Revision: my-pkg-commit @ my-pkg-timestamp\]`,
+		want: `homelab version my-pkg-version \[Revision: my-pkg-commit @ my-pkg-timestamp\]`,
 	},
 	{
 		name: "Homelab Command - Show Help",
@@ -467,8 +467,6 @@ Started container g1-c1`,
 }
 
 func TestExecHomelabCmd(t *testing.T) {
-	// TODO: Set these using context rather.
-	// initPkgVersionInfoForTest()
 	for _, test := range executeHomelabCmdTests {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {
@@ -931,15 +929,6 @@ func TestExecHomelabCmdEnvErrors(t *testing.T) {
 		})
 	}
 }
-
-// TODO: Set these using context rather.
-/*
-func initPkgVersionInfoForTest() {
-	pkgVersion = "my-pkg-version"
-	pkgCommit = "my-pkg-commit"
-	pkgTimestamp = "my-pkg-timestamp"
-}
-*/
 
 func execHomelabCmdTest(ctxInfo *testutils.TestContextInfo, logLevel *zzzlog.Level, args ...string) (fmt.Stringer, error) {
 	buf := new(bytes.Buffer)

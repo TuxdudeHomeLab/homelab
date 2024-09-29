@@ -11,7 +11,8 @@ import (
 	"github.com/tuxdude/zzzlog"
 	"github.com/tuxdude/zzzlogi"
 	"github.com/tuxdudehomelab/homelab/internal/cli"
-	he "github.com/tuxdudehomelab/homelab/internal/cli/errors"
+	clierrors "github.com/tuxdudehomelab/homelab/internal/cli/errors"
+	"github.com/tuxdudehomelab/homelab/internal/cli/version"
 	"github.com/tuxdudehomelab/homelab/internal/inspect"
 	"github.com/tuxdudehomelab/homelab/internal/log"
 )
@@ -27,10 +28,6 @@ var (
 	pkgVersion   = "unset"
 	pkgCommit    = "unset"
 	pkgTimestamp = "unset"
-	// TODO: Remove after this is passed to homelab cmd using context.
-	_ = pkgVersion
-	_ = pkgCommit
-	_ = pkgTimestamp
 )
 
 func buildLogger(ctx context.Context, dest io.Writer) zzzlogi.Logger {
@@ -63,7 +60,7 @@ func updateHomelabInspectLevel(ctx context.Context) context.Context {
 	return ctx
 }
 
-func run(ctx context.Context, outW io.Writer, errW io.Writer, args ...string) int {
+func runWithContext(ctx context.Context, outW io.Writer, errW io.Writer, args ...string) int {
 	ctx = updateHomelabInspectLevel(ctx)
 	ctx = log.WithLogger(ctx, buildLogger(ctx, outW))
 	err := cli.Exec(ctx, outW, errW, args...)
@@ -74,14 +71,19 @@ func run(ctx context.Context, outW io.Writer, errW io.Writer, args ...string) in
 	// Only log homelab runtime errors. Other errors are from cobra flag
 	// and command parsing. These errors are displayed already by cobra
 	// along with the usage.
-	hre := &he.HomelabRuntimeError{}
+	hre := &clierrors.HomelabRuntimeError{}
 	if errors.As(err, &hre) {
 		log.Log(ctx).Errorf("%s", hre)
 	}
 	return 1
 }
 
+func run() int {
+	ctx := context.Background()
+	ctx = version.WithVersionInfo(ctx, version.NewVersionInfo(pkgVersion, pkgCommit, pkgTimestamp))
+	return runWithContext(ctx, os.Stdout, os.Stderr, os.Args[1:]...)
+}
+
 func main() {
-	status := run(context.Background(), os.Stdout, os.Stderr, os.Args[1:]...)
-	os.Exit(status)
+	os.Exit(run())
 }

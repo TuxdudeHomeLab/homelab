@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/tuxdude/zzzlogi"
+	"github.com/tuxdudehomelab/homelab/internal/cli/version"
 	"github.com/tuxdudehomelab/homelab/internal/docker"
 	"github.com/tuxdudehomelab/homelab/internal/docker/fakedocker"
 	"github.com/tuxdudehomelab/homelab/internal/host"
@@ -15,6 +16,7 @@ import (
 type TestContextInfo struct {
 	InspectLevel    inspect.HomelabInspectLevel
 	Logger          zzzlogi.Logger
+	Version         *version.VersionInfo
 	DockerHost      docker.DockerAPIClient
 	UseRealHostInfo bool
 }
@@ -35,6 +37,9 @@ func NewTestContext(info *TestContextInfo) context.Context {
 		ctx = log.WithLogger(ctx, info.Logger)
 	} else {
 		ctx = log.WithLogger(ctx, NewTestLogger())
+	}
+	if info.Version != nil {
+		ctx = version.WithVersionInfo(ctx, info.Version)
 	}
 	if info.DockerHost != nil {
 		ctx = docker.WithDockerAPIClient(ctx, info.DockerHost)
