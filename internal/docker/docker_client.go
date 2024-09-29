@@ -8,7 +8,6 @@ import (
 	"reflect"
 	"strings"
 
-	dtypes "github.com/docker/docker/api/types"
 	dcontainer "github.com/docker/docker/api/types/container"
 	dfilters "github.com/docker/docker/api/types/filters"
 	dimage "github.com/docker/docker/api/types/image"
@@ -28,112 +27,6 @@ type DockerClient struct {
 	platform    string
 	ociPlatform ocispec.Platform
 	debug       bool
-}
-
-type DockerAPIClient interface {
-	Close() error
-
-	ContainerCreate(ctx context.Context, config *dcontainer.Config, hostConfig *dcontainer.HostConfig, networkingConfig *dnetwork.NetworkingConfig, platform *ocispec.Platform, containerName string) (dcontainer.CreateResponse, error)
-	ContainerInspect(ctx context.Context, containerName string) (dtypes.ContainerJSON, error)
-	ContainerKill(ctx context.Context, containerName, signal string) error
-	ContainerRemove(ctx context.Context, containerName string, options dcontainer.RemoveOptions) error
-	ContainerStart(ctx context.Context, containerName string, options dcontainer.StartOptions) error
-	ContainerStop(ctx context.Context, containerName string, options dcontainer.StopOptions) error
-
-	ImageList(ctx context.Context, options dimage.ListOptions) ([]dimage.Summary, error)
-	ImagePull(ctx context.Context, refStr string, options dimage.PullOptions) (io.ReadCloser, error)
-
-	NetworkConnect(ctx context.Context, networkName, containerName string, config *dnetwork.EndpointSettings) error
-	NetworkCreate(ctx context.Context, networkName string, options dnetwork.CreateOptions) (dnetwork.CreateResponse, error)
-	NetworkDisconnect(ctx context.Context, networkName, containerName string, force bool) error
-	NetworkList(ctx context.Context, options dnetwork.ListOptions) ([]dnetwork.Summary, error)
-	NetworkRemove(ctx context.Context, networkName string) error
-}
-
-const (
-	ContainerStateUnknown ContainerState = iota
-	ContainerStateNotFound
-	ContainerStateCreated
-	ContainerStateRunning
-	ContainerStatePaused
-	ContainerStateRestarting
-	ContainerStateRemoving
-	ContainerStateExited
-	ContainerStateDead
-)
-
-type ContainerState uint8
-
-func containerStateFromString(state string) ContainerState {
-	switch state {
-	case "created":
-		return ContainerStateCreated
-	case "running":
-		return ContainerStateRunning
-	case "paused":
-		return ContainerStatePaused
-	case "restarting":
-		return ContainerStateRestarting
-	case "removing":
-		return ContainerStateRemoving
-	case "exited":
-		return ContainerStateExited
-	case "dead":
-		return ContainerStateDead
-	default:
-		return ContainerStateUnknown
-	}
-}
-
-func RestartPolicyModeFromString(pol string) (dcontainer.RestartPolicyMode, error) {
-	switch pol {
-	case "", "no":
-		return dcontainer.RestartPolicyDisabled, nil
-	case "always":
-		return dcontainer.RestartPolicyAlways, nil
-	case "on-failure":
-		return dcontainer.RestartPolicyOnFailure, nil
-	case "unless-stopped":
-		return dcontainer.RestartPolicyUnlessStopped, nil
-	default:
-		return "", fmt.Errorf("invalid restart policy mode string: %s", pol)
-	}
-}
-
-func RestartPolicyModeValidValues() string {
-	return "[ 'no', 'always', 'on-failure', 'unless-stopped' ]"
-}
-
-func (c ContainerState) String() string {
-	switch c {
-	case ContainerStateUnknown:
-		return "Unknown"
-	case ContainerStateNotFound:
-		return "NotFound"
-	case ContainerStateCreated:
-		return "Created"
-	case ContainerStateRunning:
-		return "Running"
-	case ContainerStatePaused:
-		return "Paused"
-	case ContainerStateRestarting:
-		return "Restarting"
-	case ContainerStateRemoving:
-		return "Removing"
-	case ContainerStateExited:
-		return "Exited"
-	case ContainerStateDead:
-		return "Dead"
-	default:
-		panic("Invalid scenario in ContainerState stringer, possibly indicating a bug in the code")
-	}
-}
-
-func buildDockerAPIClient(ctx context.Context) (DockerAPIClient, error) {
-	if client, found := DockerAPIClientFromContext(ctx); found {
-		return client, nil
-	}
-	return dclient.NewClientWithOpts(dclient.FromEnv, dclient.WithAPIVersionNegotiation())
 }
 
 func NewDockerClient(ctx context.Context, platform, arch string) (*DockerClient, error) {
