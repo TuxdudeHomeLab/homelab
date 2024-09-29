@@ -49,7 +49,7 @@ Use "homelab \[command\] --help" for more information about a command\.`,
 		args: []string{
 			"show-config",
 			"--configs-dir",
-			fmt.Sprintf("%s/../../testdata/show-config-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/show-config-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
@@ -57,7 +57,7 @@ Use "homelab \[command\] --help" for more information about a command\.`,
 		want: `Homelab config:
 {
   "global": {
-    "baseDir": "../../testdata/dummy-base-dir"
+    "baseDir": "testdata/dummy-base-dir"
   },
   "ipam": {
     "networks": {
@@ -171,7 +171,7 @@ Use "homelab \[command\] --help" for more information about a command\.`,
 		args: []string{
 			"show-config",
 			"--cli-config",
-			fmt.Sprintf("%s/../../testdata/cli-configs/show-config-cmd/config.yaml", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/cli-configs/show-config-cmd/config.yaml", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
@@ -179,7 +179,7 @@ Use "homelab \[command\] --help" for more information about a command\.`,
 		want: `Homelab config:
 {
   "global": {
-    "baseDir": "../../testdata/dummy-base-dir"
+    "baseDir": "testdata/dummy-base-dir"
   },
   "ipam": {
     "networks": {
@@ -241,7 +241,7 @@ Use "homelab \[command\] --help" for more information about a command\.`,
 			"start",
 			"--all-groups",
 			"--configs-dir",
-			fmt.Sprintf("%s/../../testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -261,7 +261,7 @@ Container g2-c3 not allowed to run on host [^\s]+`,
 			"start",
 			"--all-groups",
 			"--configs-dir",
-			fmt.Sprintf("%s/../../testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -285,7 +285,7 @@ Started container g2-c3`,
 			"start",
 			"--all-groups",
 			"--configs-dir",
-			fmt.Sprintf("%s/../../testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -316,7 +316,7 @@ Started container g2-c3`,
 			"start",
 			"--all-groups",
 			"--configs-dir",
-			fmt.Sprintf("%s/../../testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -345,7 +345,7 @@ Started container g2-c3`,
 			"start",
 			"--all-groups",
 			"--configs-dir",
-			fmt.Sprintf("%s/../../testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -372,7 +372,7 @@ Started container g2-c3`,
 			"start",
 			"--all-groups",
 			"--configs-dir",
-			fmt.Sprintf("%s/../../testdata/start-cmd-with-multiple-same-order-containers", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/start-cmd-with-multiple-same-order-containers", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -399,7 +399,7 @@ Started container g2-c4`,
 			"start",
 			"--all-groups",
 			"--configs-dir",
-			fmt.Sprintf("%s/../../testdata/start-cmd-with-no-network-endpoints-containers", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/start-cmd-with-no-network-endpoints-containers", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -428,7 +428,7 @@ Started container g2-c4`,
 			"--group",
 			"g1",
 			"--configs-dir",
-			fmt.Sprintf("%s/../../testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -451,7 +451,7 @@ Container g1-c2 not allowed to run on host FakeHost`,
 			"--container",
 			"c1",
 			"--configs-dir",
-			fmt.Sprintf("%s/../../testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -497,7 +497,7 @@ var executeHomelabCmdLogLevelTests = []struct {
 			"start",
 			"--all-groups",
 			"--configs-dir",
-			fmt.Sprintf("%s/../../testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -515,7 +515,7 @@ var executeHomelabCmdLogLevelTests = []struct {
 			"start",
 			"--all-groups",
 			"--configs-dir",
-			fmt.Sprintf("%s/../../testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -533,7 +533,7 @@ var executeHomelabCmdLogLevelTests = []struct {
 			"start",
 			"--all-groups",
 			"--configs-dir",
-			fmt.Sprintf("%s/../../testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -551,7 +551,7 @@ var executeHomelabCmdLogLevelTests = []struct {
 			"start",
 			"--all-groups",
 			"--configs-dir",
-			fmt.Sprintf("%s/../../testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -569,7 +569,7 @@ var executeHomelabCmdLogLevelTests = []struct {
 			"start",
 			"--all-groups",
 			"--configs-dir",
-			fmt.Sprintf("%s/../../testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -587,7 +587,7 @@ var executeHomelabCmdLogLevelTests = []struct {
 			"start",
 			"--all-groups",
 			"--configs-dir",
-			fmt.Sprintf("%s/../../testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -635,7 +635,7 @@ var executeHomelabCmdErrorTests = []struct {
 		args: []string{
 			"show-config",
 			"--cli-config",
-			fmt.Sprintf("%s/../../testdata/foobar.yaml", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/foobar.yaml", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
@@ -647,7 +647,7 @@ var executeHomelabCmdErrorTests = []struct {
 		args: []string{
 			"show-config",
 			"--cli-config",
-			fmt.Sprintf("%s/../../testdata/cli-configs/invalid-empty-config/config.yaml", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/cli-configs/invalid-empty-config/config.yaml", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
@@ -659,7 +659,7 @@ var executeHomelabCmdErrorTests = []struct {
 		args: []string{
 			"show-config",
 			"--cli-config",
-			fmt.Sprintf("%s/../../testdata/cli-configs/invalid-garbage-config/config.yaml", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/cli-configs/invalid-garbage-config/config.yaml", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
@@ -672,7 +672,7 @@ var executeHomelabCmdErrorTests = []struct {
 		args: []string{
 			"show-config",
 			"--cli-config",
-			fmt.Sprintf("%s/../../testdata/cli-configs/invalid-config-with-empty-configs-path/config.yaml", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/cli-configs/invalid-config-with-empty-configs-path/config.yaml", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
@@ -684,7 +684,7 @@ var executeHomelabCmdErrorTests = []struct {
 		args: []string{
 			"show-config",
 			"--cli-config",
-			fmt.Sprintf("%s/../../testdata/cli-configs/invalid-config-with-invalid-configs-path/config.yaml", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/cli-configs/invalid-config-with-invalid-configs-path/config.yaml", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
@@ -696,7 +696,7 @@ var executeHomelabCmdErrorTests = []struct {
 		args: []string{
 			"show-config",
 			"--configs-dir",
-			fmt.Sprintf("%s/../../testdata/foobar", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/foobar", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
@@ -708,7 +708,7 @@ var executeHomelabCmdErrorTests = []struct {
 		args: []string{
 			"start",
 			"--configs-dir",
-			fmt.Sprintf("%s/../../testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
@@ -722,7 +722,7 @@ var executeHomelabCmdErrorTests = []struct {
 			"--container",
 			"c1",
 			"--configs-dir",
-			fmt.Sprintf("%s/../../testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
@@ -737,7 +737,7 @@ var executeHomelabCmdErrorTests = []struct {
 			"--group",
 			"g1",
 			"--configs-dir",
-			fmt.Sprintf("%s/../../testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
@@ -752,7 +752,7 @@ var executeHomelabCmdErrorTests = []struct {
 			"--container",
 			"c1",
 			"--configs-dir",
-			fmt.Sprintf("%s/../../testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
@@ -765,7 +765,7 @@ var executeHomelabCmdErrorTests = []struct {
 			"start",
 			"--all-groups",
 			"--cli-config",
-			fmt.Sprintf("%s/../../testdata/foobar.yaml", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/foobar.yaml", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
@@ -778,7 +778,7 @@ var executeHomelabCmdErrorTests = []struct {
 			"start",
 			"--all-groups",
 			"--configs-dir",
-			fmt.Sprintf("%s/../../testdata/foobar", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/foobar", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
@@ -792,7 +792,7 @@ var executeHomelabCmdErrorTests = []struct {
 			"--group",
 			"g3",
 			"--configs-dir",
-			fmt.Sprintf("%s/../../testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
@@ -808,7 +808,7 @@ var executeHomelabCmdErrorTests = []struct {
 			"--container",
 			"c3",
 			"--configs-dir",
-			fmt.Sprintf("%s/../../testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
@@ -824,7 +824,7 @@ var executeHomelabCmdErrorTests = []struct {
 			"--container",
 			"c3",
 			"--configs-dir",
-			fmt.Sprintf("%s/../../testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
@@ -837,7 +837,7 @@ var executeHomelabCmdErrorTests = []struct {
 			"start",
 			"--all-groups",
 			"--configs-dir",
-			fmt.Sprintf("%s/../../testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
@@ -902,7 +902,7 @@ var executeHomelabCmdEnvErrorTests = []struct {
 			"start",
 			"--all-groups",
 			"--configs-dir",
-			fmt.Sprintf("%s/../../testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{},
 		envs: testhelpers.TestEnvMap{

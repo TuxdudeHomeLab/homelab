@@ -7,7 +7,7 @@ import (
 )
 
 func HomelabBaseDir() string {
-	return "../../testdata/dummy-base-dir"
+	return "testdata/dummy-base-dir"
 }
 
 func Pwd() string {

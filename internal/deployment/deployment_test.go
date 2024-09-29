@@ -23,7 +23,7 @@ var buildDeploymentUsingReaderTests = []struct {
 		name: "Valid extensive config",
 		config: `
 global:
-  baseDir: ../../testdata/dummy-base-dir
+  baseDir: testdata/dummy-base-dir
   env:
     - var: MY_CONFIG_VAR_1
       value: MY_CONFIG_VAR_1_VALUE
@@ -778,7 +778,7 @@ containers:
 		name: "Valid Groups Only config",
 		config: `
 global:
-  baseDir: ../../testdata/dummy-base-dir
+  baseDir: testdata/dummy-base-dir
 groups:
   - name: group1
     order: 1
@@ -788,7 +788,7 @@ groups:
     order: 2`,
 		want: &config.HomelabConfig{
 			Global: config.GlobalConfig{
-				BaseDir: "../../testdata/dummy-base-dir",
+				BaseDir: "testdata/dummy-base-dir",
 			},
 			Groups: []config.ContainerGroupConfig{
 				{
@@ -1154,7 +1154,7 @@ func TestBuildDeploymentFromConfigsPath(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			p := fmt.Sprintf("%s/../../testdata/%s", testhelpers.Pwd(), tc.configsPath)
+			p := fmt.Sprintf("%s/testdata/%s", testhelpers.Pwd(), tc.configsPath)
 			got, gotErr := FromConfigsPath(testutils.NewVanillaTestContext(), p)
 			if gotErr != nil {
 				testhelpers.LogErrorNotNil(t, "FromConfigsPath()", tc.name, gotErr)
@@ -1222,7 +1222,7 @@ func TestBuildDeploymentFromConfigsPathErrors(t *testing.T) {
 
 			p := tc.configsPath
 			if !strings.HasPrefix(tc.configsPath, "/") {
-				p = fmt.Sprintf("%s/../../testdata/%s", testhelpers.Pwd(), tc.configsPath)
+				p = fmt.Sprintf("%s/testdata/%s", testhelpers.Pwd(), tc.configsPath)
 			}
 
 			_, gotErr := FromConfigsPath(testutils.NewVanillaTestContext(), p)
@@ -1430,10 +1430,10 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		name: "Base Dir Path Points To A File",
 		config: config.HomelabConfig{
 			Global: config.GlobalConfig{
-				BaseDir: "../../testdata/dummy-base-dir/.empty",
+				BaseDir: "testdata/dummy-base-dir/.empty",
 			},
 		},
-		want: `homelab base directory path ../../testdata/dummy-base-dir/\.empty must be a directory`,
+		want: `homelab base directory path testdata/dummy-base-dir/\.empty must be a directory`,
 	},
 	{
 		name: "Empty Global Config Env Var",

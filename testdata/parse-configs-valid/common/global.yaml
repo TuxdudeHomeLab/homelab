@@ -1,5 +1,5 @@
 global:
-  baseDir: ../../testdata/dummy-base-dir
+  baseDir: testdata/dummy-base-dir
   env:
     - var: MY_GLOBAL_FOO
       value: MY_GLOBAL_BAR
