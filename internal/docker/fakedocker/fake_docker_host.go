@@ -115,7 +115,7 @@ func FakeDockerHostFromContext(ctx context.Context) *FakeDockerHost {
 }
 
 func NewEmptyFakeDockerHost() *FakeDockerHost {
-	return NewFakeDockerHost(&FakeDockerHostInitInfo{})
+	return NewFakeDockerHost(nil)
 }
 
 func NewFakeDockerHost(initInfo *FakeDockerHostInitInfo) *FakeDockerHost {
