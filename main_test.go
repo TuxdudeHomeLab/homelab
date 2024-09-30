@@ -13,7 +13,7 @@ import (
 	"github.com/tuxdudehomelab/homelab/internal/utils"
 )
 
-var mainRunTests = []struct {
+var mainRunWithContextTests = []struct {
 	name       string
 	args       []string
 	ctxInfo    *testutils.TestContextInfo
@@ -99,8 +99,8 @@ Use "homelab \[command\] --help" for more information about a command\.`,
 	},
 }
 
-func TestMainRun(t *testing.T) {
-	for _, tc := range mainRunTests {
+func TestMainRunWithContext(t *testing.T) {
+	for _, tc := range mainRunWithContextTests {
 		t.Run(tc.name, func(t *testing.T) {
 			buf := new(bytes.Buffer)
 			ctx := testutils.NewTestContext(tc.ctxInfo)
@@ -176,4 +176,16 @@ func TestMainRunEnv(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestMainRun(t *testing.T) {
+	tc := "Main - run() - Missing Subcommand"
+	want := 1
+	t.Run(tc, func(t *testing.T) {
+		got := run()
+		if got != want {
+			testhelpers.LogCustom(t, "run()", tc, fmt.Sprintf("gotStatus (%d) != wantStatus (%d)", got, want))
+			return
+		}
+	})
 }

@@ -41,6 +41,12 @@ func LogErrorNilWithOutput(t *testing.T, methodUnderTest string, testCase string
 		methodUnderTest, testCase, out.String(), want)
 }
 
+func LogCustom(t *testing.T, methodUnderTest string, testCase string, custom string) {
+	t.Errorf(
+		"%s\nTest Case: %q\nReason: %s",
+		methodUnderTest, testCase, custom)
+}
+
 func LogCustomWithOutput(t *testing.T, methodUnderTest string, testCase string, out fmt.Stringer, custom string) {
 	t.Errorf(
 		"%s\nTest Case: %q\n\nOut:\n%s\nReason: %s",
