@@ -7,6 +7,7 @@ import (
 	"os"
 	"reflect"
 	"strings"
+	"time"
 
 	dcontainer "github.com/docker/docker/api/types/container"
 	dfilters "github.com/docker/docker/api/types/filters"
@@ -22,11 +23,16 @@ import (
 	"github.com/moby/term"
 )
 
+const (
+	defaultContainerStopAndRemoveKillDelay = 1 * time.Second
+)
+
 type DockerClient struct {
-	client      DockerAPIClient
-	platform    string
-	ociPlatform ocispec.Platform
-	debug       bool
+	client                          DockerAPIClient
+	platform                        string
+	ociPlatform                     ocispec.Platform
+	containerStopAndRemoveKillDelay time.Duration
+	debug                           bool
 }
 
 func NewDockerClient(ctx context.Context, platform, arch string) (*DockerClient, error) {
@@ -35,11 +41,16 @@ func NewDockerClient(ctx context.Context, platform, arch string) (*DockerClient,
 		return nil, fmt.Errorf("failed to create a new docker API client, reason: %w", err)
 	}
 	lvl := inspect.HomelabInspectLevelFromContext(ctx)
+	delay, ok := getContainerStopAndRemoveKillDelay(ctx)
+	if !ok {
+		delay = defaultContainerStopAndRemoveKillDelay
+	}
 	return &DockerClient{
-		client:      client,
-		platform:    platform,
-		ociPlatform: ocispec.Platform{Architecture: arch},
-		debug:       lvl == inspect.HomelabInspectLevelDebug || lvl == inspect.HomelabInspectLevelTrace,
+		client:                          client,
+		platform:                        platform,
+		ociPlatform:                     ocispec.Platform{Architecture: arch},
+		containerStopAndRemoveKillDelay: delay,
+		debug:                           lvl == inspect.HomelabInspectLevelDebug || lvl == inspect.HomelabInspectLevelTrace,
 	}, nil
 }
 
@@ -263,6 +274,10 @@ func (d *DockerClient) DisconnectContainerFromNetwork(ctx context.Context, conta
 
 	log(ctx).Debugf("Container %s disconnected from network %s successfully", containerName, networkName)
 	return nil
+}
+
+func (d *DockerClient) ContainerStopAndRemoveKillDelay() time.Duration {
+	return d.containerStopAndRemoveKillDelay
 }
 
 func (d *DockerClient) Close() {

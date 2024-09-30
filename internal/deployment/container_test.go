@@ -371,8 +371,6 @@ var containerStartTests = []struct {
 }
 
 func TestContainerStart(t *testing.T) {
-	// Reduce this delay to keep the tests executing quickly.
-	stopAndRemoveKillDelay = 100 * time.Millisecond
 	for _, test := range containerStartTests {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {
@@ -383,6 +381,10 @@ func TestContainerStart(t *testing.T) {
 			// for extra code coverage.
 			if tc.ctxInfo.InspectLevel == inspect.HomelabInspectLevelNone {
 				tc.ctxInfo.InspectLevel = inspect.HomelabInspectLevelDebug
+			}
+			if tc.ctxInfo.ContainerStopAndRemoveKillDelay == 0 {
+				// Reduce this delay to keep the tests executing quickly.
+				tc.ctxInfo.ContainerStopAndRemoveKillDelay = 100 * time.Millisecond
 			}
 			ctx := testutils.NewTestContext(tc.ctxInfo)
 

@@ -23,11 +23,6 @@ const (
 	stopAndRemoveAttempts = 6
 )
 
-// Make this a var just to allow us to change this value in tests.
-var (
-	stopAndRemoveKillDelay = 1 * time.Second
-)
-
 type Container struct {
 	config        *config.ContainerConfig
 	globalConfig  *config.GlobalConfig
@@ -118,7 +113,7 @@ func (c *Container) purge(ctx context.Context, dc *docker.DockerClient) error {
 				// Kill the container next as a precaution and ignore any errors.
 				_ = dc.KillContainer(ctx, c.Name())
 				// Add a delay before checking the container state again.
-				time.Sleep(stopAndRemoveKillDelay)
+				time.Sleep(dc.ContainerStopAndRemoveKillDelay())
 			}
 		case docker.ContainerStateCreated, docker.ContainerStateExited, docker.ContainerStateDead:
 			// Directly remove the container.
@@ -131,7 +126,7 @@ func (c *Container) purge(ctx context.Context, dc *docker.DockerClient) error {
 			// unknown handling in next steps.
 			log(ctx).Warnf("container %s is in REMOVING state already, can lead to issues while we create the container next", c.Name())
 			// Add a delay before checking the container state again.
-			time.Sleep(stopAndRemoveKillDelay)
+			time.Sleep(dc.ContainerStopAndRemoveKillDelay())
 		default:
 			log(ctx).Fatalf("container %s is in an unsupported state %v, possibly indicating a bug in the code", c.Name(), st)
 		}

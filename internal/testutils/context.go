@@ -2,6 +2,7 @@ package testutils
 
 import (
 	"context"
+	"time"
 
 	"github.com/tuxdude/zzzlogi"
 	"github.com/tuxdudehomelab/homelab/internal/cli/version"
@@ -14,11 +15,12 @@ import (
 )
 
 type TestContextInfo struct {
-	InspectLevel    inspect.HomelabInspectLevel
-	Logger          zzzlogi.Logger
-	Version         *version.VersionInfo
-	DockerHost      docker.DockerAPIClient
-	UseRealHostInfo bool
+	InspectLevel                    inspect.HomelabInspectLevel
+	Logger                          zzzlogi.Logger
+	Version                         *version.VersionInfo
+	DockerHost                      docker.DockerAPIClient
+	ContainerStopAndRemoveKillDelay time.Duration
+	UseRealHostInfo                 bool
 }
 
 func NewVanillaTestContext() context.Context {
@@ -43,6 +45,9 @@ func NewTestContext(info *TestContextInfo) context.Context {
 	}
 	if info.DockerHost != nil {
 		ctx = docker.WithDockerAPIClient(ctx, info.DockerHost)
+	}
+	if info.ContainerStopAndRemoveKillDelay != 0 {
+		ctx = docker.WithContainerStopAndRemoveKillDelay(ctx, info.ContainerStopAndRemoveKillDelay)
 	}
 	if !info.UseRealHostInfo {
 		ctx = host.WithHostInfo(ctx, fakehost.NewFakeHostInfo())
