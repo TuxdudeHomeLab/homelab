@@ -848,8 +848,13 @@ func TestContainerStartErrors(t *testing.T) {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+
 			buf := new(bytes.Buffer)
 			tc.ctxInfo.Logger = testutils.NewCapturingTestLogger(zzzlog.LvlDebug, buf)
+			if tc.ctxInfo.ContainerStopAndRemoveKillDelay == 0 {
+				// Reduce this delay to keep the tests executing quickly.
+				tc.ctxInfo.ContainerStopAndRemoveKillDelay = 100 * time.Millisecond
+			}
 			ctx := testutils.NewTestContext(tc.ctxInfo)
 
 			if tc.wantPanic {
