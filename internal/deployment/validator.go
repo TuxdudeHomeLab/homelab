@@ -438,7 +438,8 @@ func validateIPAMConfig(ctx context.Context, conf *config.IPAMConfig) (NetworkMa
 	return networks, containerEndpoints, nil
 }
 
-func validateHostsConfig(hosts []config.HostConfig, currentHost *host.HostInfo) (containerSet, error) {
+func validateHostsConfig(ctx context.Context, hosts []config.HostConfig) (containerSet, error) {
+	currentHost := host.MustHostInfo(ctx)
 	hostNames := utils.StringSet{}
 	allowedContainers := containerSet{}
 	for _, h := range hosts {

@@ -9,8 +9,6 @@ import (
 
 	"github.com/tuxdudehomelab/homelab/internal/config"
 	"github.com/tuxdudehomelab/homelab/internal/config/env"
-	"github.com/tuxdudehomelab/homelab/internal/host"
-	"github.com/tuxdudehomelab/homelab/internal/user"
 )
 
 type Deployment struct {
@@ -19,7 +17,6 @@ type Deployment struct {
 	GroupsOrder            []string
 	Networks               NetworkMap
 	NetworksOrder          []string
-	Host                   *host.HostInfo
 	allowedContainers      containerSet
 	containerDockerConfigs containerDockerConfigMap
 }
@@ -43,19 +40,8 @@ func FromReader(ctx context.Context, reader io.Reader) (*Deployment, error) {
 }
 
 func FromConfig(ctx context.Context, conf *config.HomelabConfig) (*Deployment, error) {
-	_, found := user.UserInfoFromContext(ctx)
-	if !found {
-		ctx = user.WithUserInfo(ctx, user.NewUserInfo(ctx))
-	}
-
-	h, found := host.HostInfoFromContext(ctx)
-	if !found {
-		h = host.NewHostInfo(ctx)
-		ctx = host.WithHostInfo(ctx, h)
-	}
 	d := Deployment{
 		Config:                 conf,
-		Host:                   h,
 		containerDockerConfigs: containerDockerConfigMap{},
 	}
 
@@ -65,7 +51,7 @@ func FromConfig(ctx context.Context, conf *config.HomelabConfig) (*Deployment, e
 		return nil, err
 	}
 
-	d.allowedContainers, err = validateHostsConfig(conf.Hosts, h)
+	d.allowedContainers, err = validateHostsConfig(ctx, conf.Hosts)
 	if err != nil {
 		return nil, err
 	}

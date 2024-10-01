@@ -13,11 +13,10 @@ var (
 type ctxKeyLogger struct{}
 
 func Log(ctx context.Context) zzzlogi.Logger {
-	logger, ok := ctx.Value(loggerKey).(zzzlogi.Logger)
-	if !ok {
-		panic("Unable to retrieve logger from context")
+	if logger, found := ctx.Value(loggerKey).(zzzlogi.Logger); found {
+		return logger
 	}
-	return logger
+	panic("Unable to retrieve logger from context")
 }
 
 func WithLogger(ctx context.Context, logger zzzlogi.Logger) context.Context {

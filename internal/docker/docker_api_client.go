@@ -32,9 +32,10 @@ type DockerAPIClient interface {
 	NetworkRemove(ctx context.Context, networkName string) error
 }
 
-func buildDockerAPIClient(ctx context.Context) (DockerAPIClient, error) {
-	if client, found := DockerAPIClientFromContext(ctx); found {
-		return client, nil
+func MustRealDockerAPIClient(ctx context.Context) DockerAPIClient {
+	d, err := dclient.NewClientWithOpts(dclient.FromEnv, dclient.WithAPIVersionNegotiation())
+	if err != nil {
+		log(ctx).Fatalf("Failed to create a new docker API client, reason: %v", err)
 	}
-	return dclient.NewClientWithOpts(dclient.FromEnv, dclient.WithAPIVersionNegotiation())
+	return d
 }

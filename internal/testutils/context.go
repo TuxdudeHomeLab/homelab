@@ -12,6 +12,8 @@ import (
 	"github.com/tuxdudehomelab/homelab/internal/host/fakehost"
 	"github.com/tuxdudehomelab/homelab/internal/inspect"
 	"github.com/tuxdudehomelab/homelab/internal/log"
+	"github.com/tuxdudehomelab/homelab/internal/user"
+	"github.com/tuxdudehomelab/homelab/internal/user/fakeuser"
 )
 
 type TestContextInfo struct {
@@ -20,6 +22,7 @@ type TestContextInfo struct {
 	Version                         *version.VersionInfo
 	DockerHost                      docker.DockerAPIClient
 	ContainerStopAndRemoveKillDelay time.Duration
+	UseRealUserInfo                 bool
 	UseRealHostInfo                 bool
 }
 
@@ -43,14 +46,17 @@ func NewTestContext(info *TestContextInfo) context.Context {
 	if info.Version != nil {
 		ctx = version.WithVersionInfo(ctx, info.Version)
 	}
+	if !info.UseRealUserInfo {
+		ctx = user.WithUserInfo(ctx, fakeuser.NewFakeUserInfo())
+	}
+	if !info.UseRealHostInfo {
+		ctx = host.WithHostInfo(ctx, fakehost.NewFakeHostInfo())
+	}
 	if info.DockerHost != nil {
 		ctx = docker.WithDockerAPIClient(ctx, info.DockerHost)
 	}
 	if info.ContainerStopAndRemoveKillDelay != 0 {
 		ctx = docker.WithContainerStopAndRemoveKillDelay(ctx, info.ContainerStopAndRemoveKillDelay)
-	}
-	if !info.UseRealHostInfo {
-		ctx = host.WithHostInfo(ctx, fakehost.NewFakeHostInfo())
 	}
 	return ctx
 }

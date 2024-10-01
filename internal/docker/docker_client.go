@@ -15,6 +15,7 @@ import (
 	dnetwork "github.com/docker/docker/api/types/network"
 	dclient "github.com/docker/docker/client"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/tuxdudehomelab/homelab/internal/host"
 	"github.com/tuxdudehomelab/homelab/internal/inspect"
 
 	"golang.org/x/sys/unix"
@@ -35,23 +36,15 @@ type DockerClient struct {
 	debug                           bool
 }
 
-func NewDockerClient(ctx context.Context, platform, arch string) (*DockerClient, error) {
-	client, err := buildDockerAPIClient(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create a new docker API client, reason: %w", err)
-	}
-	lvl := inspect.HomelabInspectLevelFromContext(ctx)
-	delay, ok := getContainerStopAndRemoveKillDelay(ctx)
-	if !ok {
-		delay = defaultContainerStopAndRemoveKillDelay
-	}
+func NewDockerClient(ctx context.Context) *DockerClient {
+	h := host.MustHostInfo(ctx)
 	return &DockerClient{
-		client:                          client,
-		platform:                        platform,
-		ociPlatform:                     ocispec.Platform{Architecture: arch},
-		containerStopAndRemoveKillDelay: delay,
-		debug:                           lvl == inspect.HomelabInspectLevelDebug || lvl == inspect.HomelabInspectLevelTrace,
-	}, nil
+		client:                          MustDockerAPIClient(ctx),
+		platform:                        h.DockerPlatform,
+		ociPlatform:                     ocispec.Platform{Architecture: h.Arch},
+		containerStopAndRemoveKillDelay: evalContainerStopAndRemoveKillDelay(ctx),
+		debug:                           dockerDebugFromInspect(ctx),
+	}
 }
 
 func (d *DockerClient) PullImage(ctx context.Context, imageName string) error {
@@ -282,4 +275,16 @@ func (d *DockerClient) ContainerStopAndRemoveKillDelay() time.Duration {
 
 func (d *DockerClient) Close() {
 	d.client.Close()
+}
+
+func dockerDebugFromInspect(ctx context.Context) bool {
+	lvl := inspect.HomelabInspectLevelFromContext(ctx)
+	return lvl == inspect.HomelabInspectLevelDebug || lvl == inspect.HomelabInspectLevelTrace
+}
+
+func evalContainerStopAndRemoveKillDelay(ctx context.Context) time.Duration {
+	if delay, ok := getContainerStopAndRemoveKillDelay(ctx); ok {
+		return delay
+	}
+	return defaultContainerStopAndRemoveKillDelay
 }

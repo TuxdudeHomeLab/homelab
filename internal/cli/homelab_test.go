@@ -896,20 +896,6 @@ var executeHomelabCmdEnvErrorTests = []struct {
 		},
 		want: `show-config failed while determining the configs path, reason: failed to open homelab CLI config file, reason: open /foo/bar/\.homelab/config\.yaml: no such file or directory`,
 	},
-	{
-		name: "Homelab Command - Start - Docker Client Creation Failed",
-		args: []string{
-			"start",
-			"--all-groups",
-			"--configs-dir",
-			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
-		},
-		ctxInfo: &testutils.TestContextInfo{},
-		envs: testhelpers.TestEnvMap{
-			"DOCKER_HOST": "/var/run/foobar-docker.sock",
-		},
-		want: "failed to create a new docker API client, reason: unable to parse docker host `/var/run/foobar-docker\\.sock`",
-	},
 }
 
 func TestExecHomelabCmdEnvErrors(t *testing.T) {
@@ -930,8 +916,47 @@ func TestExecHomelabCmdEnvErrors(t *testing.T) {
 	}
 }
 
+var executeHomelabCmdEnvPanicTests = []struct {
+	name    string
+	args    []string
+	ctxInfo *testutils.TestContextInfo
+	envs    testhelpers.TestEnvMap
+	want    string
+}{
+	{
+		name: "Homelab Command - Start - Docker Client Creation Failed",
+		args: []string{
+			"start",
+			"--all-groups",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
+		},
+		ctxInfo: &testutils.TestContextInfo{},
+		envs: testhelpers.TestEnvMap{
+			"DOCKER_HOST": "/var/run/foobar-docker.sock",
+		},
+		want: "Failed to create a new docker API client, reason: unable to parse docker host `/var/run/foobar-docker\\.sock`",
+	},
+}
+
+func TestExecHomelabCmdEnvPanics(t *testing.T) {
+	for _, tc := range executeHomelabCmdEnvPanicTests {
+		t.Run(tc.name, func(t *testing.T) {
+			testhelpers.SetTestEnv(t, tc.envs)
+
+			buf := new(bytes.Buffer)
+			defer testhelpers.ExpectPanicWithOutput(t, "Exec()", tc.name, buf, tc.want)
+			_, _ = execHomelabCmdTestWithBuf(tc.ctxInfo, nil, buf, tc.args...)
+		})
+	}
+}
+
 func execHomelabCmdTest(ctxInfo *testutils.TestContextInfo, logLevel *zzzlog.Level, args ...string) (fmt.Stringer, error) {
 	buf := new(bytes.Buffer)
+	return execHomelabCmdTestWithBuf(ctxInfo, logLevel, buf, args...)
+}
+
+func execHomelabCmdTestWithBuf(ctxInfo *testutils.TestContextInfo, logLevel *zzzlog.Level, buf *bytes.Buffer, args ...string) (fmt.Stringer, error) {
 	lvl := zzzlog.LvlInfo
 	if logLevel != nil {
 		lvl = *logLevel

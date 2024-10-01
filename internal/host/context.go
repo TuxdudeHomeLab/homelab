@@ -13,6 +13,14 @@ func HostInfoFromContext(ctx context.Context) (*HostInfo, bool) {
 	return host, ok
 }
 
+func MustHostInfo(ctx context.Context) *HostInfo {
+	if h, found := HostInfoFromContext(ctx); found {
+		return h
+	}
+	log(ctx).Fatalf("host info not found in context")
+	return nil
+}
+
 func WithHostInfo(ctx context.Context, host *HostInfo) context.Context {
 	return context.WithValue(ctx, hostInfoKey, host)
 }

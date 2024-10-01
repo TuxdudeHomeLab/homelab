@@ -9,6 +9,7 @@ import (
 	"github.com/tuxdudehomelab/homelab/internal/cli/clicommon"
 	"github.com/tuxdudehomelab/homelab/internal/cli/errors"
 	"github.com/tuxdudehomelab/homelab/internal/docker"
+	"github.com/tuxdudehomelab/homelab/internal/host"
 )
 
 const (
@@ -49,7 +50,7 @@ func StartCmd(ctx context.Context, globalOptions *clicommon.GlobalCmdOptions) *c
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
 			cmd.SilenceErrors = true
-			err := execStartCmd(ctx, cmd, args, &options, globalOptions)
+			err := execStartCmd(homelabContext(ctx), cmd, args, &options, globalOptions)
 			if err != nil {
 				return errors.NewHomelabRuntimeError(err)
 			}
@@ -71,10 +72,7 @@ func execStartCmd(ctx context.Context, cmd *cobra.Command, args []string, option
 		return err
 	}
 
-	dockerClient, err := docker.NewDockerClient(ctx, dep.Host.DockerPlatform, dep.Host.Arch)
-	if err != nil {
-		return err
-	}
+	dockerClient := docker.NewDockerClient(ctx)
 	defer dockerClient.Close()
 
 	res, err := dep.QueryContainers(ctx, options.allGroups, options.group, options.container)
@@ -88,6 +86,7 @@ func execStartCmd(ctx context.Context, cmd *cobra.Command, args []string, option
 	}
 	log(ctx).DebugEmpty()
 
+	h := host.MustHostInfo(ctx)
 	var errList []error
 	for _, c := range res {
 		// We ignore the errors to keep moving forward even if one or more
@@ -97,7 +96,7 @@ func execStartCmd(ctx context.Context, cmd *cobra.Command, args []string, option
 			errList = append(errList, err)
 		}
 		if !started {
-			log(ctx).Warnf("Container %s not allowed to run on host %s", c.Name(), dep.Host.HumanFriendlyHostName)
+			log(ctx).Warnf("Container %s not allowed to run on host %s", c.Name(), h.HumanFriendlyHostName)
 		}
 	}
 

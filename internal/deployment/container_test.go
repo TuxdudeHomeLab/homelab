@@ -394,10 +394,7 @@ func TestContainerStart(t *testing.T) {
 				return
 			}
 
-			dockerClient, gotErr := docker.NewDockerClient(ctx, dep.Host.DockerPlatform, dep.Host.Arch)
-			if gotErr != nil {
-				testhelpers.LogErrorNotNil(t, "NewDockerClient()", tc.name, gotErr)
-			}
+			dockerClient := docker.NewDockerClient(ctx)
 			defer dockerClient.Close()
 
 			ct, gotErr := dep.queryContainer(tc.cRef)
@@ -867,11 +864,7 @@ func TestContainerStartErrors(t *testing.T) {
 				return
 			}
 
-			dockerClient, gotErr := docker.NewDockerClient(ctx, dep.Host.DockerPlatform, dep.Host.Arch)
-			if gotErr != nil {
-				testhelpers.LogErrorNotNil(t, "NewDockerClient()", tc.name, gotErr)
-				return
-			}
+			dockerClient := docker.NewDockerClient(ctx)
 			defer dockerClient.Close()
 
 			ct, gotErr := dep.queryContainer(tc.cRef)
