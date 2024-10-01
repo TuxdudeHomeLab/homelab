@@ -9,21 +9,21 @@ import (
 )
 
 type ContainerGroup struct {
-	config          *config.ContainerGroupConfig
+	config          *config.ContainerGroup
 	containers      containerMap
 	containersOrder []config.ContainerReference
 }
 
 type ContainerGroupMap map[string]*ContainerGroup
 
-func NewContainerGroup(groupConfig *config.ContainerGroupConfig) *ContainerGroup {
+func NewContainerGroup(groupConfig *config.ContainerGroup) *ContainerGroup {
 	return &ContainerGroup{
 		config:     groupConfig,
 		containers: containerMap{},
 	}
 }
 
-func (c *ContainerGroup) addContainer(config *config.ContainerConfig, globalConfig *config.GlobalConfig, endpoints networkEndpointList, isAllowedOnCurrentHost bool) {
+func (c *ContainerGroup) addContainer(config *config.Container, globalConfig *config.Global, endpoints networkEndpointList, isAllowedOnCurrentHost bool) {
 	ct := newContainer(c, config, globalConfig, endpoints, isAllowedOnCurrentHost)
 	c.containers[config.Info] = ct
 }

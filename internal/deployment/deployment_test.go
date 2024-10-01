@@ -16,7 +16,7 @@ import (
 var buildDeploymentUsingReaderTests = []struct {
 	name              string
 	config            string
-	want              *config.HomelabConfig
+	want              *config.Homelab
 	wantDockerConfigs containerDockerConfigMap
 }{
 	{
@@ -263,8 +263,8 @@ containers:
         - foo
         - bar
         - baz`,
-		want: &config.HomelabConfig{
-			Global: config.GlobalConfig{
+		want: &config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 				Env: []config.ConfigEnv{
 					{
@@ -280,7 +280,7 @@ containers:
 						ValueCommand: "/foo/bar/some-env-var-cmd",
 					},
 				},
-				MountDefs: []config.MountConfig{
+				MountDefs: []config.Mount{
 					{
 						Name:     "mount-def-1",
 						Type:     "bind",
@@ -301,10 +301,10 @@ containers:
 						Dst:  "/path/to/my/self/signed/cert/on/container",
 					},
 				},
-				Container: config.GlobalContainerConfig{
+				Container: config.GlobalContainer{
 					StopSignal:  "SIGTERM",
 					StopTimeout: 8,
-					RestartPolicy: config.ContainerRestartPolicyConfig{
+					RestartPolicy: config.ContainerRestartPolicy{
 						Mode: "unless-stopped",
 					},
 					DomainName: "example.tld",
@@ -326,7 +326,7 @@ containers:
 							ValueCommand: "/foo2/bar2/some-other-env-var-cmd",
 						},
 					},
-					Mounts: []config.MountConfig{
+					Mounts: []config.Mount{
 						{
 							Name: "mount-def-1",
 						},
@@ -340,7 +340,7 @@ containers:
 							ReadOnly: true,
 						},
 					},
-					Labels: []config.LabelConfig{
+					Labels: []config.Label{
 						{
 							Name:  "my-label-1",
 							Value: "my-label-1-value",
@@ -352,15 +352,15 @@ containers:
 					},
 				},
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					BridgeModeNetworks: []config.BridgeModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					BridgeModeNetworks: []config.BridgeModeNetwork{
 						{
 							Name:              "group1-bridge",
 							HostInterfaceName: "docker-grp1",
 							CIDR:              "172.18.18.0/24",
 							Priority:          1,
-							Containers: []config.ContainerIPConfig{
+							Containers: []config.ContainerIP{
 								{
 									IP: "172.18.18.11",
 									Container: config.ContainerReference{
@@ -382,7 +382,7 @@ containers:
 							HostInterfaceName: "docker-grp2",
 							CIDR:              "172.18.19.0/24",
 							Priority:          1,
-							Containers: []config.ContainerIPConfig{
+							Containers: []config.ContainerIP{
 								{
 									IP: "172.18.19.11",
 									Container: config.ContainerReference{
@@ -397,7 +397,7 @@ containers:
 							HostInterfaceName: "docker-cmn",
 							CIDR:              "172.18.20.0/24",
 							Priority:          2,
-							Containers: []config.ContainerIPConfig{
+							Containers: []config.ContainerIP{
 								{
 									IP: "172.18.20.11",
 									Container: config.ContainerReference{
@@ -422,7 +422,7 @@ containers:
 							},
 						},
 					},
-					ContainerModeNetworks: []config.ContainerModeNetworkConfig{
+					ContainerModeNetworks: []config.ContainerModeNetwork{
 						{
 							Name: "group3-ct4",
 							Container: config.ContainerReference{
@@ -447,7 +447,7 @@ containers:
 					},
 				},
 			},
-			Hosts: []config.HostConfig{
+			Hosts: []config.Host{
 				{
 					Name: "fakehost",
 					AllowedContainers: []config.ContainerReference{
@@ -474,7 +474,7 @@ containers:
 					Name: "host3",
 				},
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "group1",
 					Order: 1,
@@ -488,20 +488,20 @@ containers:
 					Order: 3,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "group1",
 						Container: "ct1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image:                   "tuxdude/homelab-base:master",
 						SkipImagePull:           false,
 						IgnoreImagePullFailures: true,
 						PullImageBeforeStop:     true,
 					},
-					Metadata: config.ContainerMetadataConfig{
-						Labels: []config.LabelConfig{
+					Metadata: config.ContainerMetadata{
+						Labels: []config.Label{
 							{
 								Name:  "my.ct1.label.name.1",
 								Value: "my.ct1.label.value.1",
@@ -512,17 +512,17 @@ containers:
 							},
 						},
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order:        1,
 						StartPreHook: "$$SCRIPTS_DIR$$/my-start-prehook.sh",
-						RestartPolicy: config.ContainerRestartPolicyConfig{
+						RestartPolicy: config.ContainerRestartPolicy{
 							Mode: "always",
 						},
 						AutoRemove:  true,
 						StopSignal:  "SIGHUP",
 						StopTimeout: 10,
 					},
-					User: config.ContainerUserConfig{
+					User: config.ContainerUser{
 						User:         "$$CURRENT_USER$$",
 						PrimaryGroup: "$$CURRENT_GROUP$$",
 						AdditionalGroups: []string{
@@ -530,9 +530,9 @@ containers:
 							"someRandomGroup",
 						},
 					},
-					Filesystem: config.ContainerFilesystemConfig{
+					Filesystem: config.ContainerFilesystem{
 						ReadOnlyRootfs: true,
-						Mounts: []config.MountConfig{
+						Mounts: []config.Mount{
 							{
 								Name:     "blocky-config-mount",
 								Type:     "bind",
@@ -550,7 +550,7 @@ containers:
 								Options: "tmpfs-size=100000000",
 							},
 						},
-						Devices: []config.DeviceConfig{
+						Devices: []config.Device{
 							{
 								Src:           "/dev/foo",
 								Dst:           "/dev/bar",
@@ -569,7 +569,7 @@ containers:
 							},
 						},
 					},
-					Network: config.ContainerNetworkConfig{
+					Network: config.ContainerNetwork{
 						HostName:   "foobar",
 						DomainName: "somedomain",
 						DNSServers: []string{
@@ -584,7 +584,7 @@ containers:
 							"dns-ct-search-1",
 							"dns-ct-search-2",
 						},
-						PublishedPorts: []config.PublishedPortConfig{
+						PublishedPorts: []config.PublishedPort{
 							{
 								ContainerPort: 53,
 								Protocol:      "tcp",
@@ -599,9 +599,9 @@ containers:
 							},
 						},
 					},
-					Security: config.ContainerSecurityConfig{
+					Security: config.ContainerSecurity{
 						Privileged: true,
-						Sysctls: []config.SysctlConfig{
+						Sysctls: []config.Sysctl{
 							{
 								Key:   "net.ipv4.ip_forward",
 								Value: "1",
@@ -620,7 +620,7 @@ containers:
 							"SYS_MODULE",
 						},
 					},
-					Health: config.ContainerHealthConfig{
+					Health: config.ContainerHealth{
 						Cmd: []string{
 							"my-health-cmd",
 							"health-arg-1",
@@ -632,7 +632,7 @@ containers:
 						StartPeriod:   "3m",
 						StartInterval: "10s",
 					},
-					Runtime: config.ContainerRuntimeConfig{
+					Runtime: config.ContainerRuntime{
 						AttachToTty: true,
 						ShmSize:     "1g",
 						Env: []config.ContainerEnv{
@@ -786,11 +786,11 @@ groups:
     order: 3
   - name: group3
     order: 2`,
-		want: &config.HomelabConfig{
-			Global: config.GlobalConfig{
+		want: &config.Homelab{
+			Global: config.Global{
 				BaseDir: "testdata/dummy-base-dir",
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "group1",
 					Order: 1,
@@ -836,14 +836,14 @@ func TestBuildDeploymentUsingReader(t *testing.T) {
 var buildDeploymentFromConfigsPathTests = []struct {
 	name              string
 	configsPath       string
-	want              *config.HomelabConfig
+	want              *config.Homelab
 	wantDockerConfigs containerDockerConfigMap
 }{
 	{
 		name:        "Valid Multi File Config",
 		configsPath: "parse-configs-valid",
-		want: &config.HomelabConfig{
-			Global: config.GlobalConfig{
+		want: &config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 				Env: []config.ConfigEnv{
 					{
@@ -851,25 +851,25 @@ var buildDeploymentFromConfigsPathTests = []struct {
 						Value: "MY_GLOBAL_BAR",
 					},
 				},
-				Container: config.GlobalContainerConfig{
+				Container: config.GlobalContainer{
 					StopSignal:  "SIGTERM",
 					StopTimeout: 5,
-					RestartPolicy: config.ContainerRestartPolicyConfig{
+					RestartPolicy: config.ContainerRestartPolicy{
 						Mode:          "on-failure",
 						MaxRetryCount: 5,
 					},
 					DomainName: "somedomain",
 				},
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					BridgeModeNetworks: []config.BridgeModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					BridgeModeNetworks: []config.BridgeModeNetwork{
 						{
 							Name:              "net1",
 							HostInterfaceName: "docker-net1",
 							CIDR:              "172.18.100.0/24",
 							Priority:          1,
-							Containers: []config.ContainerIPConfig{
+							Containers: []config.ContainerIP{
 								{
 									IP: "172.18.100.11",
 									Container: config.ContainerReference{
@@ -891,7 +891,7 @@ var buildDeploymentFromConfigsPathTests = []struct {
 							HostInterfaceName: "docker-net2",
 							CIDR:              "172.18.101.0/24",
 							Priority:          1,
-							Containers: []config.ContainerIPConfig{
+							Containers: []config.ContainerIP{
 								{
 									IP: "172.18.101.21",
 									Container: config.ContainerReference{
@@ -906,7 +906,7 @@ var buildDeploymentFromConfigsPathTests = []struct {
 							HostInterfaceName: "docker-cmn",
 							CIDR:              "172.19.200.0/24",
 							Priority:          2,
-							Containers: []config.ContainerIPConfig{
+							Containers: []config.ContainerIP{
 								{
 									IP: "172.19.200.201",
 									Container: config.ContainerReference{
@@ -931,7 +931,7 @@ var buildDeploymentFromConfigsPathTests = []struct {
 							},
 						},
 					},
-					ContainerModeNetworks: []config.ContainerModeNetworkConfig{
+					ContainerModeNetworks: []config.ContainerModeNetwork{
 						{
 							Name: "g3-c4",
 							Container: config.ContainerReference{
@@ -956,7 +956,7 @@ var buildDeploymentFromConfigsPathTests = []struct {
 					},
 				},
 			},
-			Hosts: []config.HostConfig{
+			Hosts: []config.Host{
 				{
 					Name: "fakehost",
 					AllowedContainers: []config.ContainerReference{
@@ -983,7 +983,7 @@ var buildDeploymentFromConfigsPathTests = []struct {
 					},
 				},
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
@@ -997,16 +997,16 @@ var buildDeploymentFromConfigsPathTests = []struct {
 					Order: 3,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "abc/xyz",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
 				},
@@ -1015,10 +1015,10 @@ var buildDeploymentFromConfigsPathTests = []struct {
 						Group:     "g1",
 						Container: "c2",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "abc/xyz2",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 2,
 					},
 				},
@@ -1027,10 +1027,10 @@ var buildDeploymentFromConfigsPathTests = []struct {
 						Group:     "g2",
 						Container: "c3",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "abc/xyz3",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
 				},
@@ -1039,10 +1039,10 @@ var buildDeploymentFromConfigsPathTests = []struct {
 						Group:     "g3",
 						Container: "c4",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "abc/xyz4",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
 				},
@@ -1210,7 +1210,7 @@ var buildDeploymentFromConfigsPathErrorTests = []struct {
 	{
 		name:        "Invalid config key",
 		configsPath: "parse-configs-invalid-config-key",
-		want:        `(?s)failed to parse homelab config, reason: yaml: unmarshal errors:.+: field someInvalidKey not found in type config\.GlobalContainerConfig`,
+		want:        `(?s)failed to parse homelab config, reason: yaml: unmarshal errors:.+: field someInvalidKey not found in type config\.GlobalContainer`,
 	},
 }
 
@@ -1240,13 +1240,13 @@ func TestBuildDeploymentFromConfigsPathErrors(t *testing.T) {
 
 var buildDeploymentFromConfigStringerTests = []struct {
 	name   string
-	config config.HomelabConfig
+	config config.Homelab
 	want   string
 }{
 	{
 		name: "Valid Empty Config",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
 		},
@@ -1254,13 +1254,13 @@ var buildDeploymentFromConfigStringerTests = []struct {
 	},
 	{
 		name: "Valid IPAM Config",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					BridgeModeNetworks: []config.BridgeModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					BridgeModeNetworks: []config.BridgeModeNetwork{
 						{
 							Name:              "net1",
 							HostInterfaceName: "docker-net1",
@@ -1274,7 +1274,7 @@ var buildDeploymentFromConfigStringerTests = []struct {
 							Priority:          1,
 						},
 					},
-					ContainerModeNetworks: []config.ContainerModeNetworkConfig{
+					ContainerModeNetworks: []config.ContainerModeNetwork{
 						{
 							Name: "net3",
 							Container: config.ContainerReference{
@@ -1297,11 +1297,11 @@ var buildDeploymentFromConfigStringerTests = []struct {
 	},
 	{
 		name: "Valid Containers Without Hosts And IPAM Configs",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
@@ -1319,16 +1319,16 @@ var buildDeploymentFromConfigStringerTests = []struct {
 					Order: 4,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
 				},
@@ -1337,10 +1337,10 @@ var buildDeploymentFromConfigStringerTests = []struct {
 						Group:     "g1",
 						Container: "c2",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar2:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
 				},
@@ -1349,10 +1349,10 @@ var buildDeploymentFromConfigStringerTests = []struct {
 						Group:     "g2",
 						Container: "c3",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar3:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
 				},
@@ -1361,10 +1361,10 @@ var buildDeploymentFromConfigStringerTests = []struct {
 						Group:     "g4",
 						Container: "c4",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar4:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
 				},
@@ -1373,10 +1373,10 @@ var buildDeploymentFromConfigStringerTests = []struct {
 						Group:     "g4",
 						Container: "c5",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar5:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
 				},
@@ -1409,18 +1409,18 @@ func TestBuildDeploymentFromConfigStringer(t *testing.T) {
 
 var buildDeploymentFromConfigErrorTests = []struct {
 	name   string
-	config config.HomelabConfig
+	config config.Homelab
 	want   string
 }{
 	{
 		name:   "Empty Base Dir",
-		config: config.HomelabConfig{},
+		config: config.Homelab{},
 		want:   `homelab base directory cannot be empty`,
 	},
 	{
 		name: "Non-Existing Base Dir Path",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: "/foo/bar",
 			},
 		},
@@ -1428,8 +1428,8 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Base Dir Path Points To A File",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: "testdata/dummy-base-dir/.empty",
 			},
 		},
@@ -1437,8 +1437,8 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Empty Global Config Env Var",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 				Env: []config.ConfigEnv{
 					{
@@ -1451,8 +1451,8 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Duplicate Global Config Env Var",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 				Env: []config.ConfigEnv{
 					{
@@ -1474,8 +1474,8 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Global Config Env Var Without Value And ValueCommand",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 				Env: []config.ConfigEnv{
 					{
@@ -1488,8 +1488,8 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Global Config Env Var With Both Value And ValueCommand",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 				Env: []config.ConfigEnv{
 					{
@@ -1504,10 +1504,10 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Global Config Empty Mount Def Name",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
-				MountDefs: []config.MountConfig{
+				MountDefs: []config.Mount{
 					{
 						Type:     "bind",
 						Src:      "/foo",
@@ -1521,10 +1521,10 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Global Config Duplicate Mount Defs",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
-				MountDefs: []config.MountConfig{
+				MountDefs: []config.Mount{
 					{
 						Name: "mount-foo1",
 						Type: "bind",
@@ -1550,10 +1550,10 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Global Config Mount Def With Invalid Mount Type",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
-				MountDefs: []config.MountConfig{
+				MountDefs: []config.Mount{
 					{
 						Name: "foo",
 						Type: "garbage",
@@ -1567,10 +1567,10 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Global Config Mount Def With Empty Src",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
-				MountDefs: []config.MountConfig{
+				MountDefs: []config.Mount{
 					{
 						Name: "foo",
 						Type: "bind",
@@ -1583,10 +1583,10 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Global Config Mount Def With Empty Dst",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
-				MountDefs: []config.MountConfig{
+				MountDefs: []config.Mount{
 					{
 						Name: "foo",
 						Type: "bind",
@@ -1599,10 +1599,10 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Global Config Bind Mount Def With Options",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
-				MountDefs: []config.MountConfig{
+				MountDefs: []config.Mount{
 					{
 						Name:    "foo",
 						Type:    "bind",
@@ -1617,10 +1617,10 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Global Container Config Negative Stop Timeout",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
-				Container: config.GlobalContainerConfig{
+				Container: config.GlobalContainer{
 					StopTimeout: -1,
 				},
 			},
@@ -1629,11 +1629,11 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Global Container Config Restart Policy MaxRetryCount Set With Non-On-Failure Mode",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
-				Container: config.GlobalContainerConfig{
-					RestartPolicy: config.ContainerRestartPolicyConfig{
+				Container: config.GlobalContainer{
+					RestartPolicy: config.ContainerRestartPolicy{
 						Mode:          "always",
 						MaxRetryCount: 5,
 					},
@@ -1644,11 +1644,11 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Global Container Config Invalid Restart Policy Mode",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
-				Container: config.GlobalContainerConfig{
-					RestartPolicy: config.ContainerRestartPolicyConfig{
+				Container: config.GlobalContainer{
+					RestartPolicy: config.ContainerRestartPolicy{
 						Mode: "garbage",
 					},
 				},
@@ -1658,11 +1658,11 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Global Container Config Negative Restart Policy MaxRetryCount",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
-				Container: config.GlobalContainerConfig{
-					RestartPolicy: config.ContainerRestartPolicyConfig{
+				Container: config.GlobalContainer{
+					RestartPolicy: config.ContainerRestartPolicy{
 						Mode:          "on-failure",
 						MaxRetryCount: -1,
 					},
@@ -1673,10 +1673,10 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Empty Global Container Config Env Var",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
-				Container: config.GlobalContainerConfig{
+				Container: config.GlobalContainer{
 					Env: []config.ContainerEnv{
 						{
 							Value: "foo-bar",
@@ -1689,10 +1689,10 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Duplicate Global Container Config Env Var",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
-				Container: config.GlobalContainerConfig{
+				Container: config.GlobalContainer{
 					Env: []config.ContainerEnv{
 						{
 							Var:   "FOO",
@@ -1714,10 +1714,10 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Global Container Config Env Var Without Value And ValueCommand",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
-				Container: config.GlobalContainerConfig{
+				Container: config.GlobalContainer{
 					Env: []config.ContainerEnv{
 						{
 							Var: "FOO",
@@ -1730,10 +1730,10 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Global Container Config Env Var With Both Value And ValueCommand",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
-				Container: config.GlobalContainerConfig{
+				Container: config.GlobalContainer{
 					Env: []config.ContainerEnv{
 						{
 							Var:          "FOO",
@@ -1748,11 +1748,11 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Global Container Config Empty Mount Name",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
-				Container: config.GlobalContainerConfig{
-					Mounts: []config.MountConfig{
+				Container: config.GlobalContainer{
+					Mounts: []config.Mount{
 						{
 							Type:     "bind",
 							Src:      "/foo",
@@ -1767,11 +1767,11 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Global Container Config Duplicate Mounts",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
-				Container: config.GlobalContainerConfig{
-					Mounts: []config.MountConfig{
+				Container: config.GlobalContainer{
+					Mounts: []config.Mount{
 						{
 							Name: "mount-foo1",
 							Type: "bind",
@@ -1798,11 +1798,11 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Global Container Config Mount With Invalid Mount Type",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
-				Container: config.GlobalContainerConfig{
-					Mounts: []config.MountConfig{
+				Container: config.GlobalContainer{
+					Mounts: []config.Mount{
 						{
 							Name: "foo",
 							Type: "garbage",
@@ -1817,11 +1817,11 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Global Container Config Mount With Empty Src",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
-				Container: config.GlobalContainerConfig{
-					Mounts: []config.MountConfig{
+				Container: config.GlobalContainer{
+					Mounts: []config.Mount{
 						{
 							Name: "foo",
 							Type: "bind",
@@ -1835,11 +1835,11 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Global Container Config Mount With Empty Dst",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
-				Container: config.GlobalContainerConfig{
-					Mounts: []config.MountConfig{
+				Container: config.GlobalContainer{
+					Mounts: []config.Mount{
 						{
 							Name: "foo",
 							Type: "bind",
@@ -1853,11 +1853,11 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Global Container Config Bind Mount With Options",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
-				Container: config.GlobalContainerConfig{
-					Mounts: []config.MountConfig{
+				Container: config.GlobalContainer{
+					Mounts: []config.Mount{
 						{
 							Name:    "foo",
 							Type:    "bind",
@@ -1873,10 +1873,10 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Global Container Config Mount Def Reference Not Found",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
-				MountDefs: []config.MountConfig{
+				MountDefs: []config.Mount{
 					{
 						Name: "foo",
 						Type: "bind",
@@ -1884,8 +1884,8 @@ var buildDeploymentFromConfigErrorTests = []struct {
 						Dst:  "/bar",
 					},
 				},
-				Container: config.GlobalContainerConfig{
-					Mounts: []config.MountConfig{
+				Container: config.GlobalContainer{
+					Mounts: []config.Mount{
 						{
 							Name: "foo2",
 						},
@@ -1897,11 +1897,11 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Empty Global Container Config Label Name",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
-				Container: config.GlobalContainerConfig{
-					Labels: []config.LabelConfig{
+				Container: config.GlobalContainer{
+					Labels: []config.Label{
 						{
 							Value: "foo-bar",
 						},
@@ -1913,11 +1913,11 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Duplicate Global Container Config Label Name",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
-				Container: config.GlobalContainerConfig{
-					Labels: []config.LabelConfig{
+				Container: config.GlobalContainer{
+					Labels: []config.Label{
 						{
 							Name:  "FOO",
 							Value: "foo-bar",
@@ -1938,11 +1938,11 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Global Container Config Empty Label Value",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
-				Container: config.GlobalContainerConfig{
-					Labels: []config.LabelConfig{
+				Container: config.GlobalContainer{
+					Labels: []config.Label{
 						{
 							Name: "FOO",
 						},
@@ -1954,13 +1954,13 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Empty Bridge Mode Network Name",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					BridgeModeNetworks: []config.BridgeModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					BridgeModeNetworks: []config.BridgeModeNetwork{
 						{
 							HostInterfaceName: "docker-net1",
 							CIDR:              "172.18.100.0/24",
@@ -1974,13 +1974,13 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Duplicate Bridge Mode Network",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					BridgeModeNetworks: []config.BridgeModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					BridgeModeNetworks: []config.BridgeModeNetwork{
 						{
 							Name:              "net1",
 							HostInterfaceName: "docker-net1",
@@ -2001,13 +2001,13 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Empty Host Interface Name",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					BridgeModeNetworks: []config.BridgeModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					BridgeModeNetworks: []config.BridgeModeNetwork{
 						{
 							Name:     "net1",
 							CIDR:     "172.18.100.0/24",
@@ -2021,13 +2021,13 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Duplicate Network Host Interface Names",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					BridgeModeNetworks: []config.BridgeModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					BridgeModeNetworks: []config.BridgeModeNetwork{
 						{
 							Name:              "net1",
 							HostInterfaceName: "docker-net1",
@@ -2048,13 +2048,13 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Empty Bridge Mode Network Priority",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					BridgeModeNetworks: []config.BridgeModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					BridgeModeNetworks: []config.BridgeModeNetwork{
 						{
 							Name:              "net1",
 							HostInterfaceName: "docker-net1",
@@ -2068,13 +2068,13 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Invalid CIDR - Empty",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					BridgeModeNetworks: []config.BridgeModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					BridgeModeNetworks: []config.BridgeModeNetwork{
 						{
 							Name:              "net1",
 							HostInterfaceName: "docker-net1",
@@ -2088,13 +2088,13 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Invalid CIDR - Unparsable",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					BridgeModeNetworks: []config.BridgeModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					BridgeModeNetworks: []config.BridgeModeNetwork{
 						{
 							Name:              "net1",
 							HostInterfaceName: "docker-net1",
@@ -2109,13 +2109,13 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Invalid CIDR - Missing /",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					BridgeModeNetworks: []config.BridgeModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					BridgeModeNetworks: []config.BridgeModeNetwork{
 						{
 							Name:              "net1",
 							HostInterfaceName: "docker-net1",
@@ -2130,13 +2130,13 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Invalid CIDR - Wrong Prefix Length",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					BridgeModeNetworks: []config.BridgeModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					BridgeModeNetworks: []config.BridgeModeNetwork{
 						{
 							Name:              "net1",
 							HostInterfaceName: "docker-net1",
@@ -2151,13 +2151,13 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Invalid CIDR - IPv6",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					BridgeModeNetworks: []config.BridgeModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					BridgeModeNetworks: []config.BridgeModeNetwork{
 						{
 							Name:              "net1",
 							HostInterfaceName: "docker-net1",
@@ -2172,13 +2172,13 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Invalid CIDR - Octets Out Of Range",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					BridgeModeNetworks: []config.BridgeModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					BridgeModeNetworks: []config.BridgeModeNetwork{
 						{
 							Name:              "net1",
 							HostInterfaceName: "docker-net1",
@@ -2193,13 +2193,13 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Invalid CIDR - Not A Network Address",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					BridgeModeNetworks: []config.BridgeModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					BridgeModeNetworks: []config.BridgeModeNetwork{
 						{
 							Name:              "net1",
 							HostInterfaceName: "docker-net1",
@@ -2214,13 +2214,13 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Invalid CIDR - Long Prefix 31",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					BridgeModeNetworks: []config.BridgeModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					BridgeModeNetworks: []config.BridgeModeNetwork{
 						{
 							Name:              "net1",
 							HostInterfaceName: "docker-net1",
@@ -2235,13 +2235,13 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Invalid CIDR - Long Prefix 32",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					BridgeModeNetworks: []config.BridgeModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					BridgeModeNetworks: []config.BridgeModeNetwork{
 						{
 							Name:              "net1",
 							HostInterfaceName: "docker-net1",
@@ -2256,13 +2256,13 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Non-RFC1918 CIDR - Public IPv4",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					BridgeModeNetworks: []config.BridgeModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					BridgeModeNetworks: []config.BridgeModeNetwork{
 						{
 							Name:              "net1",
 							HostInterfaceName: "docker-net1",
@@ -2277,13 +2277,13 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Non-RFC1918 CIDR - Link Local",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					BridgeModeNetworks: []config.BridgeModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					BridgeModeNetworks: []config.BridgeModeNetwork{
 						{
 							Name:              "net1",
 							HostInterfaceName: "docker-net1",
@@ -2298,13 +2298,13 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Non-RFC1918 CIDR - Multicast",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					BridgeModeNetworks: []config.BridgeModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					BridgeModeNetworks: []config.BridgeModeNetwork{
 						{
 							Name:              "net1",
 							HostInterfaceName: "docker-net1",
@@ -2319,13 +2319,13 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Overlapping CIDR",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					BridgeModeNetworks: []config.BridgeModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					BridgeModeNetworks: []config.BridgeModeNetwork{
 						{
 							Name:              "net1",
 							HostInterfaceName: "docker-net1",
@@ -2346,19 +2346,19 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Bridge Mode Network Invalid Container Reference - Empty Group",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					BridgeModeNetworks: []config.BridgeModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					BridgeModeNetworks: []config.BridgeModeNetwork{
 						{
 							Name:              "net1",
 							HostInterfaceName: "docker-net1",
 							CIDR:              "172.18.100.0/24",
 							Priority:          1,
-							Containers: []config.ContainerIPConfig{
+							Containers: []config.ContainerIP{
 								{
 									IP: "172.18.100.11",
 									Container: config.ContainerReference{
@@ -2375,19 +2375,19 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Bridge Mode Network Invalid Container Reference - Empty Container",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					BridgeModeNetworks: []config.BridgeModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					BridgeModeNetworks: []config.BridgeModeNetwork{
 						{
 							Name:              "net1",
 							HostInterfaceName: "docker-net1",
 							CIDR:              "172.18.100.0/24",
 							Priority:          1,
-							Containers: []config.ContainerIPConfig{
+							Containers: []config.ContainerIP{
 								{
 									IP: "172.18.100.11",
 									Container: config.ContainerReference{
@@ -2404,19 +2404,19 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Invalid Container IP - Unparsable",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					BridgeModeNetworks: []config.BridgeModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					BridgeModeNetworks: []config.BridgeModeNetwork{
 						{
 							Name:              "net1",
 							HostInterfaceName: "docker-net1",
 							CIDR:              "172.18.100.0/24",
 							Priority:          1,
-							Containers: []config.ContainerIPConfig{
+							Containers: []config.ContainerIP{
 								{
 									IP: "garbage-ip",
 									Container: config.ContainerReference{
@@ -2434,19 +2434,19 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Invalid Container IP - Too Short",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					BridgeModeNetworks: []config.BridgeModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					BridgeModeNetworks: []config.BridgeModeNetwork{
 						{
 							Name:              "net1",
 							HostInterfaceName: "docker-net1",
 							CIDR:              "172.18.100.0/24",
 							Priority:          1,
-							Containers: []config.ContainerIPConfig{
+							Containers: []config.ContainerIP{
 								{
 									IP: "172.18.100",
 									Container: config.ContainerReference{
@@ -2464,19 +2464,19 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Invalid Container IP - Too Long",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					BridgeModeNetworks: []config.BridgeModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					BridgeModeNetworks: []config.BridgeModeNetwork{
 						{
 							Name:              "net1",
 							HostInterfaceName: "docker-net1",
 							CIDR:              "172.18.100.0/24",
 							Priority:          1,
-							Containers: []config.ContainerIPConfig{
+							Containers: []config.ContainerIP{
 								{
 									IP: "172.18.100.1.2.3.4",
 									Container: config.ContainerReference{
@@ -2494,19 +2494,19 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container IP Not Within Network CIDR",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					BridgeModeNetworks: []config.BridgeModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					BridgeModeNetworks: []config.BridgeModeNetwork{
 						{
 							Name:              "net1",
 							HostInterfaceName: "docker-net1",
 							CIDR:              "172.18.100.0/24",
 							Priority:          1,
-							Containers: []config.ContainerIPConfig{
+							Containers: []config.ContainerIP{
 								{
 									IP: "172.18.101.2",
 									Container: config.ContainerReference{
@@ -2524,19 +2524,19 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container IP same as Network Address",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					BridgeModeNetworks: []config.BridgeModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					BridgeModeNetworks: []config.BridgeModeNetwork{
 						{
 							Name:              "net1",
 							HostInterfaceName: "docker-net1",
 							CIDR:              "172.18.100.0/24",
 							Priority:          1,
-							Containers: []config.ContainerIPConfig{
+							Containers: []config.ContainerIP{
 								{
 									IP: "172.18.100.0",
 									Container: config.ContainerReference{
@@ -2554,19 +2554,19 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container IP same as Gateway Address",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					BridgeModeNetworks: []config.BridgeModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					BridgeModeNetworks: []config.BridgeModeNetwork{
 						{
 							Name:              "net1",
 							HostInterfaceName: "docker-net1",
 							CIDR:              "172.18.100.0/24",
 							Priority:          1,
-							Containers: []config.ContainerIPConfig{
+							Containers: []config.ContainerIP{
 								{
 									IP: "172.18.100.1",
 									Container: config.ContainerReference{
@@ -2584,19 +2584,19 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Multiple Endpoints For Same Container Within A Bridge Mode Network",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					BridgeModeNetworks: []config.BridgeModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					BridgeModeNetworks: []config.BridgeModeNetwork{
 						{
 							Name:              "net1",
 							HostInterfaceName: "docker-net1",
 							CIDR:              "172.18.100.0/24",
 							Priority:          1,
-							Containers: []config.ContainerIPConfig{
+							Containers: []config.ContainerIP{
 								{
 									IP: "172.18.100.2",
 									Container: config.ContainerReference{
@@ -2621,19 +2621,19 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Duplicate Container IPs",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					BridgeModeNetworks: []config.BridgeModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					BridgeModeNetworks: []config.BridgeModeNetwork{
 						{
 							Name:              "net1",
 							HostInterfaceName: "docker-net1",
 							CIDR:              "172.18.100.0/24",
 							Priority:          1,
-							Containers: []config.ContainerIPConfig{
+							Containers: []config.ContainerIP{
 								{
 									IP: "172.18.100.2",
 									Container: config.ContainerReference{
@@ -2672,19 +2672,19 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Multiple Same Priority Bridge Mode Network Endpoints For Same Container",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					BridgeModeNetworks: []config.BridgeModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					BridgeModeNetworks: []config.BridgeModeNetwork{
 						{
 							Name:              "net1",
 							HostInterfaceName: "docker-net1",
 							CIDR:              "172.18.100.0/24",
 							Priority:          1,
-							Containers: []config.ContainerIPConfig{
+							Containers: []config.ContainerIP{
 								{
 									IP: "172.18.100.2",
 									Container: config.ContainerReference{
@@ -2699,7 +2699,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 							HostInterfaceName: "docker-net2",
 							CIDR:              "172.18.101.0/24",
 							Priority:          1,
-							Containers: []config.ContainerIPConfig{
+							Containers: []config.ContainerIP{
 								{
 									IP: "172.18.101.2",
 									Container: config.ContainerReference{
@@ -2717,13 +2717,13 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Empty Container Mode Network Name",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					ContainerModeNetworks: []config.ContainerModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					ContainerModeNetworks: []config.ContainerModeNetwork{
 						{
 							Container: config.ContainerReference{
 								Group:     "some-group",
@@ -2738,13 +2738,13 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Duplicate Container Mode Network Name",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					ContainerModeNetworks: []config.ContainerModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					ContainerModeNetworks: []config.ContainerModeNetwork{
 						{
 							Name: "net1",
 							Container: config.ContainerReference{
@@ -2767,13 +2767,13 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Duplicate Bridge/Container Mode Networks",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					BridgeModeNetworks: []config.BridgeModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					BridgeModeNetworks: []config.BridgeModeNetwork{
 						{
 							Name:              "net1",
 							HostInterfaceName: "docker-net1",
@@ -2781,7 +2781,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 							Priority:          1,
 						},
 					},
-					ContainerModeNetworks: []config.ContainerModeNetworkConfig{
+					ContainerModeNetworks: []config.ContainerModeNetwork{
 						{
 							Name: "net1",
 							Container: config.ContainerReference{
@@ -2797,13 +2797,13 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Mode Network Invalid Container Reference - Empty Group",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					ContainerModeNetworks: []config.ContainerModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					ContainerModeNetworks: []config.ContainerModeNetwork{
 						{
 							Name: "net1",
 							Container: config.ContainerReference{
@@ -2818,13 +2818,13 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Mode Network Invalid Container Reference - Empty Container",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					ContainerModeNetworks: []config.ContainerModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					ContainerModeNetworks: []config.ContainerModeNetwork{
 						{
 							Name: "net1",
 							Container: config.ContainerReference{
@@ -2839,13 +2839,13 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Mode Network Invalid Attaching Container Reference - Empty Group",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					ContainerModeNetworks: []config.ContainerModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					ContainerModeNetworks: []config.ContainerModeNetwork{
 						{
 							Name: "net1",
 							Container: config.ContainerReference{
@@ -2866,13 +2866,13 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Mode Network Invalid Attaching Container Reference - Empty Container",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					ContainerModeNetworks: []config.ContainerModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					ContainerModeNetworks: []config.ContainerModeNetwork{
 						{
 							Name: "net1",
 							Container: config.ContainerReference{
@@ -2893,13 +2893,13 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Multiple Container Mode Network Stacks For Same Container Within Same Network Stack",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					ContainerModeNetworks: []config.ContainerModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					ContainerModeNetworks: []config.ContainerModeNetwork{
 						{
 							Name: "net1",
 							Container: config.ContainerReference{
@@ -2933,13 +2933,13 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Multiple Container Mode Network Stacks For Same Container Across Network Stacks",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					ContainerModeNetworks: []config.ContainerModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					ContainerModeNetworks: []config.ContainerModeNetwork{
 						{
 							Name: "net1",
 							Container: config.ContainerReference{
@@ -2978,19 +2978,19 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Connected To Both Bridge Mode and Container Mode Networks",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			IPAM: config.IPAMConfig{
-				Networks: config.NetworksConfig{
-					BridgeModeNetworks: []config.BridgeModeNetworkConfig{
+			IPAM: config.IPAM{
+				Networks: config.Networks{
+					BridgeModeNetworks: []config.BridgeModeNetwork{
 						{
 							Name:              "net1",
 							HostInterfaceName: "docker-net1",
 							CIDR:              "172.18.100.0/24",
 							Priority:          1,
-							Containers: []config.ContainerIPConfig{
+							Containers: []config.ContainerIP{
 								{
 									IP: "172.18.100.2",
 									Container: config.ContainerReference{
@@ -3001,7 +3001,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 							},
 						},
 					},
-					ContainerModeNetworks: []config.ContainerModeNetworkConfig{
+					ContainerModeNetworks: []config.ContainerModeNetwork{
 						{
 							Name: "net2",
 							Container: config.ContainerReference{
@@ -3023,11 +3023,11 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Empty Host Name In Hosts Config",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Hosts: []config.HostConfig{
+			Hosts: []config.Host{
 				{
 					AllowedContainers: []config.ContainerReference{
 						{
@@ -3042,11 +3042,11 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Duplicate Host Name In Hosts Config",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Hosts: []config.HostConfig{
+			Hosts: []config.Host{
 				{
 					Name: "h1",
 					AllowedContainers: []config.ContainerReference{
@@ -3079,11 +3079,11 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Invalid Container Reference Within Host Config - Empty Group",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Hosts: []config.HostConfig{
+			Hosts: []config.Host{
 				{
 					Name: "h1",
 					AllowedContainers: []config.ContainerReference{
@@ -3098,11 +3098,11 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Invalid Container Reference Within Host Config - Empty Container",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Hosts: []config.HostConfig{
+			Hosts: []config.Host{
 				{
 					Name: "h1",
 					AllowedContainers: []config.ContainerReference{
@@ -3117,11 +3117,11 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Duplicate Container Within Host Config",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Hosts: []config.HostConfig{
+			Hosts: []config.Host{
 				{
 					Name: "h1",
 					AllowedContainers: []config.ContainerReference{
@@ -3149,11 +3149,11 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Empty Group Name In Groups Config",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Order: 1,
 				},
@@ -3163,11 +3163,11 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Duplicate Container Group Name",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
@@ -3190,11 +3190,11 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Group Without Order",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name: "g1",
 				},
@@ -3204,11 +3204,11 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Group With Zero Order",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 0,
@@ -3219,11 +3219,11 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Group With Negative Order",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: -1,
@@ -3234,17 +3234,17 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Group Definition Missing",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
 				},
@@ -3254,26 +3254,26 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Duplicate Container Definition",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
 				},
@@ -3282,10 +3282,10 @@ var buildDeploymentFromConfigErrorTests = []struct {
 						Group:     "g1",
 						Container: "c2",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar2:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
 				},
@@ -3294,10 +3294,10 @@ var buildDeploymentFromConfigErrorTests = []struct {
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar3:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
 				},
@@ -3307,26 +3307,26 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Empty Container Config Env Var",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
 					Config: config.ContainerConfigOptions{
@@ -3343,26 +3343,26 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Duplicate Container Config Env Var",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
 					Config: config.ContainerConfigOptions{
@@ -3388,26 +3388,26 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Config Env Var Without Value And ValueCommand",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
 					Config: config.ContainerConfigOptions{
@@ -3424,26 +3424,26 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Config Env Var With Both Value And ValueCommand",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
 					Config: config.ContainerConfigOptions{
@@ -3462,23 +3462,23 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Empty Container Config Image",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
 				},
@@ -3488,28 +3488,28 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Config SkipImagePull And IgnoreImagePullFailures Both Set To True",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image:                   "foo/bar:123",
 						SkipImagePull:           true,
 						IgnoreImagePullFailures: true,
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
 				},
@@ -3519,28 +3519,28 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Config SkipImagePull And PullImageBeforeStop Both Set To True",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image:               "foo/bar:123",
 						SkipImagePull:       true,
 						PullImageBeforeStop: true,
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
 				},
@@ -3550,33 +3550,33 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Empty Container Config Label Name",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Metadata: config.ContainerMetadataConfig{
-						Labels: []config.LabelConfig{
+					Metadata: config.ContainerMetadata{
+						Labels: []config.Label{
 							{
 								Value: "foo-bar",
 							},
 						},
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
 				},
@@ -3586,27 +3586,27 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Duplicate Container Config Label Name",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Metadata: config.ContainerMetadataConfig{
-						Labels: []config.LabelConfig{
+					Metadata: config.ContainerMetadata{
+						Labels: []config.Label{
 							{
 								Name:  "FOO",
 								Value: "foo-bar",
@@ -3621,7 +3621,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 							},
 						},
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
 				},
@@ -3631,33 +3631,33 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Config Empty Label Value",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Metadata: config.ContainerMetadataConfig{
-						Labels: []config.LabelConfig{
+					Metadata: config.ContainerMetadata{
+						Labels: []config.Label{
 							{
 								Name: "FOO",
 							},
 						},
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
 				},
@@ -3667,23 +3667,23 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Config Empty Order",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
 				},
@@ -3693,26 +3693,26 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Config Negative Order",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: -1,
 					},
 				},
@@ -3722,28 +3722,28 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Config Restart Policy MaxRetryCount Set With Non-On-Failure Mode",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
-						RestartPolicy: config.ContainerRestartPolicyConfig{
+						RestartPolicy: config.ContainerRestartPolicy{
 							Mode:          "always",
 							MaxRetryCount: 5,
 						},
@@ -3755,28 +3755,28 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Config Invalid Restart Policy Mode",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
-						RestartPolicy: config.ContainerRestartPolicyConfig{
+						RestartPolicy: config.ContainerRestartPolicy{
 							Mode: "garbage",
 						},
 					},
@@ -3787,28 +3787,28 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Config Negative Restart Policy MaxRetryCount",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
-						RestartPolicy: config.ContainerRestartPolicyConfig{
+						RestartPolicy: config.ContainerRestartPolicy{
 							Mode:          "on-failure",
 							MaxRetryCount: -1,
 						},
@@ -3820,26 +3820,26 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Config Negative StopTimeout",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order:       1,
 						StopTimeout: -1,
 					},
@@ -3850,29 +3850,29 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Config PrimaryUserGroup Without User",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
-					User: config.ContainerUserConfig{
+					User: config.ContainerUser{
 						PrimaryGroup: "my-user-group",
 					},
 				},
@@ -3882,30 +3882,30 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Config Device Missing Src And Dst",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
-					Filesystem: config.ContainerFilesystemConfig{
-						Devices: []config.DeviceConfig{
+					Filesystem: config.ContainerFilesystem{
+						Devices: []config.Device{
 							{},
 						},
 					},
@@ -3916,30 +3916,30 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Config Device Missing Src",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
-					Filesystem: config.ContainerFilesystemConfig{
-						Devices: []config.DeviceConfig{
+					Filesystem: config.ContainerFilesystem{
+						Devices: []config.Device{
 							{
 								Dst: "/dev/my-target-dev",
 							},
@@ -3952,30 +3952,30 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Config Empty Mount Name",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
-					Filesystem: config.ContainerFilesystemConfig{
-						Mounts: []config.MountConfig{
+					Filesystem: config.ContainerFilesystem{
+						Mounts: []config.Mount{
 							{
 								Type:     "bind",
 								Src:      "/foo",
@@ -3991,30 +3991,30 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Config Duplicate Mounts Within Container Config",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
-					Filesystem: config.ContainerFilesystemConfig{
-						Mounts: []config.MountConfig{
+					Filesystem: config.ContainerFilesystem{
+						Mounts: []config.Mount{
 							{
 								Name: "mount-foo1",
 								Type: "bind",
@@ -4042,11 +4042,11 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Config Duplicate Mounts Within Container And Global Configs Combined",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
-				Container: config.GlobalContainerConfig{
-					Mounts: []config.MountConfig{
+				Container: config.GlobalContainer{
+					Mounts: []config.Mount{
 						{
 							Name: "mount-foo2",
 							Type: "bind",
@@ -4062,26 +4062,26 @@ var buildDeploymentFromConfigErrorTests = []struct {
 					},
 				},
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
-					Filesystem: config.ContainerFilesystemConfig{
-						Mounts: []config.MountConfig{
+					Filesystem: config.ContainerFilesystem{
+						Mounts: []config.Mount{
 							{
 								Name: "mount-foo1",
 								Type: "bind",
@@ -4103,30 +4103,30 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Config Mount With Invalid Mount Type",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
-					Filesystem: config.ContainerFilesystemConfig{
-						Mounts: []config.MountConfig{
+					Filesystem: config.ContainerFilesystem{
+						Mounts: []config.Mount{
 							{
 								Name: "foo",
 								Type: "garbage",
@@ -4142,30 +4142,30 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Config Mount With Empty Src",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
-					Filesystem: config.ContainerFilesystemConfig{
-						Mounts: []config.MountConfig{
+					Filesystem: config.ContainerFilesystem{
+						Mounts: []config.Mount{
 							{
 								Name: "foo",
 								Type: "bind",
@@ -4180,30 +4180,30 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Config Mount With Empty Dst",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
-					Filesystem: config.ContainerFilesystemConfig{
-						Mounts: []config.MountConfig{
+					Filesystem: config.ContainerFilesystem{
+						Mounts: []config.Mount{
 							{
 								Name: "foo",
 								Type: "bind",
@@ -4218,30 +4218,30 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Config Bind Mount With Options",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
-					Filesystem: config.ContainerFilesystemConfig{
-						Mounts: []config.MountConfig{
+					Filesystem: config.ContainerFilesystem{
+						Mounts: []config.Mount{
 							{
 								Name:    "foo",
 								Type:    "bind",
@@ -4258,10 +4258,10 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Config Mount Def Reference Not Found",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
-				MountDefs: []config.MountConfig{
+				MountDefs: []config.Mount{
 					{
 						Name: "foo",
 						Type: "bind",
@@ -4270,26 +4270,26 @@ var buildDeploymentFromConfigErrorTests = []struct {
 					},
 				},
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
-					Filesystem: config.ContainerFilesystemConfig{
-						Mounts: []config.MountConfig{
+					Filesystem: config.ContainerFilesystem{
+						Mounts: []config.Mount{
 							{
 								Name: "foo2",
 							},
@@ -4302,30 +4302,30 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Config Published Port - Container Port Empty",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
-					Network: config.ContainerNetworkConfig{
-						PublishedPorts: []config.PublishedPortConfig{
+					Network: config.ContainerNetwork{
+						PublishedPorts: []config.PublishedPort{
 							{
 								Protocol: "tcp",
 								HostIP:   "127.0.0.1",
@@ -4340,30 +4340,30 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Config Published Port - Container Port Negative",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
-					Network: config.ContainerNetworkConfig{
-						PublishedPorts: []config.PublishedPortConfig{
+					Network: config.ContainerNetwork{
+						PublishedPorts: []config.PublishedPort{
 							{
 								ContainerPort: -1,
 								Protocol:      "tcp",
@@ -4379,30 +4379,30 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Config Published Port - Protocol Empty",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
-					Network: config.ContainerNetworkConfig{
-						PublishedPorts: []config.PublishedPortConfig{
+					Network: config.ContainerNetwork{
+						PublishedPorts: []config.PublishedPort{
 							{
 								ContainerPort: 10001,
 								HostIP:        "127.0.0.1",
@@ -4417,30 +4417,30 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Config Published Port - Protocol Invalid",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
-					Network: config.ContainerNetworkConfig{
-						PublishedPorts: []config.PublishedPortConfig{
+					Network: config.ContainerNetwork{
+						PublishedPorts: []config.PublishedPort{
 							{
 								ContainerPort: 10001,
 								Protocol:      "garbage",
@@ -4456,30 +4456,30 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Config Published Port - Host IP Empty",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
-					Network: config.ContainerNetworkConfig{
-						PublishedPorts: []config.PublishedPortConfig{
+					Network: config.ContainerNetwork{
+						PublishedPorts: []config.PublishedPort{
 							{
 								ContainerPort: 10001,
 								Protocol:      "tcp",
@@ -4494,30 +4494,30 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Config Published Port - Host IP Invalid",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
-					Network: config.ContainerNetworkConfig{
-						PublishedPorts: []config.PublishedPortConfig{
+					Network: config.ContainerNetwork{
+						PublishedPorts: []config.PublishedPort{
 							{
 								ContainerPort: 10001,
 								Protocol:      "tcp",
@@ -4533,30 +4533,30 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Config Published Port - Host Port Empty",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
-					Network: config.ContainerNetworkConfig{
-						PublishedPorts: []config.PublishedPortConfig{
+					Network: config.ContainerNetwork{
+						PublishedPorts: []config.PublishedPort{
 							{
 								ContainerPort: 10001,
 								Protocol:      "tcp",
@@ -4571,30 +4571,30 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Config Published Port - Host Port Negative",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
-					Network: config.ContainerNetworkConfig{
-						PublishedPorts: []config.PublishedPortConfig{
+					Network: config.ContainerNetwork{
+						PublishedPorts: []config.PublishedPort{
 							{
 								ContainerPort: 10001,
 								Protocol:      "tcp",
@@ -4610,30 +4610,30 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Empty Container Config Sysctl Key",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
-					Security: config.ContainerSecurityConfig{
-						Sysctls: []config.SysctlConfig{
+					Security: config.ContainerSecurity{
+						Sysctls: []config.Sysctl{
 							{
 								Value: "foo-bar",
 							},
@@ -4646,30 +4646,30 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Duplicate Container Config Sysctl Key",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
-					Security: config.ContainerSecurityConfig{
-						Sysctls: []config.SysctlConfig{
+					Security: config.ContainerSecurity{
+						Sysctls: []config.Sysctl{
 							{
 								Key:   "FOO",
 								Value: "foo-bar",
@@ -4691,30 +4691,30 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Config Empty Sysctl Value",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
-					Security: config.ContainerSecurityConfig{
-						Sysctls: []config.SysctlConfig{
+					Security: config.ContainerSecurity{
+						Sysctls: []config.Sysctl{
 							{
 								Key: "FOO",
 							},
@@ -4727,29 +4727,29 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Health Config - Negative Retries",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
-					Health: config.ContainerHealthConfig{
+					Health: config.ContainerHealth{
 						Retries: -1,
 					},
 				},
@@ -4759,29 +4759,29 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Health Config - Invalid Interval",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
-					Health: config.ContainerHealthConfig{
+					Health: config.ContainerHealth{
 						Interval: "garbage",
 					},
 				},
@@ -4791,29 +4791,29 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Health Config - Invalid Timeout",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
-					Health: config.ContainerHealthConfig{
+					Health: config.ContainerHealth{
 						Timeout: "garbage",
 					},
 				},
@@ -4823,29 +4823,29 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Health Config - Invalid StartPeriod",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
-					Health: config.ContainerHealthConfig{
+					Health: config.ContainerHealth{
 						StartPeriod: "garbage",
 					},
 				},
@@ -4855,29 +4855,29 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Health Config - Invalid StartInterval",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
-					Health: config.ContainerHealthConfig{
+					Health: config.ContainerHealth{
 						StartInterval: "garbage",
 					},
 				},
@@ -4887,29 +4887,29 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container ShmSize Invalid Unit",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
-					Runtime: config.ContainerRuntimeConfig{
+					Runtime: config.ContainerRuntime{
 						ShmSize: "1foobar",
 					},
 				},
@@ -4919,29 +4919,29 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container ShmSize Invalid Value",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
-					Runtime: config.ContainerRuntimeConfig{
+					Runtime: config.ContainerRuntime{
 						ShmSize: "garbage",
 					},
 				},
@@ -4951,29 +4951,29 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Empty Container Env Var",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
-					Runtime: config.ContainerRuntimeConfig{
+					Runtime: config.ContainerRuntime{
 						Env: []config.ContainerEnv{
 							{
 								Value: "foo-bar",
@@ -4987,29 +4987,29 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Duplicate Container Env Var",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
-					Runtime: config.ContainerRuntimeConfig{
+					Runtime: config.ContainerRuntime{
 						Env: []config.ContainerEnv{
 							{
 								Var:   "FOO",
@@ -5032,29 +5032,29 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Env Var Without Value And ValueCommand",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
-					Runtime: config.ContainerRuntimeConfig{
+					Runtime: config.ContainerRuntime{
 						Env: []config.ContainerEnv{
 							{
 								Var: "FOO",
@@ -5068,29 +5068,29 @@ var buildDeploymentFromConfigErrorTests = []struct {
 	},
 	{
 		name: "Container Env Var With Both Value And ValueCommand",
-		config: config.HomelabConfig{
-			Global: config.GlobalConfig{
+		config: config.Homelab{
+			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 			},
-			Groups: []config.ContainerGroupConfig{
+			Groups: []config.ContainerGroup{
 				{
 					Name:  "g1",
 					Order: 1,
 				},
 			},
-			Containers: []config.ContainerConfig{
+			Containers: []config.Container{
 				{
 					Info: config.ContainerReference{
 						Group:     "g1",
 						Container: "c1",
 					},
-					Image: config.ContainerImageConfig{
+					Image: config.ContainerImage{
 						Image: "foo/bar:123",
 					},
-					Lifecycle: config.ContainerLifecycleConfig{
+					Lifecycle: config.ContainerLifecycle{
 						Order: 1,
 					},
-					Runtime: config.ContainerRuntimeConfig{
+					Runtime: config.ContainerRuntime{
 						Env: []config.ContainerEnv{
 							{
 								Var:          "FOO",
@@ -5114,11 +5114,11 @@ func TestBuildDeploymentFromConfigErrors(t *testing.T) {
 
 			_, gotErr := FromConfig(testutils.NewVanillaTestContext(), &tc.config)
 			if gotErr == nil {
-				testhelpers.LogErrorNil(t, "HomelabConfig.validate()", tc.name, tc.want)
+				testhelpers.LogErrorNil(t, "Homelab.validate()", tc.name, tc.want)
 				return
 			}
 
-			if !testhelpers.RegexMatch(t, "HomelabConfig.validate()", tc.name, "gotErr error string", tc.want, gotErr.Error()) {
+			if !testhelpers.RegexMatch(t, "Homelab.validate()", tc.name, "gotErr error string", tc.want, gotErr.Error()) {
 				return
 			}
 		})

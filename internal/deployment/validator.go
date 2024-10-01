@@ -16,7 +16,7 @@ import (
 	"github.com/tuxdudehomelab/homelab/internal/utils"
 )
 
-func validateGlobalConfig(ctx context.Context, parentEnv *env.ConfigEnvManager, conf *config.GlobalConfig) (*env.ConfigEnvManager, error) {
+func validateGlobalConfig(ctx context.Context, parentEnv *env.ConfigEnvManager, conf *config.Global) (*env.ConfigEnvManager, error) {
 	if err := validateBaseDir(conf.BaseDir); err != nil {
 		return nil, err
 	}
@@ -100,7 +100,7 @@ func validateContainerEnv(conf []config.ContainerEnv, location string) error {
 	return nil
 }
 
-func validateLabelsConfig(conf []config.LabelConfig, location string) error {
+func validateLabelsConfig(conf []config.Label, location string) error {
 	labels := utils.StringSet{}
 	for _, l := range conf {
 		if len(l.Name) == 0 {
@@ -118,7 +118,7 @@ func validateLabelsConfig(conf []config.LabelConfig, location string) error {
 	return nil
 }
 
-func validateMountsConfig(conf, commonConfig, globalDefs []config.MountConfig, location string) error {
+func validateMountsConfig(conf, commonConfig, globalDefs []config.Mount, location string) error {
 	// First build a map of the mounts from the globalDefs (which should
 	// already have been validated).
 	globalMountDefs := utils.StringSet{}
@@ -170,7 +170,7 @@ func validateMountsConfig(conf, commonConfig, globalDefs []config.MountConfig, l
 	return nil
 }
 
-func validateDevicesConfig(devices []config.DeviceConfig, location string) error {
+func validateDevicesConfig(devices []config.Device, location string) error {
 	for _, d := range devices {
 		if len(d.Src) == 0 {
 			return fmt.Errorf("device src cannot be empty in %s", location)
@@ -179,7 +179,7 @@ func validateDevicesConfig(devices []config.DeviceConfig, location string) error
 	return nil
 }
 
-func validatePublishedPortsConfig(ports []config.PublishedPortConfig, location string) error {
+func validatePublishedPortsConfig(ports []config.PublishedPort, location string) error {
 	for _, p := range ports {
 		if p.ContainerPort <= 0 {
 			return fmt.Errorf("published container port %d cannot be non-positive in %s", p.ContainerPort, location)
@@ -200,7 +200,7 @@ func validatePublishedPortsConfig(ports []config.PublishedPortConfig, location s
 	return nil
 }
 
-func validateSysctlsConfig(sysctls []config.SysctlConfig, location string) error {
+func validateSysctlsConfig(sysctls []config.Sysctl, location string) error {
 	keys := utils.StringSet{}
 	for _, s := range sysctls {
 		if len(s.Key) == 0 {
@@ -218,7 +218,7 @@ func validateSysctlsConfig(sysctls []config.SysctlConfig, location string) error
 	return nil
 }
 
-func validateHealthConfig(conf *config.ContainerHealthConfig, location string) error {
+func validateHealthConfig(conf *config.ContainerHealth, location string) error {
 	if conf.Retries < 0 {
 		return fmt.Errorf("health check retries %d cannot be negative in %s", conf.Retries, location)
 	}
@@ -245,7 +245,7 @@ func validateHealthConfig(conf *config.ContainerHealthConfig, location string) e
 	return nil
 }
 
-func validateGlobalContainerConfig(conf *config.GlobalContainerConfig, globalMountDefs []config.MountConfig) error {
+func validateGlobalContainerConfig(conf *config.GlobalContainer, globalMountDefs []config.Mount) error {
 	if conf.StopTimeout < 0 {
 		return fmt.Errorf("container stop timeout %d cannot be negative in global container config", conf.StopTimeout)
 	}
@@ -264,7 +264,7 @@ func validateGlobalContainerConfig(conf *config.GlobalContainerConfig, globalMou
 	return nil
 }
 
-func validateContainerRestartPolicy(conf *config.ContainerRestartPolicyConfig, location string) error {
+func validateContainerRestartPolicy(conf *config.ContainerRestartPolicy, location string) error {
 	if conf.Mode != "on-failure" && conf.MaxRetryCount != 0 {
 		return fmt.Errorf("restart policy max retry count can be set only when the mode is on-failure in %s", location)
 	}
@@ -280,7 +280,7 @@ func validateContainerRestartPolicy(conf *config.ContainerRestartPolicyConfig, l
 	return nil
 }
 
-func validateIPAMConfig(ctx context.Context, conf *config.IPAMConfig) (NetworkMap, map[config.ContainerReference]networkEndpointList, error) {
+func validateIPAMConfig(ctx context.Context, conf *config.IPAM) (NetworkMap, map[config.ContainerReference]networkEndpointList, error) {
 	networks := NetworkMap{}
 	hostInterfaces := utils.StringSet{}
 	bridgeModeNetworks := conf.Networks.BridgeModeNetworks
@@ -438,7 +438,7 @@ func validateIPAMConfig(ctx context.Context, conf *config.IPAMConfig) (NetworkMa
 	return networks, containerEndpoints, nil
 }
 
-func validateHostsConfig(ctx context.Context, hosts []config.HostConfig) (containerSet, error) {
+func validateHostsConfig(ctx context.Context, hosts []config.Host) (containerSet, error) {
 	currentHost := host.MustHostInfo(ctx)
 	hostNames := utils.StringSet{}
 	allowedContainers := containerSet{}
@@ -469,7 +469,7 @@ func validateHostsConfig(ctx context.Context, hosts []config.HostConfig) (contai
 	return allowedContainers, nil
 }
 
-func validateGroupsConfig(groups []config.ContainerGroupConfig) (ContainerGroupMap, error) {
+func validateGroupsConfig(groups []config.ContainerGroup) (ContainerGroupMap, error) {
 	containerGroups := ContainerGroupMap{}
 	for _, g := range groups {
 		if len(g.Name) == 0 {
@@ -487,7 +487,7 @@ func validateGroupsConfig(groups []config.ContainerGroupConfig) (ContainerGroupM
 	return containerGroups, nil
 }
 
-func validateContainersConfig(ctx context.Context, parentEnv *env.ConfigEnvManager, containersConfig []config.ContainerConfig, groups ContainerGroupMap, globalConfig *config.GlobalConfig, containerEndpoints map[config.ContainerReference]networkEndpointList, allowedContainers containerSet) error {
+func validateContainersConfig(ctx context.Context, parentEnv *env.ConfigEnvManager, containersConfig []config.Container, groups ContainerGroupMap, globalConfig *config.Global, containerEndpoints map[config.ContainerReference]networkEndpointList, allowedContainers containerSet) error {
 	for _, ct := range containersConfig {
 		g, found := groups[ct.Info.Group]
 		if !found {

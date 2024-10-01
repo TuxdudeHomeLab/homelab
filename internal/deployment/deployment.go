@@ -12,7 +12,7 @@ import (
 )
 
 type Deployment struct {
-	Config                 *config.HomelabConfig
+	Config                 *config.Homelab
 	Groups                 ContainerGroupMap
 	GroupsOrder            []string
 	Networks               NetworkMap
@@ -31,7 +31,7 @@ func FromConfigsPath(ctx context.Context, configsPath string) (*Deployment, erro
 }
 
 func FromReader(ctx context.Context, reader io.Reader) (*Deployment, error) {
-	config := config.HomelabConfig{}
+	config := config.Homelab{}
 	err := config.Parse(ctx, reader)
 	if err != nil {
 		return nil, err
@@ -39,7 +39,7 @@ func FromReader(ctx context.Context, reader io.Reader) (*Deployment, error) {
 	return FromConfig(ctx, &config)
 }
 
-func FromConfig(ctx context.Context, conf *config.HomelabConfig) (*Deployment, error) {
+func FromConfig(ctx context.Context, conf *config.Homelab) (*Deployment, error) {
 	d := Deployment{
 		Config:                 conf,
 		containerDockerConfigs: containerDockerConfigMap{},

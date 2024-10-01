@@ -24,8 +24,8 @@ const (
 )
 
 type Container struct {
-	config        *config.ContainerConfig
-	globalConfig  *config.GlobalConfig
+	config        *config.Container
+	globalConfig  *config.Global
 	group         *ContainerGroup
 	endpoints     networkEndpointList
 	allowedOnHost bool
@@ -48,7 +48,7 @@ type containerSet map[config.ContainerReference]bool
 type containerMap map[config.ContainerReference]*Container
 type containerDockerConfigMap map[config.ContainerReference]*containerDockerConfigs
 
-func newContainer(group *ContainerGroup, config *config.ContainerConfig, globalConfig *config.GlobalConfig, endpoints networkEndpointList, allowedOnHost bool) *Container {
+func newContainer(group *ContainerGroup, config *config.Container, globalConfig *config.Global, endpoints networkEndpointList, allowedOnHost bool) *Container {
 	return &Container{
 		config:        config,
 		globalConfig:  globalConfig,
@@ -555,7 +555,7 @@ func containerMapToList(cm containerMap) containerList {
 	return res
 }
 
-func mountConfigToString(v *config.MountConfig) string {
+func mountConfigToString(v *config.Mount) string {
 	if v.ReadOnly {
 		return fmt.Sprintf("%s:%s:ro", v.Src, v.Dst)
 	}

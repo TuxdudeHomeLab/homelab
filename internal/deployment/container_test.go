@@ -19,7 +19,7 @@ import (
 
 var containerStartTests = []struct {
 	name           string
-	config         config.HomelabConfig
+	config         config.Homelab
 	cRef           config.ContainerReference
 	ctxInfo        *testutils.TestContextInfo
 	preExec        func(context.Context)
@@ -428,7 +428,7 @@ func TestContainerStart(t *testing.T) {
 
 var containerStartErrorTests = []struct {
 	name      string
-	config    config.HomelabConfig
+	config    config.Homelab
 	cRef      config.ContainerReference
 	ctxInfo   *testutils.TestContextInfo
 	wantPanic bool
@@ -890,17 +890,17 @@ func TestContainerStartErrors(t *testing.T) {
 	}
 }
 
-func buildSingleContainerConfig(ct config.ContainerReference, image string) config.HomelabConfig {
+func buildSingleContainerConfig(ct config.ContainerReference, image string) config.Homelab {
 	conf := buildSingleContainerNoNetworkConfig(ct, image)
-	conf.IPAM = config.IPAMConfig{
-		Networks: config.NetworksConfig{
-			BridgeModeNetworks: []config.BridgeModeNetworkConfig{
+	conf.IPAM = config.IPAM{
+		Networks: config.Networks{
+			BridgeModeNetworks: []config.BridgeModeNetwork{
 				{
 					Name:              fmt.Sprintf("%s-bridge", ct.Group),
 					HostInterfaceName: fmt.Sprintf("docker-%s", ct.Group),
 					CIDR:              "172.18.101.0/24",
 					Priority:          1,
-					Containers: []config.ContainerIPConfig{
+					Containers: []config.ContainerIP{
 						{
 							IP:        "172.18.101.11",
 							Container: ct,
@@ -912,7 +912,7 @@ func buildSingleContainerConfig(ct config.ContainerReference, image string) conf
 					HostInterfaceName: "docker-prx",
 					CIDR:              "172.18.201.0/24",
 					Priority:          2,
-					Containers: []config.ContainerIPConfig{
+					Containers: []config.ContainerIP{
 						{
 							IP:        "172.18.201.11",
 							Container: ct,
@@ -925,11 +925,11 @@ func buildSingleContainerConfig(ct config.ContainerReference, image string) conf
 	return conf
 }
 
-func buildSingleContainerWithContainerModeNetworkConfig(ct config.ContainerReference, image string, connectTo config.ContainerReference) config.HomelabConfig {
+func buildSingleContainerWithContainerModeNetworkConfig(ct config.ContainerReference, image string, connectTo config.ContainerReference) config.Homelab {
 	conf := buildSingleContainerNoNetworkConfig(ct, image)
-	conf.IPAM = config.IPAMConfig{
-		Networks: config.NetworksConfig{
-			ContainerModeNetworks: []config.ContainerModeNetworkConfig{
+	conf.IPAM = config.IPAM{
+		Networks: config.Networks{
+			ContainerModeNetworks: []config.ContainerModeNetwork{
 				{
 					Name:      "net1",
 					Container: connectTo,
@@ -943,12 +943,12 @@ func buildSingleContainerWithContainerModeNetworkConfig(ct config.ContainerRefer
 	return conf
 }
 
-func buildSingleContainerNoNetworkConfig(ct config.ContainerReference, image string) config.HomelabConfig {
-	return config.HomelabConfig{
-		Global: config.GlobalConfig{
+func buildSingleContainerNoNetworkConfig(ct config.ContainerReference, image string) config.Homelab {
+	return config.Homelab{
+		Global: config.Global{
 			BaseDir: testhelpers.HomelabBaseDir(),
 		},
-		Hosts: []config.HostConfig{
+		Hosts: []config.Host{
 			{
 				Name: "fakehost",
 				AllowedContainers: []config.ContainerReference{
@@ -956,19 +956,19 @@ func buildSingleContainerNoNetworkConfig(ct config.ContainerReference, image str
 				},
 			},
 		},
-		Groups: []config.ContainerGroupConfig{
+		Groups: []config.ContainerGroup{
 			{
 				Name:  ct.Group,
 				Order: 1,
 			},
 		},
-		Containers: []config.ContainerConfig{
+		Containers: []config.Container{
 			{
 				Info: ct,
-				Image: config.ContainerImageConfig{
+				Image: config.ContainerImage{
 					Image: image,
 				},
-				Lifecycle: config.ContainerLifecycleConfig{
+				Lifecycle: config.ContainerLifecycle{
 					Order: 1,
 				},
 			},
