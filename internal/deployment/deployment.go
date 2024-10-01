@@ -43,13 +43,10 @@ func FromReader(ctx context.Context, reader io.Reader) (*Deployment, error) {
 }
 
 func FromConfig(ctx context.Context, conf *config.HomelabConfig) (*Deployment, error) {
-	u, found := user.UserInfoFromContext(ctx)
+	_, found := user.UserInfoFromContext(ctx)
 	if !found {
-		u = user.NewUserInfo(ctx)
-		ctx = user.WithUserInfo(ctx, u)
+		ctx = user.WithUserInfo(ctx, user.NewUserInfo(ctx))
 	}
-	// TODO: Actually use the userInfo.
-	_ = u
 
 	h, found := host.HostInfoFromContext(ctx)
 	if !found {

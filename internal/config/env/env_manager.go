@@ -4,12 +4,17 @@ import (
 	"context"
 
 	"github.com/tuxdudehomelab/homelab/internal/host"
+	"github.com/tuxdudehomelab/homelab/internal/user"
 )
 
 var (
 	configEnvHostIP                = "HOST_IP"
 	configEnvHostName              = "HOST_NAME"
 	configEnvHumanFriendlyHostName = "HUMAN_FRIENDLY_HOST_NAME"
+	configEnvUserName              = "USER_NAME"
+	configEnvUserID                = "USER_ID"
+	configEnvUserPrimaryGroupName  = "USER_PRIMARY_GROUP_NAME"
+	configEnvUserPrimaryGroupID    = "USER_PRIMARY_GROUP_ID"
 )
 
 type ConfigEnvManager struct {
@@ -52,13 +57,26 @@ func defaultEnv(ctx context.Context) (EnvMap, EnvOrder) {
 		log(ctx).Fatalf("Unable to find host info in context")
 	}
 
+	u, found := user.UserInfoFromContext(ctx)
+	if !found {
+		log(ctx).Fatalf("Unable to find user info in context")
+	}
+
 	return EnvMap{
 			configEnvHostIP:                h.IP.String(),
 			configEnvHostName:              h.HostName,
 			configEnvHumanFriendlyHostName: h.HumanFriendlyHostName,
+			configEnvUserName:              u.User.Username,
+			configEnvUserID:                u.User.Uid,
+			configEnvUserPrimaryGroupName:  u.PrimaryGroup.Name,
+			configEnvUserPrimaryGroupID:    u.PrimaryGroup.Gid,
 		}, EnvOrder{
 			configEnvHostIP,
 			configEnvHostName,
 			configEnvHumanFriendlyHostName,
+			configEnvUserName,
+			configEnvUserID,
+			configEnvUserPrimaryGroupName,
+			configEnvUserPrimaryGroupID,
 		}
 }
