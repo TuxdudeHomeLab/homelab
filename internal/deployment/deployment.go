@@ -62,8 +62,8 @@ func FromConfig(ctx context.Context, conf *config.HomelabConfig) (*Deployment, e
 		containerDockerConfigs: containerDockerConfigMap{},
 	}
 
-	env := env.NewConfigEnv(ctx)
-	envWithGlobal, err := validateGlobalConfig(ctx, env, &conf.Global)
+	systemEnv := env.NewSystemConfigEnvManager(ctx)
+	envWithGlobal, err := validateGlobalConfig(ctx, systemEnv, &conf.Global)
 	if err != nil {
 		return nil, err
 	}

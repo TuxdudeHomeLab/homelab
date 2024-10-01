@@ -16,12 +16,12 @@ import (
 	"github.com/tuxdudehomelab/homelab/internal/utils"
 )
 
-func validateGlobalConfig(ctx context.Context, parentEnv *env.ConfigEnv, conf *config.GlobalConfig) (*env.ConfigEnv, error) {
+func validateGlobalConfig(ctx context.Context, parentEnv *env.ConfigEnvManager, conf *config.GlobalConfig) (*env.ConfigEnvManager, error) {
 	if err := validateBaseDir(conf.BaseDir); err != nil {
 		return nil, err
 	}
 
-	newEnv, err := validateConfigEnv(ctx, parentEnv, conf.Env, "global config")
+	newEnvMap, newEnvOrder, err := validateConfigEnv(conf.Env, "global config")
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +34,7 @@ func validateGlobalConfig(ctx context.Context, parentEnv *env.ConfigEnv, conf *c
 		return nil, err
 	}
 
-	return newEnv, nil
+	return parentEnv.NewGlobalConfigEnvManager(ctx, newEnvMap, newEnvOrder), nil
 }
 
 func validateBaseDir(baseDir string) error {
@@ -51,22 +51,22 @@ func validateBaseDir(baseDir string) error {
 	return nil
 }
 
-func validateConfigEnv(ctx context.Context, parentEnv *env.ConfigEnv, conf []config.ConfigEnv, location string) (*env.ConfigEnv, error) {
+func validateConfigEnv(conf []config.ConfigEnv, location string) (env.EnvMap, env.EnvOrder, error) {
 	envs := env.EnvMap{}
-	envOrder := make([]string, 0)
+	envOrder := env.EnvOrder{}
 	for _, e := range conf {
 		if len(e.Var) == 0 {
-			return nil, fmt.Errorf("empty env var in %s", location)
+			return nil, nil, fmt.Errorf("empty env var in %s", location)
 		}
 		if _, found := envs[e.Var]; found {
-			return nil, fmt.Errorf("env var %s specified more than once in %s", e.Var, location)
+			return nil, nil, fmt.Errorf("env var %s specified more than once in %s", e.Var, location)
 		}
 
 		if len(e.Value) == 0 && len(e.ValueCommand) == 0 {
-			return nil, fmt.Errorf("neither value nor valueCommand specified for env var %s in %s", e.Var, location)
+			return nil, nil, fmt.Errorf("neither value nor valueCommand specified for env var %s in %s", e.Var, location)
 		}
 		if len(e.Value) > 0 && len(e.ValueCommand) > 0 {
-			return nil, fmt.Errorf("exactly one of value or valueCommand must be specified for env var %s in %s", e.Var, location)
+			return nil, nil, fmt.Errorf("exactly one of value or valueCommand must be specified for env var %s in %s", e.Var, location)
 		}
 
 		if len(e.Value) > 0 {
@@ -76,7 +76,7 @@ func validateConfigEnv(ctx context.Context, parentEnv *env.ConfigEnv, conf []con
 		}
 		envOrder = append(envOrder, e.Var)
 	}
-	return parentEnv.Override(ctx, envs, envOrder), nil
+	return envs, envOrder, nil
 }
 
 func validateContainerEnv(conf []config.ContainerEnv, location string) error {
@@ -486,7 +486,7 @@ func validateGroupsConfig(groups []config.ContainerGroupConfig) (ContainerGroupM
 	return containerGroups, nil
 }
 
-func validateContainersConfig(ctx context.Context, parentEnv *env.ConfigEnv, containersConfig []config.ContainerConfig, groups ContainerGroupMap, globalConfig *config.GlobalConfig, containerEndpoints map[config.ContainerReference]networkEndpointList, allowedContainers containerSet) error {
+func validateContainersConfig(ctx context.Context, parentEnv *env.ConfigEnvManager, containersConfig []config.ContainerConfig, groups ContainerGroupMap, globalConfig *config.GlobalConfig, containerEndpoints map[config.ContainerReference]networkEndpointList, allowedContainers containerSet) error {
 	for _, ct := range containersConfig {
 		g, found := groups[ct.Info.Group]
 		if !found {
@@ -497,11 +497,11 @@ func validateContainersConfig(ctx context.Context, parentEnv *env.ConfigEnv, con
 		}
 
 		loc := fmt.Sprintf("container {Group: %s Container:%s} config", ct.Info.Group, ct.Info.Container)
-		ctConfigEnv, err := validateConfigEnv(ctx, parentEnv, ct.Config.Env, loc)
+		ctConfigEnvMap, ctConfigEnvOrder, err := validateConfigEnv(ct.Config.Env, loc)
 		if err != nil {
 			return err
 		}
-		ct.ApplyConfigEnv(ctConfigEnv)
+		ct.ApplyConfigEnv(parentEnv.NewContainerConfigEnvManager(ctx, ctConfigEnvMap, ctConfigEnvOrder))
 
 		if len(ct.Image.Image) == 0 {
 			return fmt.Errorf("image cannot be empty in %s", loc)

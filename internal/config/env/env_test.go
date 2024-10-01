@@ -12,243 +12,274 @@ import (
 )
 
 var configEnvTests = []struct {
-	name    string
-	ctxInfo *testutils.TestContextInfo
-	test    func(*testing.T, context.Context, string)
+	name string
+	test func(*testing.T, context.Context, *configEnv, string)
 }{
 	{
-		name:    "Config Env - New",
-		ctxInfo: &testutils.TestContextInfo{},
-		test: func(t *testing.T, ctx context.Context, tc string) {
+		name: "Config Env - New",
+		test: func(t *testing.T, ctx context.Context, env *configEnv, tc string) {
 			wantEnvMap := EnvMap{
-				"$$HOST_IP$$":                  "10.76.77.78",
-				"$$HOST_NAME$$":                "fakehost",
-				"$$HUMAN_FRIENDLY_HOST_NAME$$": "FakeHost",
+				"$$ENV1$$": "my-env-1",
+				"$$ENV2$$": "my-env-2",
+				"$$ENV3$$": "my-env-3",
 			}
-			wantKeyOrder := []string{
-				"$$HOST_IP$$",
-				"$$HOST_NAME$$",
-				"$$HUMAN_FRIENDLY_HOST_NAME$$",
+			wantKeyOrder := EnvOrder{
+				"$$ENV1$$",
+				"$$ENV2$$",
+				"$$ENV3$$",
 			}
 
-			env := NewConfigEnv(ctx)
-			if !testhelpers.CmpDiff(t, "NewConfigEnv()", tc, "configEnv struct env map", wantEnvMap, env.env) {
+			if !testhelpers.CmpDiff(t, "newConfigEnv()", tc, "configEnv struct env map", wantEnvMap, env.env) {
 				return
 			}
-			if !testhelpers.CmpDiff(t, "NewConfigEnv()", tc, "configEnv struct env key order", wantKeyOrder, env.envKeyOrder) {
+			if !testhelpers.CmpDiff(t, "newConfigEnv()", tc, "configEnv struct env key order", wantKeyOrder, env.envKeyOrder) {
 				return
 			}
 		},
 	},
 	{
-		name:    "Config Env - Override - No overlap",
-		ctxInfo: &testutils.TestContextInfo{},
-		test: func(t *testing.T, ctx context.Context, tc string) {
+		name: "Config Env - override - No overlap",
+
+		test: func(t *testing.T, ctx context.Context, env *configEnv, tc string) {
 			override := EnvMap{
 				"FOO1": "foo1",
 				"BAR1": "bar1",
 				"BAZ1": "baz1",
 			}
-			overrideOrder := []string{
+			overrideOrder := EnvOrder{
 				"FOO1",
 				"BAR1",
 				"BAZ1",
 			}
 			wantEnvMap := EnvMap{
-				"$$HOST_IP$$":                  "10.76.77.78",
-				"$$HOST_NAME$$":                "fakehost",
-				"$$HUMAN_FRIENDLY_HOST_NAME$$": "FakeHost",
-				"$$FOO1$$":                     "foo1",
-				"$$BAR1$$":                     "bar1",
-				"$$BAZ1$$":                     "baz1",
+				"$$ENV1$$": "my-env-1",
+				"$$ENV2$$": "my-env-2",
+				"$$ENV3$$": "my-env-3",
+				"$$FOO1$$": "foo1",
+				"$$BAR1$$": "bar1",
+				"$$BAZ1$$": "baz1",
 			}
-			wantKeyOrder := []string{
-				"$$HOST_IP$$",
-				"$$HOST_NAME$$",
-				"$$HUMAN_FRIENDLY_HOST_NAME$$",
+			wantKeyOrder := EnvOrder{
+				"$$ENV1$$",
+				"$$ENV2$$",
+				"$$ENV3$$",
 				"$$FOO1$$",
 				"$$BAR1$$",
 				"$$BAZ1$$",
 			}
 
-			env := NewConfigEnv(ctx)
-			got := env.Override(ctx, override, overrideOrder)
-			if !testhelpers.CmpDiff(t, "NewConfigEnv()", tc, "configEnv struct", wantEnvMap, got.env) {
+			got := env.override(ctx, override, overrideOrder)
+			if !testhelpers.CmpDiff(t, "newConfigEnv()", tc, "configEnv struct", wantEnvMap, got.env) {
 				return
 			}
-			if !testhelpers.CmpDiff(t, "NewConfigEnv()", tc, "configEnv struct env key order", wantKeyOrder, got.envKeyOrder) {
+			if !testhelpers.CmpDiff(t, "newConfigEnv()", tc, "configEnv struct env key order", wantKeyOrder, got.envKeyOrder) {
 				return
 			}
 		},
 	},
 	{
-		name:    "Config Env - Override - With overlap",
-		ctxInfo: &testutils.TestContextInfo{},
-		test: func(t *testing.T, ctx context.Context, tc string) {
+		name: "Config Env - override - With overlap",
+		test: func(t *testing.T, ctx context.Context, env *configEnv, tc string) {
 			override := EnvMap{
-				"FOO1":                     "foo1",
-				"HOST_IP":                  "10.76.77.178",
-				"BAR1":                     "bar1",
-				"HUMAN_FRIENDLY_HOST_NAME": "FakeHost2",
+				"FOO1": "foo1",
+				"ENV1": "env1",
+				"BAR1": "bar1",
+				"ENV3": "env3",
 			}
-			overrideOrder := []string{
+			overrideOrder := EnvOrder{
 				"FOO1",
-				"HOST_IP",
+				"ENV1",
 				"BAR1",
-				"HUMAN_FRIENDLY_HOST_NAME",
+				"ENV3",
 			}
 			wantEnvMap := EnvMap{
-				"$$HOST_IP$$":                  "10.76.77.178",
-				"$$HOST_NAME$$":                "fakehost",
-				"$$HUMAN_FRIENDLY_HOST_NAME$$": "FakeHost2",
-				"$$FOO1$$":                     "foo1",
-				"$$BAR1$$":                     "bar1",
+				"$$ENV1$$": "env1",
+				"$$ENV2$$": "my-env-2",
+				"$$ENV3$$": "env3",
+				"$$FOO1$$": "foo1",
+				"$$BAR1$$": "bar1",
 			}
-			wantKeyOrder := []string{
-				"$$HOST_IP$$",
-				"$$HOST_NAME$$",
-				"$$HUMAN_FRIENDLY_HOST_NAME$$",
+			wantKeyOrder := EnvOrder{
+				"$$ENV1$$",
+				"$$ENV2$$",
+				"$$ENV3$$",
 				"$$FOO1$$",
 				"$$BAR1$$",
 			}
 
-			env := NewConfigEnv(ctx)
-			got := env.Override(ctx, override, overrideOrder)
-			if !testhelpers.CmpDiff(t, "NewConfigEnv()", tc, "configEnv struct", wantEnvMap, got.env) {
+			got := env.override(ctx, override, overrideOrder)
+			if !testhelpers.CmpDiff(t, "newConfigEnv()", tc, "configEnv struct", wantEnvMap, got.env) {
 				return
 			}
-			if !testhelpers.CmpDiff(t, "NewConfigEnv()", tc, "configEnv struct env key order", wantKeyOrder, got.envKeyOrder) {
+			if !testhelpers.CmpDiff(t, "newConfigEnv()", tc, "configEnv struct env key order", wantKeyOrder, got.envKeyOrder) {
 				return
 			}
 		},
 	},
 	{
-		name:    "Config Env - Apply - No Match",
-		ctxInfo: &testutils.TestContextInfo{},
-		test: func(t *testing.T, ctx context.Context, tc string) {
-			input := "host_ip=$HOST_IP$$;host_name=$$HOST_NAME$;friendly=HUMAN_FRIENDLY_HOST_NAME"
-			want := "host_ip=$HOST_IP$$;host_name=$$HOST_NAME$;friendly=HUMAN_FRIENDLY_HOST_NAME"
+		name: "Config Env - apply - No Match",
+		test: func(t *testing.T, ctx context.Context, env *configEnv, tc string) {
+			input := "my_env1=$ENV1$$;my_env2=$$ENV2$;my_env3=ENV3"
+			want := "my_env1=$ENV1$$;my_env2=$$ENV2$;my_env3=ENV3"
 
-			env := NewConfigEnv(ctx)
-			got := env.Apply(input)
+			got := env.apply(input)
 			if !testhelpers.CmpDiff(t, "configEnv.apply()", tc, "apply result", want, got) {
 				return
 			}
 		},
 	},
 	{
-		name:    "Config Env - Apply - Single Match",
-		ctxInfo: &testutils.TestContextInfo{},
-		test: func(t *testing.T, ctx context.Context, tc string) {
-			input := "host_ip=$HOST_IP$$;host_name=$$HOST_NAME$$;friendly=HUMAN_FRIENDLY_HOST_NAME"
-			want := "host_ip=$HOST_IP$$;host_name=fakehost;friendly=HUMAN_FRIENDLY_HOST_NAME"
+		name: "Config Env - apply - Single Match",
+		test: func(t *testing.T, ctx context.Context, env *configEnv, tc string) {
+			input := "my_env1=$ENV1$$;my_env2=$$ENV2$$;my_env3=ENV3"
+			want := "my_env1=$ENV1$$;my_env2=my-env-2;my_env3=ENV3"
 
-			env := NewConfigEnv(ctx)
-			got := env.Apply(input)
+			got := env.apply(input)
 			if !testhelpers.CmpDiff(t, "configEnv.apply()", tc, "apply result", want, got) {
 				return
 			}
 		},
 	},
 	{
-		name:    "Config Env - Apply - Multi Match",
-		ctxInfo: &testutils.TestContextInfo{},
-		test: func(t *testing.T, ctx context.Context, tc string) {
-			input := "host_ip=$$HOST_IP$$;host_name=$$HOST_NAME$$;friendly=$$HUMAN_FRIENDLY_HOST_NAME$$"
-			want := "host_ip=10.76.77.78;host_name=fakehost;friendly=FakeHost"
+		name: "Config Env - apply - Multi Match",
+		test: func(t *testing.T, ctx context.Context, env *configEnv, tc string) {
+			input := "my_env1=$$ENV1$$;my_env2=$$ENV2$$;my_env3=$$ENV3$$"
+			want := "my_env1=my-env-1;my_env2=my-env-2;my_env3=my-env-3"
 
-			env := NewConfigEnv(ctx)
-			got := env.Apply(input)
+			got := env.apply(input)
 			if !testhelpers.CmpDiff(t, "configEnv.apply()", tc, "apply result", want, got) {
 				return
 			}
 		},
 	},
 	{
-		name:    "Config Env - Apply - Recursive Match",
-		ctxInfo: &testutils.TestContextInfo{},
-		test: func(t *testing.T, ctx context.Context, tc string) {
+		name: "Config Env - apply - Recursive Match",
+		test: func(t *testing.T, ctx context.Context, env *configEnv, tc string) {
 			input := "foo=$$FOO$$"
 			want := "foo=$$BAR$$"
 
-			env := NewConfigEnv(ctx).Override(
+			env = env.override(
 				ctx,
 				EnvMap{
 					"FOO": "$$BAR$$",
 					"BAR": "$$BAZ$$",
 					"BAZ": "baz1",
 				},
-				[]string{
+				EnvOrder{
 					"FOO",
 					"BAR",
 					"BAZ",
 				},
 			)
-			got := env.Apply(input)
+			got := env.apply(input)
 			if !testhelpers.CmpDiff(t, "configEnv.apply()", tc, "apply result", want, got) {
 				return
 			}
 		},
 	},
-	{
-		name:    "Config Env - New - Missing Host Info",
-		ctxInfo: &testutils.TestContextInfo{},
-		test: func(t *testing.T, _ context.Context, tc string) {
-			want := `Unable to find host info in context`
-			l := testutils.NewCapturingTestLogger(zzzlog.LvlInfo, new(bytes.Buffer))
-			ctx := logger.WithLogger(context.Background(), l)
 
-			defer testhelpers.ExpectPanic(t, "NewConfigEnv", tc, want)
-			_ = NewConfigEnv(ctx)
-		},
-	},
 	{
-		name:    "Config Env - Override - Unequal Lengths Between Override Map And Order",
-		ctxInfo: &testutils.TestContextInfo{},
-		test: func(t *testing.T, ctx context.Context, tc string) {
+		name: "Config Env - override - Unequal Lengths Between Override Map And Order",
+		test: func(t *testing.T, ctx context.Context, env *configEnv, tc string) {
 			want := `Override map \(len:2\) and order slice \(len:1\) are of unequal lengths`
 			override := EnvMap{
 				"FOO1": "foo1",
 				"BAR1": "bar1",
 			}
-			overrideOrder := []string{
+			overrideOrder := EnvOrder{
 				"FOO1",
 			}
-			l := testutils.NewCapturingTestLogger(zzzlog.LvlInfo, new(bytes.Buffer))
-			ctx = logger.WithLogger(ctx, l)
-			env := NewConfigEnv(ctx)
 
 			defer testhelpers.ExpectPanic(t, "configEnv.override()", tc, want)
-			_ = env.Override(ctx, override, overrideOrder)
+			_ = env.override(ctx, override, overrideOrder)
 		},
 	},
 	{
-		name:    "Config Env - Override - Invalid Override Map Key In Order",
-		ctxInfo: &testutils.TestContextInfo{},
-		test: func(t *testing.T, ctx context.Context, tc string) {
+		name: "Config Env - override - Invalid Override Map Key In Order",
+		test: func(t *testing.T, ctx context.Context, env *configEnv, tc string) {
 			want := `Expected key BAZ1 not found in override map input`
 			override := EnvMap{
 				"FOO1": "foo1",
 				"BAR1": "bar1",
 			}
-			overrideOrder := []string{
+			overrideOrder := EnvOrder{
 				"FOO1",
 				"BAZ1",
 			}
-			l := testutils.NewCapturingTestLogger(zzzlog.LvlInfo, new(bytes.Buffer))
-			ctx = logger.WithLogger(ctx, l)
-			env := NewConfigEnv(ctx)
 
 			defer testhelpers.ExpectPanic(t, "configEnv.override()", tc, want)
-			_ = env.Override(ctx, override, overrideOrder)
+			_ = env.override(ctx, override, overrideOrder)
 		},
 	},
 }
 
 func TestConfigEnv(t *testing.T) {
+	initEnvMap := EnvMap{
+		"ENV1": "my-env-1",
+		"ENV2": "my-env-2",
+		"ENV3": "my-env-3",
+	}
+	initEnvOrder := EnvOrder{
+		"ENV1",
+		"ENV2",
+		"ENV3",
+	}
 	for _, tc := range configEnvTests {
 		t.Run(tc.name, func(t *testing.T) {
-			tc.test(t, testutils.NewTestContext(tc.ctxInfo), tc.name)
+			l := testutils.NewCapturingTestLogger(zzzlog.LvlInfo, new(bytes.Buffer))
+			ctx := testutils.NewTestContext(&testutils.TestContextInfo{})
+			ctx = logger.WithLogger(ctx, l)
+
+			env := newConfigEnv(ctx, initEnvMap, initEnvOrder)
+			tc.test(t, ctx, env, tc.name)
+		})
+	}
+}
+
+var configEnvInitPanicTests = []struct {
+	name         string
+	initEnvMap   EnvMap
+	initEnvOrder EnvOrder
+	want         string
+	test         func(*testing.T, context.Context, *configEnv, string)
+}{
+	{
+		name: "Config Env - New - Unequal Lengths Between Override Map And Order",
+		initEnvMap: EnvMap{
+			"ENV1": "my-env-1",
+			"ENV2": "my-env-2",
+			"ENV3": "my-env-3",
+		},
+		initEnvOrder: EnvOrder{
+			"ENV1",
+			"ENV2",
+		},
+		want: `Override map \(len:3\) and order slice \(len:2\) are of unequal lengths`,
+	},
+	{
+		name: "Config Env - new - Invalid Map Key In Order",
+		initEnvMap: EnvMap{
+			"ENV1": "my-env-1",
+			"ENV2": "my-env-2",
+			"ENV3": "my-env-3",
+		},
+		initEnvOrder: EnvOrder{
+			"ENV1",
+			"ENV4",
+			"ENV3",
+		},
+		want: `Expected key ENV4 not found in override map input`,
+	},
+}
+
+func TestConfigEnvInitPanic(t *testing.T) {
+	for _, tc := range configEnvInitPanicTests {
+		t.Run(tc.name, func(t *testing.T) {
+			l := testutils.NewCapturingTestLogger(zzzlog.LvlInfo, new(bytes.Buffer))
+			ctx := logger.WithLogger(context.Background(), l)
+
+			defer testhelpers.ExpectPanic(t, "newConfigEnv", tc.name, tc.want)
+			_ = newConfigEnv(ctx, tc.initEnvMap, tc.initEnvOrder)
 		})
 	}
 }

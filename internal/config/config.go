@@ -272,7 +272,7 @@ func (h *HomelabConfig) Parse(ctx context.Context, r io.Reader) error {
 	return nil
 }
 
-func (c *ContainerConfig) ApplyConfigEnv(env *env.ConfigEnv) {
+func (c *ContainerConfig) ApplyConfigEnv(env *env.ConfigEnvManager) {
 	c.Lifecycle.StartPreHook = env.Apply(c.Lifecycle.StartPreHook)
 	c.User.User = env.Apply(c.User.User)
 	c.User.PrimaryGroup = env.Apply(c.User.PrimaryGroup)

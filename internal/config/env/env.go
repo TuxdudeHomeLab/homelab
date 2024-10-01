@@ -4,52 +4,26 @@ import (
 	"context"
 	"fmt"
 	"strings"
-
-	"github.com/tuxdudehomelab/homelab/internal/host"
 )
 
-var (
-	configEnvHostIP                = "HOST_IP"
-	configEnvHostName              = "HOST_NAME"
-	configEnvHumanFriendlyHostName = "HUMAN_FRIENDLY_HOST_NAME"
-)
-
-type ConfigEnv struct {
+type configEnv struct {
 	env         EnvMap
-	envKeyOrder []string
+	envKeyOrder EnvOrder
 	replacer    *strings.Replacer
 }
 
-type EnvMap map[string]string
-
-func NewConfigEnv(ctx context.Context) *ConfigEnv {
-	h, found := host.HostInfoFromContext(ctx)
-	if !found {
-		log(ctx).Fatalf("Unable to find host info in context")
-	}
-
-	c := ConfigEnv{}
-	return c.Override(
-		ctx,
-		EnvMap{
-			configEnvHostIP:                h.IP.String(),
-			configEnvHostName:              h.HostName,
-			configEnvHumanFriendlyHostName: h.HumanFriendlyHostName,
-		},
-		[]string{
-			configEnvHostIP,
-			configEnvHostName,
-			configEnvHumanFriendlyHostName,
-		})
+func newConfigEnv(ctx context.Context, env EnvMap, order EnvOrder) *configEnv {
+	c := configEnv{}
+	return c.override(ctx, env, order)
 }
 
-func (c *ConfigEnv) Override(ctx context.Context, override EnvMap, order []string) *ConfigEnv {
+func (c *configEnv) override(ctx context.Context, override EnvMap, order EnvOrder) *configEnv {
 	if len(override) != len(order) {
 		log(ctx).Fatalf("Override map (len:%d) and order slice (len:%d) are of unequal lengths", len(override), len(order))
 	}
-	res := ConfigEnv{
+	res := configEnv{
 		env:         EnvMap{},
-		envKeyOrder: make([]string, 0),
+		envKeyOrder: EnvOrder{},
 	}
 	for _, k := range c.envKeyOrder {
 		v := c.env[k]
@@ -75,7 +49,7 @@ func (c *ConfigEnv) Override(ctx context.Context, override EnvMap, order []strin
 	return &res
 }
 
-func (c *ConfigEnv) Apply(input string) string {
+func (c *configEnv) apply(input string) string {
 	return c.replacer.Replace(input)
 }
 
