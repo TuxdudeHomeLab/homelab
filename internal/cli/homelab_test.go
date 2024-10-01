@@ -245,15 +245,38 @@ Use "homelab \[command\] --help" for more information about a command\.`,
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
-				ValidImagesForPull: utils.StringSet{
-					"abc/xyz": {},
-				},
+				ValidImagesForPull: utils.StringSet{},
 			}),
 			UseRealHostInfo: true,
 		},
 		want: `Container g1-c1 not allowed to run on host [^\s]+
 Container g1-c2 not allowed to run on host [^\s]+
 Container g2-c3 not allowed to run on host [^\s]+`,
+	},
+	{
+		name: "Homelab Command - Start - All Groups With Real User Info",
+		args: []string{
+			"start",
+			"--all-groups",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				ValidImagesForPull: utils.StringSet{
+					"abc/xyz":  {},
+					"abc/xyz3": {},
+				},
+			}),
+			UseRealUserInfo: true,
+		},
+		want: `Pulling image: abc/xyz
+Created network net1
+Started container g1-c1
+Container g1-c2 not allowed to run on host FakeHost
+Pulling image: abc/xyz3
+Created network net2
+Started container g2-c3`,
 	},
 	{
 		name: "Homelab Command - Start - All Groups",
