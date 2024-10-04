@@ -260,7 +260,7 @@ func (c *Container) dockerNetworkConfig() *dnetwork.NetworkingConfig {
 		return nil
 	}
 	return &dnetwork.NetworkingConfig{
-		EndpointsConfig: c.primaryNetworkEndpoint(),
+		EndpointsConfig: ne,
 	}
 }
 
