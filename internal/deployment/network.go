@@ -8,7 +8,7 @@ import (
 	dnetwork "github.com/docker/docker/api/types/network"
 	"github.com/tuxdudehomelab/homelab/internal/config"
 	"github.com/tuxdudehomelab/homelab/internal/docker"
-	"github.com/tuxdudehomelab/homelab/internal/utils"
+	"github.com/tuxdudehomelab/homelab/internal/newutils"
 )
 
 type Network struct {
@@ -109,7 +109,7 @@ func (n *Network) createOptions() dnetwork.CreateOptions {
 	return dnetwork.CreateOptions{
 		Driver:     "bridge",
 		Scope:      "local",
-		EnableIPv6: utils.NewBool(false),
+		EnableIPv6: newutils.NewBool(false),
 		IPAM: &dnetwork.IPAM{
 			Driver: "default",
 			Config: []dnetwork.IPAMConfig{

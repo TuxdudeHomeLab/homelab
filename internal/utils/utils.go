@@ -23,7 +23,3 @@ func LogToErrorAndReturn(ctx context.Context, format string, args ...interface{}
 	log(ctx).ErrorEmpty()
 	return fmt.Errorf(format, args...)
 }
-
-func NewBool(b bool) *bool {
-	return &b
-}
