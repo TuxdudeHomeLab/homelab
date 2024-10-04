@@ -279,6 +279,22 @@ Created network net2
 Started container g2-c3`,
 	},
 	{
+		name: "Homelab Command - Start - All Groups With Real User, Host And Docker",
+		args: []string{
+			"start",
+			"--all-groups",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			UseRealHostInfo: true,
+			UseRealUserInfo: true,
+		},
+		want: `Container g1-c1 not allowed to run on host [^\s]+
+Container g1-c2 not allowed to run on host [^\s]+
+Container g2-c3 not allowed to run on host [^\s]+`,
+	},
+	{
 		name: "Homelab Command - Start - All Groups",
 		args: []string{
 			"start",
