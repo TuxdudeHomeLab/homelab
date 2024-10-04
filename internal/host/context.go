@@ -17,7 +17,7 @@ func MustHostInfo(ctx context.Context) *HostInfo {
 	if h, found := HostInfoFromContext(ctx); found {
 		return h
 	}
-	log(ctx).Fatalf("host info not found in context")
+	log(ctx).Fatalf("Host info not found in context")
 	return nil
 }
 
