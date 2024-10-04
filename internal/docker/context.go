@@ -22,7 +22,7 @@ func MustDockerAPIClient(ctx context.Context) DockerAPIClient {
 	if d, found := DockerAPIClientFromContext(ctx); found {
 		return d
 	}
-	log(ctx).Fatalf("Docker API client not found in context")
+	log(ctx).Fatalf("Docker API Client not found in context")
 	return nil
 }
 
