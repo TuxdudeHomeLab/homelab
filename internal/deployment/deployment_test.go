@@ -31,6 +31,20 @@ global:
       value: MY_CONFIG_VAR_2_VALUE
     - var: MY_CONFIG_VAR_3
       valueCommand: /foo/bar/some-env-var-cmd
+    - var: ENV_GROUP_1
+      value: fakegroup1
+    - var: ENV_GROUP_2
+      value: fakegroup2
+    - var: ENV_DEST_DIR
+      value: /foo123/bar123
+    - var: ENV_DOMAIN
+      value: my.custom.domain
+    - var: ENV_DNS_SERVER
+      value: 10.53.53.53
+    - var: ENV_DNS_OPTION
+      value: dns-opt-123
+    - var: ENV_DNS_SEARCH
+      value: custom-dns-search
   mountDefs:
     - name: mount-def-1
       type: bind
@@ -150,6 +164,18 @@ containers:
   - info:
       group: group1
       container: ct1
+    config:
+      env:
+        - var: ENV_TMPFS_SIZE
+          value: 100000000
+        - var: ENV_SRC_DEV
+          value: /dev/src123
+        - var: ENV_DST_DEV
+          value: /dev/dst123
+        - var: ENV_MY_ENV_VAL
+          value: my-env-val
+        - var: ENV_MY_ENV_2_VAL_CMD
+          value: cat /foo/bar/baz.txt
     image:
       image: tuxdude/homelab-base:master
       skipImagePull: false
@@ -163,60 +189,72 @@ containers:
           value: my.ct1.label.value.2
     lifecycle:
       order: 1
-      startPreHook: $$SCRIPTS_DIR$$/my-start-prehook.sh
+      startPreHook: $$CONTAINER_SCRIPTS_DIR$$/my-start-prehook.sh
       restartPolicy:
         mode: always
       autoRemove: true
       stopSignal: SIGHUP
       stopTimeout: 10
     user:
-      user: $$CURRENT_USER$$
-      primaryGroup: $$CURRENT_GROUP$$
+      user: $$USER_ID$$
+      primaryGroup: $$USER_PRIMARY_GROUP_ID$$
       additionalGroups:
-        - dialout
-        - someRandomGroup
+        - $$ENV_GROUP_1$$
+        - $$ENV_GROUP_2$$
     fs:
       readOnlyRootfs: true
       mounts:
+        - name: some-other-mount-1
+          type: bind
+          src: $$HOMELAB_BASE_DIR$$/abc
+          dst: /abc
+        - name: some-other-mount-2
+          type: bind
+          src: $$CONTAINER_BASE_DIR$$/some/random/dir
+          dst: /xyz
         - name: blocky-config-mount
           type: bind
-          src: $$CONFIG_DIR$$/generated/config.yml
+          src: $$CONTAINER_CONFIGS_DIR$$/generated/config.yml
           dst: /data/blocky/config/config.yml
           readOnly: true
+        - name: some-other-mount-3
+          type: bind
+          src: $$CONTAINER_DATA_DIR$$/my-data
+          dst: $$ENV_DEST_DIR$$/my-data
         - name: homelab-self-signed-tls-cert
         - name: tmpfs-mount
           type: tmpfs
-          dst: /tmp/cache
-          options: tmpfs-size=100000000
+          dst: /tmp/cache-$$USER_NAME$$
+          options: tmpfs-size=$$ENV_TMPFS_SIZE$$
       devices:
         - src: /dev/foo
           dst: /dev/bar
           disallowRead: false
           disallowWrite: true
           disallowMknod: true
-        - src: /dev/dev1
-          dst: /dev/dev2
+        - src: $$ENV_SRC_DEV$$
+          dst: $$ENV_DST_DEV$$
         - src: /dev/foo2
           dst: /dev/bar2
           disallowRead: true
           disallowWrite: true
           disallowMknod: false
     network:
-      hostName: foobar
-      domainName: somedomain
+      hostName: Special-$$HOST_NAME$$-$$USER_PRIMARY_GROUP_NAME$$
+      domainName: $$ENV_DOMAIN$$
       dnsServers:
         - 1.1.1.1
-        - 1.0.0.1
+        - $$ENV_DNS_SERVER$$
       dnsOptions:
         - dns-option-1
-        - dns-option-2
+        - $$ENV_DNS_OPTION$$
       dnsSearch:
         - dns-ct-search-1
-        - dns-ct-search-2
+        - $$ENV_DNS_SEARCH$$
       publishedPorts:
         - containerPort: 53
           proto: tcp
-          hostIp: 127.0.0.1
+          hostIp: $$HOST_IP$$
           hostPort: 53
         - containerPort: 53
           proto: udp
@@ -250,9 +288,9 @@ containers:
       shmSize: 1g
       env:
         - var: MY_ENV
-          value: MY_ENV_VALUE
+          value: $$ENV_MY_ENV_VAL$$
         - var: MY_ENV_2
-          valueCommand: cat /foo/bar/baz.txt
+          valueCommand: $$ENV_MY_ENV_2_VAL_CMD$$
         - var: MY_ENV_3
           value: SomeHostName.$$HUMAN_FRIENDLY_HOST_NAME$$.SomeDomainName
       entrypoint:
@@ -278,6 +316,34 @@ containers:
 					{
 						Var:          "MY_CONFIG_VAR_3",
 						ValueCommand: "/foo/bar/some-env-var-cmd",
+					},
+					{
+						Var:   "ENV_GROUP_1",
+						Value: "fakegroup1",
+					},
+					{
+						Var:   "ENV_GROUP_2",
+						Value: "fakegroup2",
+					},
+					{
+						Var:   "ENV_DEST_DIR",
+						Value: "/foo123/bar123",
+					},
+					{
+						Var:   "ENV_DOMAIN",
+						Value: "my.custom.domain",
+					},
+					{
+						Var:   "ENV_DNS_SERVER",
+						Value: "10.53.53.53",
+					},
+					{
+						Var:   "ENV_DNS_OPTION",
+						Value: "dns-opt-123",
+					},
+					{
+						Var:   "ENV_DNS_SEARCH",
+						Value: "custom-dns-search",
 					},
 				},
 				MountDefs: []config.Mount{
@@ -494,6 +560,30 @@ containers:
 						Group:     "group1",
 						Container: "ct1",
 					},
+					Config: config.ContainerConfigOptions{
+						Env: []config.ConfigEnv{
+							{
+								Var:   "ENV_TMPFS_SIZE",
+								Value: "100000000",
+							},
+							{
+								Var:   "ENV_SRC_DEV",
+								Value: "/dev/src123",
+							},
+							{
+								Var:   "ENV_DST_DEV",
+								Value: "/dev/dst123",
+							},
+							{
+								Var:   "ENV_MY_ENV_VAL",
+								Value: "my-env-val",
+							},
+							{
+								Var:   "ENV_MY_ENV_2_VAL_CMD",
+								Value: "cat /foo/bar/baz.txt",
+							},
+						},
+					},
 					Image: config.ContainerImage{
 						Image:                   "tuxdude/homelab-base:master",
 						SkipImagePull:           false,
@@ -514,7 +604,7 @@ containers:
 					},
 					Lifecycle: config.ContainerLifecycle{
 						Order:        1,
-						StartPreHook: "$$SCRIPTS_DIR$$/my-start-prehook.sh",
+						StartPreHook: "testdata/dummy-base-dir/group1/ct1/scripts/my-start-prehook.sh",
 						RestartPolicy: config.ContainerRestartPolicy{
 							Mode: "always",
 						},
@@ -523,22 +613,40 @@ containers:
 						StopTimeout: 10,
 					},
 					User: config.ContainerUser{
-						User:         "$$CURRENT_USER$$",
-						PrimaryGroup: "$$CURRENT_GROUP$$",
+						User:         "55555",
+						PrimaryGroup: "44444",
 						AdditionalGroups: []string{
-							"dialout",
-							"someRandomGroup",
+							"fakegroup1",
+							"fakegroup2",
 						},
 					},
 					Filesystem: config.ContainerFilesystem{
 						ReadOnlyRootfs: true,
 						Mounts: []config.Mount{
 							{
+								Name: "some-other-mount-1",
+								Type: "bind",
+								Src:  "testdata/dummy-base-dir/abc",
+								Dst:  "/abc",
+							},
+							{
+								Name: "some-other-mount-2",
+								Type: "bind",
+								Src:  "testdata/dummy-base-dir/group1/ct1/some/random/dir",
+								Dst:  "/xyz",
+							},
+							{
 								Name:     "blocky-config-mount",
 								Type:     "bind",
-								Src:      "$$CONFIG_DIR$$/generated/config.yml",
+								Src:      "testdata/dummy-base-dir/group1/ct1/configs/generated/config.yml",
 								Dst:      "/data/blocky/config/config.yml",
 								ReadOnly: true,
+							},
+							{
+								Name: "some-other-mount-3",
+								Type: "bind",
+								Src:  "testdata/dummy-base-dir/group1/ct1/data/my-data",
+								Dst:  "/foo123/bar123/my-data",
 							},
 							{
 								Name: "homelab-self-signed-tls-cert",
@@ -546,7 +654,7 @@ containers:
 							{
 								Name:    "tmpfs-mount",
 								Type:    "tmpfs",
-								Dst:     "/tmp/cache",
+								Dst:     "/tmp/cache-fakeuser",
 								Options: "tmpfs-size=100000000",
 							},
 						},
@@ -558,8 +666,8 @@ containers:
 								DisallowMknod: true,
 							},
 							{
-								Src: "/dev/dev1",
-								Dst: "/dev/dev2",
+								Src: "/dev/src123",
+								Dst: "/dev/dst123",
 							},
 							{
 								Src:           "/dev/foo2",
@@ -570,25 +678,25 @@ containers:
 						},
 					},
 					Network: config.ContainerNetwork{
-						HostName:   "foobar",
-						DomainName: "somedomain",
+						HostName:   "Special-fakehost-fakegroup1",
+						DomainName: "my.custom.domain",
 						DNSServers: []string{
 							"1.1.1.1",
-							"1.0.0.1",
+							"10.53.53.53",
 						},
 						DNSOptions: []string{
 							"dns-option-1",
-							"dns-option-2",
+							"dns-opt-123",
 						},
 						DNSSearch: []string{
 							"dns-ct-search-1",
-							"dns-ct-search-2",
+							"custom-dns-search",
 						},
 						PublishedPorts: []config.PublishedPort{
 							{
 								ContainerPort: 53,
 								Protocol:      "tcp",
-								HostIP:        "127.0.0.1",
+								HostIP:        "10.76.77.78",
 								HostPort:      53,
 							},
 							{
@@ -638,7 +746,7 @@ containers:
 						Env: []config.ContainerEnv{
 							{
 								Var:   "MY_ENV",
-								Value: "MY_ENV_VALUE",
+								Value: "my-env-val",
 							},
 							{
 								Var:          "MY_ENV_2",
@@ -669,9 +777,9 @@ containers:
 				Container: "ct1",
 			}: &containerDockerConfigs{
 				ContainerConfig: &dcontainer.Config{
-					Hostname:   "foobar",
-					Domainname: "somedomain",
-					User:       "$$CURRENT_USER$$:$$CURRENT_GROUP$$",
+					Hostname:   "Special-fakehost-fakegroup1",
+					Domainname: "my.custom.domain",
+					User:       "55555:44444",
 					ExposedPorts: nat.PortSet{
 						"53/tcp": struct{}{},
 						"53/udp": struct{}{},
@@ -681,7 +789,7 @@ containers:
 						"MY_CONTAINER_ENV_VAR_1=MY_CONTAINER_ENV_VAR_1_VALUE",
 						"MY_CONTAINER_ENV_VAR_2=MY_CONTAINER_ENV_VAR_2_VALUE",
 						"MY_CONTAINER_ENV_VAR_3=",
-						"MY_ENV=MY_ENV_VALUE",
+						"MY_ENV=my-env-val",
 						"MY_ENV_2=",
 						"MY_ENV_3=SomeHostName.FakeHost.SomeDomainName",
 					},
@@ -709,14 +817,17 @@ containers:
 						"/abc1/def1:/pqr2/stu2/vwx2",
 						"/path/to/my/self/signed/cert/on/host:/path/to/my/self/signed/cert/on/container",
 						"/foo:/bar:ro",
-						"$$CONFIG_DIR$$/generated/config.yml:/data/blocky/config/config.yml:ro",
-						":/tmp/cache",
+						"testdata/dummy-base-dir/abc:/abc",
+						"testdata/dummy-base-dir/group1/ct1/some/random/dir:/xyz",
+						"testdata/dummy-base-dir/group1/ct1/configs/generated/config.yml:/data/blocky/config/config.yml:ro",
+						"testdata/dummy-base-dir/group1/ct1/data/my-data:/foo123/bar123/my-data",
+						":/tmp/cache-fakeuser",
 					},
 					NetworkMode: "group1-bridge",
 					PortBindings: nat.PortMap{
 						"53/tcp": []nat.PortBinding{
 							{
-								HostIP:   "127.0.0.1",
+								HostIP:   "10.76.77.78",
 								HostPort: "53",
 							},
 						},
@@ -741,19 +852,19 @@ containers:
 					},
 					DNS: []string{
 						"1.1.1.1",
-						"1.0.0.1",
+						"10.53.53.53",
 					},
 					DNSOptions: []string{
 						"dns-option-1",
-						"dns-option-2",
+						"dns-opt-123",
 					},
 					DNSSearch: []string{
 						"dns-ct-search-1",
-						"dns-ct-search-2",
+						"custom-dns-search",
 					},
 					GroupAdd: []string{
-						"dialout",
-						"someRandomGroup",
+						"fakegroup1",
+						"fakegroup2",
 					},
 					Privileged:     true,
 					ReadonlyRootfs: true,

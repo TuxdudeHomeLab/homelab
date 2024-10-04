@@ -34,7 +34,7 @@ func validateGlobalConfig(ctx context.Context, parentEnv *env.ConfigEnvManager, 
 		return nil, err
 	}
 
-	return parentEnv.NewGlobalConfigEnvManager(ctx, newEnvMap, newEnvOrder), nil
+	return parentEnv.NewGlobalConfigEnvManager(ctx, conf.BaseDir, newEnvMap, newEnvOrder), nil
 }
 
 func validateBaseDir(baseDir string) error {
@@ -488,7 +488,7 @@ func validateGroupsConfig(groups []config.ContainerGroup) (ContainerGroupMap, er
 }
 
 func validateContainersConfig(ctx context.Context, parentEnv *env.ConfigEnvManager, containersConfig []config.Container, groups ContainerGroupMap, globalConfig *config.Global, containerEndpoints map[config.ContainerReference]networkEndpointList, allowedContainers containerSet) error {
-	for _, ct := range containersConfig {
+	for i, ct := range containersConfig {
 		g, found := groups[ct.Info.Group]
 		if !found {
 			return fmt.Errorf("group definition missing in groups config for the container {Group:%s Container:%s} in the containers config", ct.Info.Group, ct.Info.Container)
@@ -502,7 +502,8 @@ func validateContainersConfig(ctx context.Context, parentEnv *env.ConfigEnvManag
 		if err != nil {
 			return err
 		}
-		ct.ApplyConfigEnv(parentEnv.NewContainerConfigEnvManager(ctx, ctConfigEnvMap, ctConfigEnvOrder))
+		ctEnv := parentEnv.NewContainerConfigEnvManager(ctx, containerBaseDir(globalConfig.BaseDir, ct.Info), ctConfigEnvMap, ctConfigEnvOrder)
+		ct.ApplyConfigEnv(ctEnv)
 
 		if len(ct.Image.Image) == 0 {
 			return fmt.Errorf("image cannot be empty in %s", loc)
@@ -564,6 +565,9 @@ func validateContainersConfig(ctx context.Context, parentEnv *env.ConfigEnvManag
 		}
 
 		g.addContainer(&ct, globalConfig, containerEndpoints[ct.Info], allowedContainers[ct.Info])
+		// This is needed to store the updated container config after
+		// ApplyConfigEnv().
+		containersConfig[i] = ct
 	}
 
 	return nil
@@ -585,4 +589,8 @@ func newBridgeModeEndpoint(network *Network, ip string) *containerNetworkEndpoin
 
 func newContainerModeEndpoint(network *Network) *containerNetworkEndpoint {
 	return &containerNetworkEndpoint{network: network}
+}
+
+func containerBaseDir(homelabBaseDir string, ct config.ContainerReference) string {
+	return fmt.Sprintf("%s/%s/%s", homelabBaseDir, ct.Group, ct.Container)
 }
