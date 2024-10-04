@@ -52,16 +52,8 @@ func (c *ConfigEnvManager) Apply(input string) string {
 }
 
 func defaultEnv(ctx context.Context) (EnvMap, EnvOrder) {
-	h, found := host.HostInfoFromContext(ctx)
-	if !found {
-		log(ctx).Fatalf("Unable to find host info in context")
-	}
-
-	u, found := user.UserInfoFromContext(ctx)
-	if !found {
-		log(ctx).Fatalf("Unable to find user info in context")
-	}
-
+	h := host.MustHostInfo(ctx)
+	u := user.MustUserInfo(ctx)
 	return EnvMap{
 			configEnvHostIP:                h.IP.String(),
 			configEnvHostName:              h.HostName,
