@@ -9,11 +9,6 @@ import (
 	"github.com/tuxdudehomelab/homelab/internal/docker"
 )
 
-const (
-	ConfigCmdGroupID     = "config"
-	ContainersCmdGroupID = "containers"
-)
-
 func ExecContainerGroupCmd(ctx context.Context, cmd, action string, options *ContainerGroupOptions, dep *deployment.Deployment, fn func(*deployment.Container, *docker.DockerClient) error) error {
 	res, err := dep.QueryContainers(ctx, options.allGroups, options.group, options.container)
 	if err != nil {
@@ -46,18 +41,4 @@ func ExecContainerGroupCmd(ctx context.Context, cmd, action string, options *Con
 		return fmt.Errorf("%s failed for %d containers, reason(s):%s", cmd, len(errList), sb.String())
 	}
 	return nil
-}
-
-func BuildDeployment(ctx context.Context, cmd string, options *GlobalCmdOptions) (*deployment.Deployment, error) {
-	path, err := configsPath(ctx, cmd, options)
-	if err != nil {
-		return nil, err
-	}
-
-	dep, err := deployment.FromConfigsPath(ctx, path)
-	if err != nil {
-		return nil, fmt.Errorf("%s failed while parsing the configs, reason: %w", cmd, err)
-	}
-
-	return dep, nil
 }
