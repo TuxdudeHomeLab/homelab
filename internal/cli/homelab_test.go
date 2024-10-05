@@ -7,6 +7,7 @@ import (
 
 	"github.com/tuxdude/zzzlog"
 	"github.com/tuxdudehomelab/homelab/internal/cli/version"
+	"github.com/tuxdudehomelab/homelab/internal/docker"
 	"github.com/tuxdudehomelab/homelab/internal/docker/fakedocker"
 	"github.com/tuxdudehomelab/homelab/internal/testhelpers"
 	"github.com/tuxdudehomelab/homelab/internal/testutils"
@@ -503,6 +504,77 @@ Container g1-c2 not allowed to run on host FakeHost`,
 Created network net1
 Started container g1-c1`,
 	},
+	{
+		name: "Homelab Command - Stop - All Groups",
+		args: []string{
+			"stop",
+			"--all-groups",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				Containers: []*fakedocker.FakeContainerInitInfo{
+					{
+						Name:  "g1-c1",
+						Image: "abc/xyz",
+						State: docker.ContainerStateCreated,
+					},
+					{
+						Name:  "g2-c3",
+						Image: "abc/xyz3",
+						State: docker.ContainerStateRemoving,
+					},
+				},
+			}),
+		},
+		want: `Stopped container g1-c1
+Container g1-c2 cannot be stopped since it was not found
+Stopped container g2-c3`,
+	},
+	{
+		name: "Homelab Command - Stop - One Group",
+		args: []string{
+			"stop",
+			"--group",
+			"g1",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				Containers: []*fakedocker.FakeContainerInitInfo{
+					{
+						Name:  "g1-c1",
+						Image: "abc/xyz",
+						State: docker.ContainerStateRunning,
+					},
+				},
+			}),
+		},
+		want: `Stopped container g1-c1
+Container g1-c2 cannot be stopped since it was not found`,
+	},
+	{
+		name: "Homelab Command - Stop - One Container - Not Found",
+		args: []string{
+			"stop",
+			"--group",
+			"g1",
+			"--container",
+			"c1",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				ValidImagesForPull: utils.StringSet{
+					"abc/xyz": {},
+				},
+			}),
+		},
+		want: `Container g1-c1 cannot be stopped since it was not found`,
+	},
 }
 
 func TestExecHomelabCmd(t *testing.T) {
@@ -524,134 +596,89 @@ func TestExecHomelabCmd(t *testing.T) {
 	}
 }
 
+var executeHomelabCmdLogLevels = []zzzlog.Level{
+	zzzlog.LvlTrace,
+	zzzlog.LvlDebug,
+	zzzlog.LvlInfo,
+	zzzlog.LvlWarn,
+	zzzlog.LvlError,
+	zzzlog.LvlFatal,
+}
+
 var executeHomelabCmdLogLevelTests = []struct {
-	name     string
-	args     []string
-	ctxInfo  *testutils.TestContextInfo
-	logLevel *zzzlog.Level
+	name    string
+	args    []string
+	ctxInfo func() *testutils.TestContextInfo
 }{
 	{
-		name: "Homelab Command - Start - All Groups - Trace Log Level",
+		name: "Homelab Command - Start - All Groups",
 		args: []string{
 			"start",
 			"--all-groups",
 			"--configs-dir",
 			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
 		},
-		ctxInfo: &testutils.TestContextInfo{
-			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
-				ValidImagesForPull: utils.StringSet{
-					"abc/xyz":  {},
-					"abc/xyz3": {},
-				},
-			}),
+		ctxInfo: func() *testutils.TestContextInfo {
+			return &testutils.TestContextInfo{
+				DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+					ValidImagesForPull: utils.StringSet{
+						"abc/xyz":  {},
+						"abc/xyz3": {},
+					},
+				}),
+			}
 		},
-		logLevel: testhelpers.NewLogLevel(zzzlog.LvlTrace),
 	},
 	{
-		name: "Homelab Command - Start - All Groups - Debug Log Level",
+		name: "Homelab Command - Stop - All Groups",
 		args: []string{
-			"start",
+			"stop",
 			"--all-groups",
 			"--configs-dir",
 			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
 		},
-		ctxInfo: &testutils.TestContextInfo{
-			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
-				ValidImagesForPull: utils.StringSet{
-					"abc/xyz":  {},
-					"abc/xyz3": {},
-				},
-			}),
+		ctxInfo: func() *testutils.TestContextInfo {
+			return &testutils.TestContextInfo{
+				DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+					Containers: []*fakedocker.FakeContainerInitInfo{
+						{
+							Name:  "g1-c1",
+							Image: "abc/xyz",
+							State: docker.ContainerStateCreated,
+						},
+						{
+							Name:  "g1-c2",
+							Image: "abc/xyz2",
+							State: docker.ContainerStateRunning,
+						},
+						{
+							Name:  "g2-c3",
+							Image: "abc/xyz3",
+							State: docker.ContainerStateRemoving,
+						},
+					},
+				}),
+			}
 		},
-		logLevel: testhelpers.NewLogLevel(zzzlog.LvlDebug),
-	},
-	{
-		name: "Homelab Command - Start - All Groups - Info Log Level",
-		args: []string{
-			"start",
-			"--all-groups",
-			"--configs-dir",
-			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
-		},
-		ctxInfo: &testutils.TestContextInfo{
-			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
-				ValidImagesForPull: utils.StringSet{
-					"abc/xyz":  {},
-					"abc/xyz3": {},
-				},
-			}),
-		},
-		logLevel: testhelpers.NewLogLevel(zzzlog.LvlInfo),
-	},
-	{
-		name: "Homelab Command - Start - All Groups - Warn Log Level",
-		args: []string{
-			"start",
-			"--all-groups",
-			"--configs-dir",
-			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
-		},
-		ctxInfo: &testutils.TestContextInfo{
-			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
-				ValidImagesForPull: utils.StringSet{
-					"abc/xyz":  {},
-					"abc/xyz3": {},
-				},
-			}),
-		},
-		logLevel: testhelpers.NewLogLevel(zzzlog.LvlWarn),
-	},
-	{
-		name: "Homelab Command - Start - All Groups - Error Log Level",
-		args: []string{
-			"start",
-			"--all-groups",
-			"--configs-dir",
-			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
-		},
-		ctxInfo: &testutils.TestContextInfo{
-			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
-				ValidImagesForPull: utils.StringSet{
-					"abc/xyz":  {},
-					"abc/xyz3": {},
-				},
-			}),
-		},
-		logLevel: testhelpers.NewLogLevel(zzzlog.LvlError),
-	},
-	{
-		name: "Homelab Command - Start - All Groups - Fatal Log Level",
-		args: []string{
-			"start",
-			"--all-groups",
-			"--configs-dir",
-			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
-		},
-		ctxInfo: &testutils.TestContextInfo{
-			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
-				ValidImagesForPull: utils.StringSet{
-					"abc/xyz":  {},
-					"abc/xyz3": {},
-				},
-			}),
-		},
-		logLevel: testhelpers.NewLogLevel(zzzlog.LvlFatal),
 	},
 }
 
 func TestExecHomelabCmdLogLevel(t *testing.T) {
 	for _, test := range executeHomelabCmdLogLevelTests {
 		tc := test
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
+		for _, l := range executeHomelabCmdLogLevels {
+			lvl := l
+			tcName := fmt.Sprintf("%s - %v Log Level", tc.name, lvl)
+			t.Run(tcName, func(t *testing.T) {
+				t.Parallel()
 
-			out, gotErr := execHomelabCmdTest(tc.ctxInfo, tc.logLevel, tc.args...)
-			if gotErr != nil {
-				testhelpers.LogErrorNotNilWithOutput(t, "Exec()", tc.name, out, gotErr)
-				return
-			}
-		})
+				out, gotErr := execHomelabCmdTest(tc.ctxInfo(), &lvl, tc.args...)
+				if gotErr != nil {
+					testhelpers.LogErrorNotNilWithOutput(t, "Exec()", tcName, out, gotErr)
+					return
+				}
+			})
+		}
 	}
 }
 

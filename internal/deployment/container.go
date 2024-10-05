@@ -80,6 +80,22 @@ func (c *Container) Start(ctx context.Context, dc *docker.DockerClient) (bool, e
 	return true, nil
 }
 
+func (c *Container) Stop(ctx context.Context, dc *docker.DockerClient) (bool, error) {
+	log(ctx).Debugf("Stopping container %s ...", c.Name())
+
+	stopped, err := c.stopInternal(ctx, dc)
+	if err != nil {
+		return false, utils.LogToErrorAndReturn(ctx, "Failed to stop container %s, reason:%v", c.Name(), err)
+	}
+
+	if stopped {
+		log(ctx).Infof("Stopped container %s", c.Name())
+		log(ctx).InfoEmpty()
+	}
+
+	return stopped, nil
+}
+
 func (c *Container) purge(ctx context.Context, dc *docker.DockerClient) error {
 	purged := false
 	stoppedOnceAlready := false
@@ -208,6 +224,33 @@ func (c *Container) startInternal(ctx context.Context, dc *docker.DockerClient) 
 	// 7. Start the created container.
 	err = dc.StartContainer(ctx, c.Name())
 	return err
+}
+
+func (c *Container) stopInternal(ctx context.Context, dc *docker.DockerClient) (bool, error) {
+	st, err := dc.GetContainerState(ctx, c.Name())
+	if err != nil {
+		return false, err
+	}
+	log(ctx).Debugf("Container %s current state: %s", c.Name(), st)
+
+	switch st {
+	case docker.ContainerStateNotFound:
+		// Nothing to stop.
+		return false, nil
+	case docker.ContainerStateRunning, docker.ContainerStatePaused, docker.ContainerStateRestarting:
+		// Stop the container.
+		if err := dc.StopContainer(ctx, c.Name()); err != nil {
+			return false, err
+		}
+		return true, nil
+	case docker.ContainerStateCreated, docker.ContainerStateExited, docker.ContainerStateDead, docker.ContainerStateRemoving:
+		// Container is already stopped in this state.
+		return true, nil
+	default:
+		log(ctx).Fatalf("container %s is in an unsupported state %v, possibly indicating a bug in the code", c.Name(), st)
+	}
+
+	return false, fmt.Errorf("failed to stop container %s since it is in state %s", c.Name(), st)
 }
 
 func (c *Container) generateDockerConfigs() (*dcontainer.Config, *dcontainer.HostConfig, *dnetwork.NetworkingConfig, error) {

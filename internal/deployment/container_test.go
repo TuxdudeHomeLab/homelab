@@ -890,6 +890,427 @@ func TestContainerStartErrors(t *testing.T) {
 	}
 }
 
+var containerStopTests = []struct {
+	name                    string
+	config                  config.Homelab
+	cRef                    config.ContainerReference
+	ctxInfo                 *testutils.TestContextInfo
+	preExec                 func(context.Context)
+	wantContainerStopIssued bool
+	wantStoppedReturnVal    bool
+	wantState               docker.ContainerState
+}{
+	{
+		name: "Container Stop - Doesn't Exist Already",
+		config: buildSingleContainerConfig(
+			config.ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz"),
+		cRef: config.ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
+		},
+		wantContainerStopIssued: false,
+		wantStoppedReturnVal:    false,
+		wantState:               docker.ContainerStateNotFound,
+	},
+	{
+		name: "Container Stop - Exists Already In Created State",
+		config: buildSingleContainerConfig(
+			config.ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz"),
+		cRef: config.ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				Containers: []*fakedocker.FakeContainerInitInfo{
+					{
+						Name:  "g1-c1",
+						Image: "abc/xyz",
+						State: docker.ContainerStateCreated,
+					},
+				},
+			}),
+		},
+		wantContainerStopIssued: false,
+		wantStoppedReturnVal:    true,
+		wantState:               docker.ContainerStateCreated,
+	},
+	{
+		name: "Container Stop - Exists Already In Running State",
+		config: buildSingleContainerConfig(
+			config.ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz"),
+		cRef: config.ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				Containers: []*fakedocker.FakeContainerInitInfo{
+					{
+						Name:  "g1-c1",
+						Image: "abc/xyz",
+						State: docker.ContainerStateRunning,
+					},
+				},
+			}),
+		},
+		wantContainerStopIssued: true,
+		wantStoppedReturnVal:    true,
+		wantState:               docker.ContainerStateExited,
+	},
+	{
+		name: "Container Stop - Exists Already In Paused State",
+		config: buildSingleContainerConfig(
+			config.ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz"),
+		cRef: config.ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				Containers: []*fakedocker.FakeContainerInitInfo{
+					{
+						Name:  "g1-c1",
+						Image: "abc/xyz",
+						State: docker.ContainerStatePaused,
+					},
+				},
+			}),
+		},
+		wantContainerStopIssued: true,
+		wantStoppedReturnVal:    true,
+		wantState:               docker.ContainerStateExited,
+	},
+	{
+		name: "Container Stop - Exists Already In Restarting State",
+		config: buildSingleContainerConfig(
+			config.ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz"),
+		cRef: config.ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				Containers: []*fakedocker.FakeContainerInitInfo{
+					{
+						Name:  "g1-c1",
+						Image: "abc/xyz",
+						State: docker.ContainerStateRestarting,
+					},
+				},
+			}),
+		},
+		wantContainerStopIssued: true,
+		wantStoppedReturnVal:    true,
+		wantState:               docker.ContainerStateExited,
+	},
+	{
+		name: "Container Stop - Exists Already In Removing State",
+		config: buildSingleContainerConfig(
+			config.ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz"),
+		cRef: config.ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				Containers: []*fakedocker.FakeContainerInitInfo{
+					{
+						Name:  "g1-c1",
+						Image: "abc/xyz",
+						State: docker.ContainerStateRemoving,
+					},
+				},
+			}),
+		},
+		wantContainerStopIssued: false,
+		wantStoppedReturnVal:    true,
+		wantState:               docker.ContainerStateRemoving,
+	},
+	{
+		name: "Container Stop - Exists Already In Exited State",
+		config: buildSingleContainerConfig(
+			config.ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz"),
+		cRef: config.ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				Containers: []*fakedocker.FakeContainerInitInfo{
+					{
+						Name:  "g1-c1",
+						Image: "abc/xyz",
+						State: docker.ContainerStateExited,
+					},
+				},
+			}),
+		},
+		wantContainerStopIssued: false,
+		wantStoppedReturnVal:    true,
+		wantState:               docker.ContainerStateExited,
+	},
+	{
+		name: "Container Stop - Exists Already In Dead State",
+		config: buildSingleContainerConfig(
+			config.ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz"),
+		cRef: config.ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				Containers: []*fakedocker.FakeContainerInitInfo{
+					{
+						Name:  "g1-c1",
+						Image: "abc/xyz",
+						State: docker.ContainerStateDead,
+					},
+				},
+			}),
+		},
+		wantContainerStopIssued: false,
+		wantStoppedReturnVal:    true,
+		wantState:               docker.ContainerStateDead,
+	},
+}
+
+func TestContainerStop(t *testing.T) {
+	for _, test := range containerStopTests {
+		tc := test
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			buf := new(bytes.Buffer)
+			tc.ctxInfo.Logger = testutils.NewCapturingTestLogger(zzzlog.LvlDebug, buf)
+			// Enable debug inspect level while running the container start tests
+			// for extra code coverage.
+			if tc.ctxInfo.InspectLevel == inspect.HomelabInspectLevelNone {
+				tc.ctxInfo.InspectLevel = inspect.HomelabInspectLevelDebug
+			}
+			if tc.ctxInfo.ContainerStopAndRemoveKillDelay == 0 {
+				// Reduce this delay to keep the tests executing quickly.
+				tc.ctxInfo.ContainerStopAndRemoveKillDelay = 100 * time.Millisecond
+			}
+			ctx := testutils.NewTestContext(tc.ctxInfo)
+
+			dep, gotErr := FromConfig(ctx, &tc.config)
+			if gotErr != nil {
+				testhelpers.LogErrorNotNil(t, "FromConfig()", tc.name, gotErr)
+				return
+			}
+
+			dockerClient := docker.NewDockerClient(ctx)
+			defer dockerClient.Close()
+
+			ct, gotErr := dep.queryContainer(tc.cRef)
+			if gotErr != nil {
+				testhelpers.LogErrorNotNil(t, "deployment.queryContainer()", tc.name, gotErr)
+				return
+			}
+
+			if tc.preExec != nil {
+				tc.preExec(ctx)
+			}
+
+			gotStoppedReturnVal, gotErr := ct.Stop(ctx, dockerClient)
+			if gotErr != nil {
+				testhelpers.LogErrorNotNilWithOutput(t, "container.stop()", tc.name, buf, gotErr)
+				return
+			}
+			if gotStoppedReturnVal != tc.wantStoppedReturnVal {
+				testhelpers.LogCustomWithOutput(t, "container.stop() return value", tc.name, buf, fmt.Sprintf("gotStopped (%t) != wantStopped (%t)", gotStoppedReturnVal, tc.wantStoppedReturnVal))
+			}
+
+			cName := fmt.Sprintf("%s-%s", tc.cRef.Group, tc.cRef.Container)
+			d := fakedocker.FakeDockerHostFromContext(ctx)
+			gotStopIssued := d.ContainerStopIssued(cName)
+			if gotStopIssued != tc.wantContainerStopIssued {
+				testhelpers.LogCustomWithOutput(t, "ContainerStop issued", tc.name, buf, fmt.Sprintf("got (%t) != want (%t)", gotStopIssued, tc.wantContainerStopIssued))
+			}
+
+			gotState := d.GetContainerState(cName)
+			if gotState != tc.wantState {
+				testhelpers.LogCustomWithOutput(t, "Container state after container.stop()", tc.name, buf, fmt.Sprintf("got (%s) != want (%s)", gotState, tc.wantState))
+			}
+		})
+	}
+}
+
+var containerStopErrorTests = []struct {
+	name      string
+	config    config.Homelab
+	cRef      config.ContainerReference
+	ctxInfo   *testutils.TestContextInfo
+	wantPanic bool
+	want      string
+}{
+	{
+		name: "Container Stop - Stop Existing Container Fails",
+		config: buildSingleContainerConfig(
+			config.ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz"),
+		cRef: config.ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				Containers: []*fakedocker.FakeContainerInitInfo{
+					{
+						Name:  "g1-c1",
+						Image: "abc/xyz",
+						State: docker.ContainerStateRunning,
+					},
+				},
+				FailContainerStop: utils.StringSet{
+					"g1-c1": {},
+				},
+			}),
+		},
+		want: `Failed to stop container g1-c1, reason:failed to stop the container, reason: failed to stop container g1-c1 on the fake docker host`,
+	},
+	{
+		name: "Container Stop - Container State Unknown",
+		config: buildSingleContainerConfig(
+			config.ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz"),
+		cRef: config.ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				Containers: []*fakedocker.FakeContainerInitInfo{
+					{
+						Name:  "g1-c1",
+						Image: "abc/xyz",
+						State: docker.ContainerStateUnknown,
+					},
+				},
+			}),
+		},
+		wantPanic: true,
+		want:      `container g1-c1 is in an unsupported state Unknown, possibly indicating a bug in the code`,
+	},
+	{
+		name: "Container Stop - Inspect Existing Container Failure",
+		config: buildSingleContainerConfig(
+			config.ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz"),
+		cRef: config.ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				Containers: []*fakedocker.FakeContainerInitInfo{
+					{
+						Name:  "g1-c1",
+						Image: "abc/xyz",
+						State: docker.ContainerStateRunning,
+					},
+				},
+				FailContainerInspect: utils.StringSet{
+					"g1-c1": {},
+				},
+			}),
+		},
+		want: `Failed to stop container g1-c1, reason:failed to retrieve the container state, reason: failed to inspect container g1-c1 on the fake docker host`,
+	},
+}
+
+func TestContainerStopErrors(t *testing.T) {
+	for _, test := range containerStopErrorTests {
+		tc := test
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			buf := new(bytes.Buffer)
+			tc.ctxInfo.Logger = testutils.NewCapturingTestLogger(zzzlog.LvlDebug, buf)
+			if tc.ctxInfo.ContainerStopAndRemoveKillDelay == 0 {
+				// Reduce this delay to keep the tests executing quickly.
+				tc.ctxInfo.ContainerStopAndRemoveKillDelay = 100 * time.Millisecond
+			}
+			ctx := testutils.NewTestContext(tc.ctxInfo)
+
+			if tc.wantPanic {
+				defer testhelpers.ExpectPanicWithOutput(t, "container.start()", tc.name, buf, tc.want)
+			}
+
+			dep, gotErr := FromConfig(ctx, &tc.config)
+			if gotErr != nil {
+				testhelpers.LogErrorNotNil(t, "FromConfig()", tc.name, gotErr)
+				return
+			}
+
+			dockerClient := docker.NewDockerClient(ctx)
+			defer dockerClient.Close()
+
+			ct, gotErr := dep.queryContainer(tc.cRef)
+			if gotErr != nil {
+				testhelpers.LogErrorNotNil(t, "deployment.queryContainer()", tc.name, gotErr)
+				return
+			}
+
+			gotStoppedReturnVal, gotErr := ct.Stop(ctx, dockerClient)
+			if gotErr == nil {
+				testhelpers.LogErrorNilWithOutput(t, "container.stop()", tc.name, buf, tc.want)
+				return
+			}
+			if gotStoppedReturnVal {
+				testhelpers.LogCustomWithOutput(t, "container.stop() return value", tc.name, buf, "gotStopped (true) != wantStopped (false)")
+			}
+			if !testhelpers.RegexMatchWithOutput(t, "container.stop()", tc.name, buf, "gotErr error string", tc.want, gotErr.Error()) {
+				return
+			}
+		})
+	}
+}
+
 func buildSingleContainerConfig(ct config.ContainerReference, image string) config.Homelab {
 	conf := buildSingleContainerNoNetworkConfig(ct, image)
 	conf.IPAM = config.IPAM{

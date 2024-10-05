@@ -43,6 +43,7 @@ type fakeContainerInfo struct {
 	name                 string
 	id                   string
 	state                docker.ContainerState
+	containerStopIssued  bool
 	pendingRequiredStops int
 	pendingRequiredKills int
 	containerConfig      *dcontainer.Config
@@ -197,12 +198,13 @@ func NewFakeDockerHost(initInfo *FakeDockerHostInitInfo) *FakeDockerHost {
 
 func newFakeContainerInfo(containerName string, cConfig *dcontainer.Config, hConfig *dcontainer.HostConfig, nConfig *dnetwork.NetworkingConfig) *fakeContainerInfo {
 	return &fakeContainerInfo{
-		name:            containerName,
-		id:              randomSHA256ID(),
-		state:           docker.ContainerStateCreated,
-		containerConfig: cConfig,
-		hostConfig:      hConfig,
-		networkConfig:   nConfig,
+		name:                containerName,
+		id:                  randomSHA256ID(),
+		state:               docker.ContainerStateCreated,
+		containerStopIssued: false,
+		containerConfig:     cConfig,
+		hostConfig:          hConfig,
+		networkConfig:       nConfig,
 	}
 }
 
@@ -372,6 +374,7 @@ func (f *FakeDockerHost) ContainerStop(ctx context.Context, containerName string
 	if !found {
 		return derrdefs.NotFound(fmt.Errorf("container %s not found on the fake docker host", containerName))
 	}
+	ct.containerStopIssued = true
 
 	switch ct.state {
 	case docker.ContainerStateRunning, docker.ContainerStatePaused, docker.ContainerStateRestarting:
@@ -556,6 +559,16 @@ func (f *FakeDockerHost) GetContainerState(containerName string) docker.Containe
 		return docker.ContainerStateNotFound
 	}
 	return ct.state
+}
+
+func (f *FakeDockerHost) ContainerStopIssued(containerName string) bool {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+
+	if ct, found := f.containers[containerName]; found {
+		return ct.containerStopIssued
+	}
+	return false
 }
 
 func fakeDockerContainerState(state docker.ContainerState) *dtypes.ContainerState {
