@@ -32,7 +32,7 @@ func ShowConfigCmd(ctx context.Context, globalOptions *clicommon.GlobalCmdOption
 }
 
 func execShowConfigCmd(ctx context.Context, cmd *cobra.Command, args []string, globalOptions *clicommon.GlobalCmdOptions) error {
-	dep, err := deploymentFromCommand(ctx, "show-config", globalOptions.CLIConfig, globalOptions.ConfigsDir)
+	dep, err := clicommon.BuildDeployment(ctx, "show-config", globalOptions)
 	if err != nil {
 		return err
 	}
