@@ -179,7 +179,7 @@ func (c *Container) stopInternal(ctx context.Context, dc *docker.Client) (bool, 
 	if err != nil {
 		return false, err
 	}
-	log(ctx).Debugf("Container %s current state: %s", c.Name(), st)
+	log(ctx).Debugf("stopInternal - Container %s current state: %s", c.Name(), st)
 
 	switch st {
 	case docker.ContainerStateNotFound:
@@ -224,7 +224,7 @@ func (c *Container) purgeInternal(ctx context.Context, dc *docker.Client) (bool,
 		if err != nil {
 			return false, err
 		}
-		log(ctx).Debugf("Container %s current state: %s", c.Name(), st)
+		log(ctx).Debugf("purgeInternal - Container %s current state: %s", c.Name(), st)
 
 		switch st {
 		case docker.ContainerStateNotFound:
