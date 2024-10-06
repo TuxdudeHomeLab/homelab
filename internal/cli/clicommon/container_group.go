@@ -9,13 +9,13 @@ import (
 	"github.com/tuxdudehomelab/homelab/internal/docker"
 )
 
-func ExecContainerGroupCmd(ctx context.Context, cmd, action string, options *ContainerGroupOptions, dep *deployment.Deployment, fn func(*deployment.Container, *docker.DockerClient) error) error {
+func ExecContainerGroupCmd(ctx context.Context, cmd, action string, options *ContainerGroupOptions, dep *deployment.Deployment, fn func(*deployment.Container, *docker.Client) error) error {
 	res, err := dep.QueryContainers(ctx, options.allGroups, options.group, options.container)
 	if err != nil {
 		return fmt.Errorf("%s failed while querying containers, reason: %w", cmd, err)
 	}
 
-	dc := docker.NewDockerClient(ctx)
+	dc := docker.NewClient(ctx)
 	defer dc.Close()
 
 	log(ctx).Debugf("%s command - %s: ", cmd, action)

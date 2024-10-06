@@ -15,8 +15,8 @@ func homelabContext(ctx context.Context) context.Context {
 	if _, found := host.HostInfoFromContext(ctx); !found {
 		ctx = host.WithHostInfo(ctx, host.NewHostInfo(ctx))
 	}
-	if _, found := docker.DockerAPIClientFromContext(ctx); !found {
-		ctx = docker.WithDockerAPIClient(ctx, docker.MustRealDockerAPIClient(ctx))
+	if _, found := docker.APIClientFromContext(ctx); !found {
+		ctx = docker.WithAPIClient(ctx, docker.MustRealAPIClient(ctx))
 	}
 	return ctx
 }

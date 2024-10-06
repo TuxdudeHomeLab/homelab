@@ -6,27 +6,27 @@ import (
 )
 
 var (
-	dockerAPIClientKey                 = ctxKeyDockerAPIClient{}
+	dockerAPIClientKey                 = ctxKeyAPIClient{}
 	containerStopAndRemoveKillDelayKey = ctxKeyContainerStopAndRemoveKillDelay{}
 )
 
-type ctxKeyDockerAPIClient struct{}
+type ctxKeyAPIClient struct{}
 type ctxKeyContainerStopAndRemoveKillDelay struct{}
 
-func DockerAPIClientFromContext(ctx context.Context) (DockerAPIClient, bool) {
-	client, ok := ctx.Value(dockerAPIClientKey).(DockerAPIClient)
+func APIClientFromContext(ctx context.Context) (APIClient, bool) {
+	client, ok := ctx.Value(dockerAPIClientKey).(APIClient)
 	return client, ok
 }
 
-func MustDockerAPIClient(ctx context.Context) DockerAPIClient {
-	if d, found := DockerAPIClientFromContext(ctx); found {
+func MustAPIClient(ctx context.Context) APIClient {
+	if d, found := APIClientFromContext(ctx); found {
 		return d
 	}
 	log(ctx).Fatalf("Docker API Client not found in context")
 	return nil
 }
 
-func WithDockerAPIClient(ctx context.Context, client DockerAPIClient) context.Context {
+func WithAPIClient(ctx context.Context, client APIClient) context.Context {
 	return context.WithValue(ctx, dockerAPIClientKey, client)
 }
 

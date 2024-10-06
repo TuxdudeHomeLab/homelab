@@ -28,18 +28,18 @@ const (
 	defaultContainerStopAndRemoveKillDelay = 1 * time.Second
 )
 
-type DockerClient struct {
-	client                          DockerAPIClient
+type Client struct {
+	client                          APIClient
 	platform                        string
 	ociPlatform                     ocispec.Platform
 	containerStopAndRemoveKillDelay time.Duration
 	debug                           bool
 }
 
-func NewDockerClient(ctx context.Context) *DockerClient {
+func NewClient(ctx context.Context) *Client {
 	h := host.MustHostInfo(ctx)
-	return &DockerClient{
-		client:                          MustDockerAPIClient(ctx),
+	return &Client{
+		client:                          MustAPIClient(ctx),
 		platform:                        h.DockerPlatform,
 		ociPlatform:                     ocispec.Platform{Architecture: h.Arch},
 		containerStopAndRemoveKillDelay: evalContainerStopAndRemoveKillDelay(ctx),
@@ -47,7 +47,7 @@ func NewDockerClient(ctx context.Context) *DockerClient {
 	}
 }
 
-func (d *DockerClient) PullImage(ctx context.Context, imageName string) error {
+func (d *Client) PullImage(ctx context.Context, imageName string) error {
 	// Store info about existing locally available image.
 	avail, id := d.QueryLocalImage(ctx, imageName)
 	// Show verbose pull progress only if either in debug mode or
@@ -99,7 +99,7 @@ func (d *DockerClient) PullImage(ctx context.Context, imageName string) error {
 	return nil
 }
 
-func (d *DockerClient) QueryLocalImage(ctx context.Context, imageName string) (bool, string) {
+func (d *Client) QueryLocalImage(ctx context.Context, imageName string) (bool, string) {
 	filter := dfilters.NewArgs()
 	filter.Add("reference", imageName)
 	images, err := d.client.ImageList(ctx, dimage.ListOptions{
@@ -119,7 +119,7 @@ func (d *DockerClient) QueryLocalImage(ctx context.Context, imageName string) (b
 	return true, images[0].ID
 }
 
-func (d *DockerClient) CreateContainer(ctx context.Context, containerName string, cConfig *dcontainer.Config, hConfig *dcontainer.HostConfig, nConfig *dnetwork.NetworkingConfig) error {
+func (d *Client) CreateContainer(ctx context.Context, containerName string, cConfig *dcontainer.Config, hConfig *dcontainer.HostConfig, nConfig *dnetwork.NetworkingConfig) error {
 	log(ctx).Debugf("Creating container %s ...", containerName)
 	resp, err := d.client.ContainerCreate(ctx, cConfig, hConfig, nConfig, &d.ociPlatform, containerName)
 	if err != nil {
@@ -138,7 +138,7 @@ func (d *DockerClient) CreateContainer(ctx context.Context, containerName string
 	return nil
 }
 
-func (d *DockerClient) StartContainer(ctx context.Context, containerName string) error {
+func (d *Client) StartContainer(ctx context.Context, containerName string) error {
 	log(ctx).Debugf("Starting container %s ...", containerName)
 	err := d.client.ContainerStart(ctx, containerName, dcontainer.StartOptions{})
 	if err != nil {
@@ -150,7 +150,7 @@ func (d *DockerClient) StartContainer(ctx context.Context, containerName string)
 	return nil
 }
 
-func (d *DockerClient) StopContainer(ctx context.Context, containerName string) error {
+func (d *Client) StopContainer(ctx context.Context, containerName string) error {
 	log(ctx).Debugf("Stopping container %s ...", containerName)
 	err := d.client.ContainerStop(ctx, containerName, dcontainer.StopOptions{})
 	if err != nil {
@@ -162,7 +162,7 @@ func (d *DockerClient) StopContainer(ctx context.Context, containerName string) 
 	return nil
 }
 
-func (d *DockerClient) KillContainer(ctx context.Context, containerName string) error {
+func (d *Client) KillContainer(ctx context.Context, containerName string) error {
 	log(ctx).Debugf("Killing container %s ...", containerName)
 	err := d.client.ContainerKill(ctx, containerName, unix.SignalName(unix.SIGKILL))
 	if err != nil {
@@ -174,7 +174,7 @@ func (d *DockerClient) KillContainer(ctx context.Context, containerName string) 
 	return nil
 }
 
-func (d *DockerClient) RemoveContainer(ctx context.Context, containerName string) error {
+func (d *Client) RemoveContainer(ctx context.Context, containerName string) error {
 	log(ctx).Debugf("Removing container %s ...", containerName)
 	err := d.client.ContainerRemove(ctx, containerName, dcontainer.RemoveOptions{Force: false})
 	if err != nil {
@@ -186,7 +186,7 @@ func (d *DockerClient) RemoveContainer(ctx context.Context, containerName string
 	return nil
 }
 
-func (d *DockerClient) GetContainerState(ctx context.Context, containerName string) (ContainerState, error) {
+func (d *Client) GetContainerState(ctx context.Context, containerName string) (ContainerState, error) {
 	c, err := d.client.ContainerInspect(ctx, containerName)
 	if dclient.IsErrNotFound(err) {
 		return ContainerStateNotFound, nil
@@ -197,7 +197,7 @@ func (d *DockerClient) GetContainerState(ctx context.Context, containerName stri
 	return containerStateFromString(c.State.Status), nil
 }
 
-func (d *DockerClient) CreateNetwork(ctx context.Context, networkName string, options dnetwork.CreateOptions) error {
+func (d *Client) CreateNetwork(ctx context.Context, networkName string, options dnetwork.CreateOptions) error {
 	log(ctx).Debugf("Creating network %s ...", networkName)
 	resp, err := d.client.NetworkCreate(ctx, networkName, options)
 
@@ -215,7 +215,7 @@ func (d *DockerClient) CreateNetwork(ctx context.Context, networkName string, op
 
 // TODO: Remove this after this function is used.
 // nolint (unused)
-func (d *DockerClient) RemoveNetwork(ctx context.Context, networkName string) error {
+func (d *Client) RemoveNetwork(ctx context.Context, networkName string) error {
 	log(ctx).Debugf("Removing network %s ...", networkName)
 	err := d.client.NetworkRemove(ctx, networkName)
 	if err != nil {
@@ -227,7 +227,7 @@ func (d *DockerClient) RemoveNetwork(ctx context.Context, networkName string) er
 	return nil
 }
 
-func (d *DockerClient) NetworkExists(ctx context.Context, networkName string) bool {
+func (d *Client) NetworkExists(ctx context.Context, networkName string) bool {
 	filter := dfilters.NewArgs()
 	filter.Add("name", networkName)
 	networks, err := d.client.NetworkList(ctx, dnetwork.ListOptions{
@@ -239,7 +239,7 @@ func (d *DockerClient) NetworkExists(ctx context.Context, networkName string) bo
 	return err == nil && len(networks) > 0
 }
 
-func (d *DockerClient) ConnectContainerToBridgeModeNetwork(ctx context.Context, containerName, networkName, ip string) error {
+func (d *Client) ConnectContainerToBridgeModeNetwork(ctx context.Context, containerName, networkName, ip string) error {
 	log(ctx).Debugf("Connecting container %s to network %s with IP %s ...", containerName, networkName, ip)
 	err := d.client.NetworkConnect(ctx, networkName, containerName, &dnetwork.EndpointSettings{
 		IPAMConfig: &dnetwork.EndpointIPAMConfig{
@@ -257,7 +257,7 @@ func (d *DockerClient) ConnectContainerToBridgeModeNetwork(ctx context.Context, 
 
 // TODO: Remove this after this function is used.
 // nolint (unused)
-func (d *DockerClient) DisconnectContainerFromNetwork(ctx context.Context, containerName, networkName string) error {
+func (d *Client) DisconnectContainerFromNetwork(ctx context.Context, containerName, networkName string) error {
 	log(ctx).Debugf("Disconnecting container %s from network %s ...", containerName, networkName)
 	err := d.client.NetworkDisconnect(ctx, networkName, containerName, false)
 	if err != nil {
@@ -269,11 +269,11 @@ func (d *DockerClient) DisconnectContainerFromNetwork(ctx context.Context, conta
 	return nil
 }
 
-func (d *DockerClient) ContainerStopAndRemoveKillDelay() time.Duration {
+func (d *Client) ContainerStopAndRemoveKillDelay() time.Duration {
 	return d.containerStopAndRemoveKillDelay
 }
 
-func (d *DockerClient) Close() {
+func (d *Client) Close() {
 	d.client.Close()
 }
 

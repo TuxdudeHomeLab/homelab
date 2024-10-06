@@ -62,7 +62,7 @@ func (c *Container) isAllowedOnCurrentHost() bool {
 	return c.allowedOnHost
 }
 
-func (c *Container) Start(ctx context.Context, dc *docker.DockerClient) (bool, error) {
+func (c *Container) Start(ctx context.Context, dc *docker.Client) (bool, error) {
 	log(ctx).Debugf("Starting container %s ...", c.Name())
 
 	// Validate the container is allowed to run on the current host.
@@ -80,7 +80,7 @@ func (c *Container) Start(ctx context.Context, dc *docker.DockerClient) (bool, e
 	return true, nil
 }
 
-func (c *Container) Stop(ctx context.Context, dc *docker.DockerClient) (bool, error) {
+func (c *Container) Stop(ctx context.Context, dc *docker.Client) (bool, error) {
 	log(ctx).Debugf("Stopping container %s ...", c.Name())
 
 	stopped, err := c.stopInternal(ctx, dc)
@@ -96,7 +96,7 @@ func (c *Container) Stop(ctx context.Context, dc *docker.DockerClient) (bool, er
 	return stopped, nil
 }
 
-func (c *Container) purge(ctx context.Context, dc *docker.DockerClient) error {
+func (c *Container) purge(ctx context.Context, dc *docker.Client) error {
 	purged := false
 	stoppedOnceAlready := false
 	attemptsRemaining := stopAndRemoveAttempts
@@ -164,7 +164,7 @@ func (c *Container) purge(ctx context.Context, dc *docker.DockerClient) error {
 	return nil
 }
 
-func (c *Container) startInternal(ctx context.Context, dc *docker.DockerClient) error {
+func (c *Container) startInternal(ctx context.Context, dc *docker.Client) error {
 	// 1. Execute any pre-start commands.
 	// TODO: Implement this.
 
@@ -226,7 +226,7 @@ func (c *Container) startInternal(ctx context.Context, dc *docker.DockerClient) 
 	return err
 }
 
-func (c *Container) stopInternal(ctx context.Context, dc *docker.DockerClient) (bool, error) {
+func (c *Container) stopInternal(ctx context.Context, dc *docker.Client) (bool, error) {
 	st, err := dc.GetContainerState(ctx, c.Name())
 	if err != nil {
 		return false, err

@@ -394,7 +394,7 @@ func TestContainerStart(t *testing.T) {
 				return
 			}
 
-			dockerClient := docker.NewDockerClient(ctx)
+			dockerClient := docker.NewClient(ctx)
 			defer dockerClient.Close()
 
 			ct, gotErr := dep.queryContainer(tc.cRef)
@@ -864,7 +864,7 @@ func TestContainerStartErrors(t *testing.T) {
 				return
 			}
 
-			dockerClient := docker.NewDockerClient(ctx)
+			dockerClient := docker.NewClient(ctx)
 			defer dockerClient.Close()
 
 			ct, gotErr := dep.queryContainer(tc.cRef)
@@ -1134,7 +1134,7 @@ func TestContainerStop(t *testing.T) {
 				return
 			}
 
-			dockerClient := docker.NewDockerClient(ctx)
+			dockerClient := docker.NewClient(ctx)
 			defer dockerClient.Close()
 
 			ct, gotErr := dep.queryContainer(tc.cRef)
@@ -1287,7 +1287,7 @@ func TestContainerStopErrors(t *testing.T) {
 				return
 			}
 
-			dockerClient := docker.NewDockerClient(ctx)
+			dockerClient := docker.NewClient(ctx)
 			defer dockerClient.Close()
 
 			ct, gotErr := dep.queryContainer(tc.cRef)

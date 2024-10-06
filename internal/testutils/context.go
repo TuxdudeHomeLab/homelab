@@ -20,7 +20,7 @@ type TestContextInfo struct {
 	InspectLevel                    inspect.HomelabInspectLevel
 	Logger                          zzzlogi.Logger
 	Version                         *version.VersionInfo
-	DockerHost                      docker.DockerAPIClient
+	DockerHost                      docker.APIClient
 	ContainerStopAndRemoveKillDelay time.Duration
 	UseRealUserInfo                 bool
 	UseRealHostInfo                 bool
@@ -53,7 +53,7 @@ func NewTestContext(info *TestContextInfo) context.Context {
 		ctx = host.WithHostInfo(ctx, fakehost.NewFakeHostInfo())
 	}
 	if info.DockerHost != nil {
-		ctx = docker.WithDockerAPIClient(ctx, info.DockerHost)
+		ctx = docker.WithAPIClient(ctx, info.DockerHost)
 	}
 	if info.ContainerStopAndRemoveKillDelay != 0 {
 		ctx = docker.WithContainerStopAndRemoveKillDelay(ctx, info.ContainerStopAndRemoveKillDelay)

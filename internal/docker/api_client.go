@@ -12,7 +12,7 @@ import (
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
-type DockerAPIClient interface {
+type APIClient interface {
 	Close() error
 
 	ContainerCreate(ctx context.Context, config *dcontainer.Config, hostConfig *dcontainer.HostConfig, networkingConfig *dnetwork.NetworkingConfig, platform *ocispec.Platform, containerName string) (dcontainer.CreateResponse, error)
@@ -32,7 +32,7 @@ type DockerAPIClient interface {
 	NetworkRemove(ctx context.Context, networkName string) error
 }
 
-func MustRealDockerAPIClient(ctx context.Context) DockerAPIClient {
+func MustRealAPIClient(ctx context.Context) APIClient {
 	d, err := dclient.NewClientWithOpts(dclient.FromEnv, dclient.WithAPIVersionNegotiation())
 	if err != nil {
 		log(ctx).Fatalf("Failed to create a new docker API client, reason: %v", err)

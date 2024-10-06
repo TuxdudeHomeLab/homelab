@@ -104,7 +104,7 @@ func (w wrappedReader) Read(p []byte) (int, error) {
 }
 
 func FakeDockerHostFromContext(ctx context.Context) *FakeDockerHost {
-	if f, ok := docker.MustDockerAPIClient(ctx).(*FakeDockerHost); ok {
+	if f, ok := docker.MustAPIClient(ctx).(*FakeDockerHost); ok {
 		return f
 	}
 	panic("unable to convert the retrieved client to fake docker host")

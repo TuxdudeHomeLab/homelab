@@ -57,7 +57,7 @@ func execStartCmd(ctx context.Context, options *startCmdOptions, globalOptions *
 		"Starting containers",
 		&options.cgOptions,
 		dep,
-		func(c *deployment.Container, dc *docker.DockerClient) error {
+		func(c *deployment.Container, dc *docker.Client) error {
 			started, err := c.Start(ctx, dc)
 			if err == nil && !started {
 				log(ctx).Warnf("Container %s not allowed to run on host %s", c.Name(), h.HumanFriendlyHostName)

@@ -57,7 +57,7 @@ func newContainerModeNetwork(name string, info *containerModeNetworkInfo) *Netwo
 	return &n
 }
 
-func (n *Network) create(ctx context.Context, dc *docker.DockerClient) error {
+func (n *Network) create(ctx context.Context, dc *docker.Client) error {
 	if n.mode == networkModeContainer {
 		log(ctx).Debugf("Nothing to do for creating container mode network %s", n.name())
 		return nil
@@ -81,7 +81,7 @@ func (n *Network) create(ctx context.Context, dc *docker.DockerClient) error {
 
 // TODO: Remove this after this function is used.
 // nolint (unused)
-func (n *Network) remove(ctx context.Context, dc *docker.DockerClient) error {
+func (n *Network) remove(ctx context.Context, dc *docker.Client) error {
 	if dc.NetworkExists(ctx, n.name()) {
 		err := dc.RemoveNetwork(ctx, n.name())
 		if err != nil {
@@ -91,13 +91,13 @@ func (n *Network) remove(ctx context.Context, dc *docker.DockerClient) error {
 	return nil
 }
 
-func (n *Network) connectContainer(ctx context.Context, dc *docker.DockerClient, containerName, ip string) error {
+func (n *Network) connectContainer(ctx context.Context, dc *docker.Client, containerName, ip string) error {
 	return dc.ConnectContainerToBridgeModeNetwork(ctx, containerName, n.name(), ip)
 }
 
 // TODO: Remove this after this function is used.
 // nolint (unused)
-func (n *Network) disconnectContainer(ctx context.Context, dc *docker.DockerClient, containerName string) error {
+func (n *Network) disconnectContainer(ctx context.Context, dc *docker.Client, containerName string) error {
 	return dc.DisconnectContainerFromNetwork(ctx, containerName, n.name())
 }
 
