@@ -96,72 +96,20 @@ func (c *Container) Stop(ctx context.Context, dc *docker.Client) (bool, error) {
 	return stopped, nil
 }
 
-func (c *Container) purge(ctx context.Context, dc *docker.Client) error {
-	purged := false
-	stoppedOnceAlready := false
-	attemptsRemaining := stopAndRemoveAttempts
+func (c *Container) Purge(ctx context.Context, dc *docker.Client) (bool, error) {
+	log(ctx).Debugf("Purging container %s ...", c.Name())
 
-	for !purged && attemptsRemaining > 0 {
-		attemptsRemaining--
-
-		st, err := dc.GetContainerState(ctx, c.Name())
-		if err != nil {
-			return err
-		}
-		log(ctx).Debugf("Container %s current state: %s", c.Name(), st)
-
-		switch st {
-		case docker.ContainerStateNotFound:
-			// Nothing to stop and/or remove.
-			purged = true
-		case docker.ContainerStateRunning, docker.ContainerStatePaused, docker.ContainerStateRestarting:
-			// Stop the container if not stopped already.
-			if !stoppedOnceAlready {
-				err = dc.StopContainer(ctx, c.Name())
-				if err != nil {
-					return err
-				}
-				stoppedOnceAlready = true
-				// Reset this to attempt killing the container at least
-				// stopAndRemoveAttempts -1 times prior to giving up.
-				attemptsRemaining = stopAndRemoveAttempts
-			} else {
-				// Kill the container next as a precaution and ignore any errors.
-				_ = dc.KillContainer(ctx, c.Name())
-				// Add a delay before checking the container state again.
-				time.Sleep(dc.ContainerStopAndRemoveKillDelay())
-			}
-		case docker.ContainerStateCreated, docker.ContainerStateExited, docker.ContainerStateDead:
-			// Directly remove the container.
-			err = dc.RemoveContainer(ctx, c.Name())
-			if err != nil {
-				return err
-			}
-		case docker.ContainerStateRemoving:
-			// Nothing to be done here, although this could lead to some
-			// unknown handling in next steps.
-			log(ctx).Warnf("container %s is in REMOVING state already, can lead to issues while we create the container next", c.Name())
-			// Add a delay before checking the container state again.
-			time.Sleep(dc.ContainerStopAndRemoveKillDelay())
-		default:
-			log(ctx).Fatalf("container %s is in an unsupported state %v, possibly indicating a bug in the code", c.Name(), st)
-		}
+	purged, err := c.purgeInternal(ctx, dc)
+	if err != nil {
+		return false, utils.LogToErrorAndReturn(ctx, "Failed to purge container %s, reason:%v", c.Name(), err)
 	}
 
 	if purged {
-		return nil
+		log(ctx).Infof("Purged container %s", c.Name())
+		log(ctx).InfoEmpty()
 	}
 
-	// Check the container state one final time after exhausting all purge
-	// attempts, and return the final error status based on that.
-	st, err := dc.GetContainerState(ctx, c.Name())
-	if err != nil {
-		return err
-	}
-	if st != docker.ContainerStateNotFound {
-		return fmt.Errorf("failed to stop and remove container %s after %d attempts", c.Name(), stopAndRemoveAttempts)
-	}
-	return nil
+	return purged, nil
 }
 
 func (c *Container) startInternal(ctx context.Context, dc *docker.Client) error {
@@ -176,7 +124,7 @@ func (c *Container) startInternal(ctx context.Context, dc *docker.Client) error 
 
 	// 3. Purge (i.e. stop and remove) any previously existing containers
 	// under the same name.
-	err = c.purge(ctx, dc)
+	_, err = c.purgeInternal(ctx, dc)
 	if err != nil {
 		return err
 	}
@@ -251,6 +199,78 @@ func (c *Container) stopInternal(ctx context.Context, dc *docker.Client) (bool, 
 	}
 
 	return false, fmt.Errorf("failed to stop container %s since it is in state %s", c.Name(), st)
+}
+
+func (c *Container) purgeInternal(ctx context.Context, dc *docker.Client) (bool, error) {
+	found := false
+	purged := false
+	stoppedOnceAlready := false
+	attemptsRemaining := stopAndRemoveAttempts
+
+	for !purged && attemptsRemaining > 0 {
+		attemptsRemaining--
+
+		st, err := dc.GetContainerState(ctx, c.Name())
+		if err != nil {
+			return false, err
+		}
+		if !found && st != docker.ContainerStateNotFound {
+			found = true
+		}
+		log(ctx).Debugf("Container %s current state: %s", c.Name(), st)
+
+		switch st {
+		case docker.ContainerStateNotFound:
+			// Nothing to stop and/or remove.
+			break
+		case docker.ContainerStateRunning, docker.ContainerStatePaused, docker.ContainerStateRestarting:
+			// Stop the container if not stopped already.
+			if !stoppedOnceAlready {
+				err = dc.StopContainer(ctx, c.Name())
+				if err != nil {
+					return false, err
+				}
+				stoppedOnceAlready = true
+				// Reset this to attempt killing the container at least
+				// stopAndRemoveAttempts -1 times prior to giving up.
+				attemptsRemaining = stopAndRemoveAttempts
+			} else {
+				// Kill the container next as a precaution and ignore any errors.
+				_ = dc.KillContainer(ctx, c.Name())
+				// Add a delay before checking the container state again.
+				time.Sleep(dc.ContainerStopAndRemoveKillDelay())
+			}
+		case docker.ContainerStateCreated, docker.ContainerStateExited, docker.ContainerStateDead:
+			// Directly remove the container.
+			err = dc.RemoveContainer(ctx, c.Name())
+			if err != nil {
+				return false, err
+			}
+		case docker.ContainerStateRemoving:
+			// Nothing to be done here, although this could lead to some
+			// unknown handling in next steps.
+			log(ctx).Warnf("container %s is in REMOVING state already, can lead to issues while we create the container next", c.Name())
+			// Add a delay before checking the container state again.
+			time.Sleep(dc.ContainerStopAndRemoveKillDelay())
+		default:
+			log(ctx).Fatalf("container %s is in an unsupported state %v, possibly indicating a bug in the code", c.Name(), st)
+		}
+	}
+
+	if !found || purged {
+		return purged, nil
+	}
+
+	// Check the container state one final time after exhausting all purge
+	// attempts, and return the final error status based on that.
+	st, err := dc.GetContainerState(ctx, c.Name())
+	if err != nil {
+		return false, err
+	}
+	if st != docker.ContainerStateNotFound {
+		return false, fmt.Errorf("failed to purge container %s after %d attempts", c.Name(), stopAndRemoveAttempts)
+	}
+	return true, nil
 }
 
 func (c *Container) generateDockerConfigs() (*dcontainer.Config, *dcontainer.HostConfig, *dnetwork.NetworkingConfig, error) {

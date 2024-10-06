@@ -529,7 +529,7 @@ var containerStartErrorTests = []struct {
 				},
 			}),
 		},
-		want: `Failed to start container g1-c1, reason:failed to stop and remove container g1-c1 after 6 attempts`,
+		want: `Failed to start container g1-c1, reason:failed to purge container g1-c1 after 6 attempts`,
 	},
 	{
 		name: "Container Start - Unkillable Existing Container",
@@ -559,7 +559,7 @@ var containerStartErrorTests = []struct {
 				},
 			}),
 		},
-		want: `Failed to start container g1-c1, reason:failed to stop and remove container g1-c1 after 6 attempts`,
+		want: `Failed to start container g1-c1, reason:failed to purge container g1-c1 after 6 attempts`,
 	},
 	{
 		name: "Container Start - Container State Unknown",
