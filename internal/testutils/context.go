@@ -17,13 +17,13 @@ import (
 )
 
 type TestContextInfo struct {
-	InspectLevel                    inspect.HomelabInspectLevel
-	Logger                          zzzlogi.Logger
-	Version                         *version.VersionInfo
-	DockerHost                      docker.APIClient
-	ContainerStopAndRemoveKillDelay time.Duration
-	UseRealUserInfo                 bool
-	UseRealHostInfo                 bool
+	InspectLevel            inspect.HomelabInspectLevel
+	Logger                  zzzlogi.Logger
+	Version                 *version.VersionInfo
+	DockerHost              docker.APIClient
+	ContainerPurgeKillDelay time.Duration
+	UseRealUserInfo         bool
+	UseRealHostInfo         bool
 }
 
 func NewVanillaTestContext() context.Context {
@@ -55,8 +55,8 @@ func NewTestContext(info *TestContextInfo) context.Context {
 	if info.DockerHost != nil {
 		ctx = docker.WithAPIClient(ctx, info.DockerHost)
 	}
-	if info.ContainerStopAndRemoveKillDelay != 0 {
-		ctx = docker.WithContainerStopAndRemoveKillDelay(ctx, info.ContainerStopAndRemoveKillDelay)
+	if info.ContainerPurgeKillDelay != 0 {
+		ctx = docker.WithContainerPurgeKillDelay(ctx, info.ContainerPurgeKillDelay)
 	}
 	return ctx
 }

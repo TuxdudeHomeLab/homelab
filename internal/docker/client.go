@@ -25,25 +25,25 @@ import (
 )
 
 const (
-	defaultContainerStopAndRemoveKillDelay = 1 * time.Second
+	defaultContainerPurgeKillDelay = 1 * time.Second
 )
 
 type Client struct {
-	client                          APIClient
-	platform                        string
-	ociPlatform                     ocispec.Platform
-	containerStopAndRemoveKillDelay time.Duration
-	debug                           bool
+	client                  APIClient
+	platform                string
+	ociPlatform             ocispec.Platform
+	containerPurgeKillDelay time.Duration
+	debug                   bool
 }
 
 func NewClient(ctx context.Context) *Client {
 	h := host.MustHostInfo(ctx)
 	return &Client{
-		client:                          MustAPIClient(ctx),
-		platform:                        h.DockerPlatform,
-		ociPlatform:                     ocispec.Platform{Architecture: h.Arch},
-		containerStopAndRemoveKillDelay: evalContainerStopAndRemoveKillDelay(ctx),
-		debug:                           dockerDebugFromInspect(ctx),
+		client:                  MustAPIClient(ctx),
+		platform:                h.DockerPlatform,
+		ociPlatform:             ocispec.Platform{Architecture: h.Arch},
+		containerPurgeKillDelay: evalContainerPurgeKillDelay(ctx),
+		debug:                   dockerDebugFromInspect(ctx),
 	}
 }
 
@@ -269,8 +269,8 @@ func (d *Client) DisconnectContainerFromNetwork(ctx context.Context, containerNa
 	return nil
 }
 
-func (d *Client) ContainerStopAndRemoveKillDelay() time.Duration {
-	return d.containerStopAndRemoveKillDelay
+func (d *Client) ContainerPurgeKillDelay() time.Duration {
+	return d.containerPurgeKillDelay
 }
 
 func (d *Client) Close() {
@@ -282,9 +282,9 @@ func dockerDebugFromInspect(ctx context.Context) bool {
 	return lvl == inspect.HomelabInspectLevelDebug || lvl == inspect.HomelabInspectLevelTrace
 }
 
-func evalContainerStopAndRemoveKillDelay(ctx context.Context) time.Duration {
-	if delay, ok := getContainerStopAndRemoveKillDelay(ctx); ok {
+func evalContainerPurgeKillDelay(ctx context.Context) time.Duration {
+	if delay, ok := getContainerPurgeKillDelay(ctx); ok {
 		return delay
 	}
-	return defaultContainerStopAndRemoveKillDelay
+	return defaultContainerPurgeKillDelay
 }

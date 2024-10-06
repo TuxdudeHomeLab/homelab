@@ -202,9 +202,19 @@ func (c *Container) stopInternal(ctx context.Context, dc *docker.Client) (bool, 
 }
 
 func (c *Container) purgeInternal(ctx context.Context, dc *docker.Client) (bool, error) {
-	found := false
+	// Stop the container once (if possible).
+	stopped, err := c.stopInternal(ctx, dc)
+	if err != nil {
+		return false, err
+	}
+
+	if !stopped {
+		// The container was not found, hence it could not be stopped.
+		// Nothing to do for purge either.
+		return false, nil
+	}
+
 	purged := false
-	stoppedOnceAlready := false
 	attemptsRemaining := stopAndRemoveAttempts
 
 	for !purged && attemptsRemaining > 0 {
@@ -214,32 +224,18 @@ func (c *Container) purgeInternal(ctx context.Context, dc *docker.Client) (bool,
 		if err != nil {
 			return false, err
 		}
-		if !found && st != docker.ContainerStateNotFound {
-			found = true
-		}
 		log(ctx).Debugf("Container %s current state: %s", c.Name(), st)
 
 		switch st {
 		case docker.ContainerStateNotFound:
-			// Nothing to stop and/or remove.
-			break
+			// Nothing further to do for purge.
+			purged = true
 		case docker.ContainerStateRunning, docker.ContainerStatePaused, docker.ContainerStateRestarting:
-			// Stop the container if not stopped already.
-			if !stoppedOnceAlready {
-				err = dc.StopContainer(ctx, c.Name())
-				if err != nil {
-					return false, err
-				}
-				stoppedOnceAlready = true
-				// Reset this to attempt killing the container at least
-				// stopAndRemoveAttempts -1 times prior to giving up.
-				attemptsRemaining = stopAndRemoveAttempts
-			} else {
-				// Kill the container next as a precaution and ignore any errors.
-				_ = dc.KillContainer(ctx, c.Name())
-				// Add a delay before checking the container state again.
-				time.Sleep(dc.ContainerStopAndRemoveKillDelay())
-			}
+			// The container was already stopped (if possible).
+			// Kill the container next as a precaution and ignore any errors.
+			_ = dc.KillContainer(ctx, c.Name())
+			// Add a delay before checking the container state again.
+			time.Sleep(dc.ContainerPurgeKillDelay())
 		case docker.ContainerStateCreated, docker.ContainerStateExited, docker.ContainerStateDead:
 			// Directly remove the container.
 			err = dc.RemoveContainer(ctx, c.Name())
@@ -249,16 +245,16 @@ func (c *Container) purgeInternal(ctx context.Context, dc *docker.Client) (bool,
 		case docker.ContainerStateRemoving:
 			// Nothing to be done here, although this could lead to some
 			// unknown handling in next steps.
-			log(ctx).Warnf("container %s is in REMOVING state already, can lead to issues while we create the container next", c.Name())
+			log(ctx).Warnf("container %s is in REMOVING state already, can lead to issues for any further operations including creating container with the same name", c.Name())
 			// Add a delay before checking the container state again.
-			time.Sleep(dc.ContainerStopAndRemoveKillDelay())
+			time.Sleep(dc.ContainerPurgeKillDelay())
 		default:
 			log(ctx).Fatalf("container %s is in an unsupported state %v, possibly indicating a bug in the code", c.Name(), st)
 		}
 	}
 
-	if !found || purged {
-		return purged, nil
+	if purged {
+		return true, nil
 	}
 
 	// Check the container state one final time after exhausting all purge

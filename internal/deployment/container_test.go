@@ -382,9 +382,9 @@ func TestContainerStart(t *testing.T) {
 			if tc.ctxInfo.InspectLevel == inspect.HomelabInspectLevelNone {
 				tc.ctxInfo.InspectLevel = inspect.HomelabInspectLevelDebug
 			}
-			if tc.ctxInfo.ContainerStopAndRemoveKillDelay == 0 {
+			if tc.ctxInfo.ContainerPurgeKillDelay == 0 {
 				// Reduce this delay to keep the tests executing quickly.
-				tc.ctxInfo.ContainerStopAndRemoveKillDelay = 100 * time.Millisecond
+				tc.ctxInfo.ContainerPurgeKillDelay = 100 * time.Millisecond
 			}
 			ctx := testutils.NewTestContext(tc.ctxInfo)
 
@@ -848,9 +848,9 @@ func TestContainerStartErrors(t *testing.T) {
 
 			buf := new(bytes.Buffer)
 			tc.ctxInfo.Logger = testutils.NewCapturingTestLogger(zzzlog.LvlDebug, buf)
-			if tc.ctxInfo.ContainerStopAndRemoveKillDelay == 0 {
+			if tc.ctxInfo.ContainerPurgeKillDelay == 0 {
 				// Reduce this delay to keep the tests executing quickly.
-				tc.ctxInfo.ContainerStopAndRemoveKillDelay = 100 * time.Millisecond
+				tc.ctxInfo.ContainerPurgeKillDelay = 100 * time.Millisecond
 			}
 			ctx := testutils.NewTestContext(tc.ctxInfo)
 
@@ -1122,9 +1122,9 @@ func TestContainerStop(t *testing.T) {
 			if tc.ctxInfo.InspectLevel == inspect.HomelabInspectLevelNone {
 				tc.ctxInfo.InspectLevel = inspect.HomelabInspectLevelDebug
 			}
-			if tc.ctxInfo.ContainerStopAndRemoveKillDelay == 0 {
+			if tc.ctxInfo.ContainerPurgeKillDelay == 0 {
 				// Reduce this delay to keep the tests executing quickly.
-				tc.ctxInfo.ContainerStopAndRemoveKillDelay = 100 * time.Millisecond
+				tc.ctxInfo.ContainerPurgeKillDelay = 100 * time.Millisecond
 			}
 			ctx := testutils.NewTestContext(tc.ctxInfo)
 
@@ -1271,9 +1271,9 @@ func TestContainerStopErrors(t *testing.T) {
 
 			buf := new(bytes.Buffer)
 			tc.ctxInfo.Logger = testutils.NewCapturingTestLogger(zzzlog.LvlDebug, buf)
-			if tc.ctxInfo.ContainerStopAndRemoveKillDelay == 0 {
+			if tc.ctxInfo.ContainerPurgeKillDelay == 0 {
 				// Reduce this delay to keep the tests executing quickly.
-				tc.ctxInfo.ContainerStopAndRemoveKillDelay = 100 * time.Millisecond
+				tc.ctxInfo.ContainerPurgeKillDelay = 100 * time.Millisecond
 			}
 			ctx := testutils.NewTestContext(tc.ctxInfo)
 
