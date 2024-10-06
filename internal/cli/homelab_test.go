@@ -242,7 +242,7 @@ Use "homelab \[command\] --help" for more information about a command\.`,
 			"start",
 			"--all-groups",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -260,7 +260,7 @@ Container g2-c3 not allowed to run on host [^\s]+`,
 			"start",
 			"--all-groups",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -285,7 +285,7 @@ Started container g2-c3`,
 			"start",
 			"--all-groups",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			UseRealHostInfo: true,
@@ -301,7 +301,7 @@ Container g2-c3 not allowed to run on host [^\s]+`,
 			"start",
 			"--all-groups",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -325,7 +325,7 @@ Started container g2-c3`,
 			"start",
 			"--all-groups",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -356,7 +356,7 @@ Started container g2-c3`,
 			"start",
 			"--all-groups",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -385,7 +385,7 @@ Started container g2-c3`,
 			"start",
 			"--all-groups",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -468,7 +468,7 @@ Started container g2-c4`,
 			"--group",
 			"g1",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -491,7 +491,7 @@ Container g1-c2 not allowed to run on host FakeHost`,
 			"--container",
 			"c1",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -510,7 +510,7 @@ Started container g1-c1`,
 			"stop",
 			"--all-groups",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -539,7 +539,7 @@ Stopped container g2-c3`,
 			"--group",
 			"g1",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -564,7 +564,7 @@ Container g1-c2 cannot be stopped since it was not found`,
 			"--container",
 			"c1",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -616,7 +616,7 @@ var executeHomelabCmdLogLevelTests = []struct {
 			"start",
 			"--all-groups",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: func() *testutils.TestContextInfo {
 			return &testutils.TestContextInfo{
@@ -635,7 +635,7 @@ var executeHomelabCmdLogLevelTests = []struct {
 			"stop",
 			"--all-groups",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: func() *testutils.TestContextInfo {
 			return &testutils.TestContextInfo{
@@ -702,7 +702,7 @@ var executeHomelabCmdErrorTests = []struct {
 			"start",
 			"--all-groups",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
@@ -717,7 +717,7 @@ var executeHomelabCmdErrorTests = []struct {
 			"stop",
 			"--all-groups",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -826,7 +826,7 @@ var executeHomelabCmdEnvPanicTests = []struct {
 			"start",
 			"--all-groups",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{},
 		envs: testhelpers.TestEnvMap{
@@ -1018,7 +1018,7 @@ var executeHomelabContainerGroupCmdFlagErrorTests = []struct {
 		name: "Homelab Command - %s - No Group Flag",
 		args: []string{
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: func() *testutils.TestContextInfo {
 			return &testutils.TestContextInfo{
@@ -1033,7 +1033,7 @@ var executeHomelabContainerGroupCmdFlagErrorTests = []struct {
 			"--container",
 			"c1",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: func() *testutils.TestContextInfo {
 			return &testutils.TestContextInfo{
@@ -1049,7 +1049,7 @@ var executeHomelabContainerGroupCmdFlagErrorTests = []struct {
 			"--group",
 			"g1",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: func() *testutils.TestContextInfo {
 			return &testutils.TestContextInfo{
@@ -1065,7 +1065,7 @@ var executeHomelabContainerGroupCmdFlagErrorTests = []struct {
 			"--container",
 			"c1",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: func() *testutils.TestContextInfo {
 			return &testutils.TestContextInfo{
@@ -1113,7 +1113,7 @@ var executeHomelabContainerGroupCmdErrorTests = []struct {
 			"--group",
 			"g3",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: func() *testutils.TestContextInfo {
 			return &testutils.TestContextInfo{
@@ -1130,7 +1130,7 @@ var executeHomelabContainerGroupCmdErrorTests = []struct {
 			"--container",
 			"c3",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: func() *testutils.TestContextInfo {
 			return &testutils.TestContextInfo{
@@ -1147,7 +1147,7 @@ var executeHomelabContainerGroupCmdErrorTests = []struct {
 			"--container",
 			"c3",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/start-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
 		},
 		ctxInfo: func() *testutils.TestContextInfo {
 			return &testutils.TestContextInfo{
