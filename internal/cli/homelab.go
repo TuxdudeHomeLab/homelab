@@ -79,6 +79,7 @@ func initHomelabCmd(ctx context.Context) *cobra.Command {
 	homelabCmd.AddCommand(cmds.ShowConfigCmd(ctx, &globalOpts))
 	homelabCmd.AddCommand(cmds.StartCmd(ctx, &globalOpts))
 	homelabCmd.AddCommand(cmds.StopCmd(ctx, &globalOpts))
+	homelabCmd.AddCommand(cmds.PurgeCmd(ctx, &globalOpts))
 	return homelabCmd
 }
 

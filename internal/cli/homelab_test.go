@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/tuxdude/zzzlog"
 	"github.com/tuxdudehomelab/homelab/internal/cli/version"
@@ -575,6 +576,77 @@ Container g1-c2 cannot be stopped since it was not found`,
 		},
 		want: `Container g1-c1 cannot be stopped since it was not found`,
 	},
+	{
+		name: "Homelab Command - Purge - All Groups",
+		args: []string{
+			"purge",
+			"--all-groups",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				Containers: []*fakedocker.FakeContainerInitInfo{
+					{
+						Name:  "g1-c1",
+						Image: "abc/xyz",
+						State: docker.ContainerStateCreated,
+					},
+					{
+						Name:  "g1-c2",
+						Image: "abc/xyz2",
+						State: docker.ContainerStatePaused,
+					},
+				},
+			}),
+		},
+		want: `Purged container g1-c1
+Purged container g1-c2
+Container g2-c3 cannot be purged since it was not found`,
+	},
+	{
+		name: "Homelab Command - Purge - One Group",
+		args: []string{
+			"purge",
+			"--group",
+			"g1",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				Containers: []*fakedocker.FakeContainerInitInfo{
+					{
+						Name:  "g1-c1",
+						Image: "abc/xyz",
+						State: docker.ContainerStateRunning,
+					},
+				},
+			}),
+		},
+		want: `Purged container g1-c1
+Container g1-c2 cannot be purged since it was not found`,
+	},
+	{
+		name: "Homelab Command - Purge - One Container - Not Found",
+		args: []string{
+			"purge",
+			"--group",
+			"g1",
+			"--container",
+			"c1",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				ValidImagesForPull: utils.StringSet{
+					"abc/xyz": {},
+				},
+			}),
+		},
+		want: `Container g1-c1 cannot be purged since it was not found`,
+	},
 }
 
 func TestExecHomelabCmd(t *testing.T) {
@@ -654,7 +726,39 @@ var executeHomelabCmdLogLevelTests = []struct {
 						{
 							Name:  "g2-c3",
 							Image: "abc/xyz3",
-							State: docker.ContainerStateRemoving,
+							State: docker.ContainerStateRestarting,
+						},
+					},
+				}),
+			}
+		},
+	},
+	{
+		name: "Homelab Command - Purge - All Groups",
+		args: []string{
+			"purge",
+			"--all-groups",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+		},
+		ctxInfo: func() *testutils.TestContextInfo {
+			return &testutils.TestContextInfo{
+				DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+					Containers: []*fakedocker.FakeContainerInitInfo{
+						{
+							Name:  "g1-c1",
+							Image: "abc/xyz",
+							State: docker.ContainerStateCreated,
+						},
+						{
+							Name:  "g1-c2",
+							Image: "abc/xyz2",
+							State: docker.ContainerStateRunning,
+						},
+						{
+							Name:  "g2-c3",
+							Image: "abc/xyz3",
+							State: docker.ContainerStateDead,
 						},
 					},
 				}),
@@ -742,6 +846,37 @@ var executeHomelabCmdErrorTests = []struct {
 		want: `stop failed for 2 containers, reason\(s\):
 1 - Failed to stop container g1-c1, reason:failed to stop the container, reason: failed to stop container g1-c1 on the fake docker host
 2 - Failed to stop container g2-c3, reason:failed to stop the container, reason: failed to stop container g2-c3 on the fake docker host`,
+	},
+	{
+		name: "Homelab Command - Purge - Failure",
+		args: []string{
+			"purge",
+			"--all-groups",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				Containers: []*fakedocker.FakeContainerInitInfo{
+					{
+						Name:  "g1-c1",
+						Image: "abc/xyz",
+						State: docker.ContainerStateRunning,
+					},
+					{
+						Name:  "g2-c3",
+						Image: "abc/xyz3",
+						State: docker.ContainerStateRemoving,
+					},
+				},
+				FailContainerStop: utils.StringSet{
+					"g1-c1": {},
+				},
+			}),
+		},
+		want: `purge failed for 2 containers, reason\(s\):
+1 - Failed to purge container g1-c1, reason:failed to stop the container, reason: failed to stop container g1-c1 on the fake docker host
+2 - Failed to purge container g2-c3, reason:failed to purge container g2-c3 after 6 attempts`,
 	},
 }
 
@@ -871,6 +1006,13 @@ var executeHomelabConfigCmds = []struct {
 			"--all-groups",
 		},
 		cmdDesc: "Stop",
+	},
+	{
+		cmdArgs: []string{
+			"purge",
+			"--all-groups",
+		},
+		cmdDesc: "Purge",
 	},
 }
 
@@ -1005,6 +1147,12 @@ var executeHomelabContainerGroupCmds = []struct {
 			"stop",
 		},
 		cmdDesc: "Stop",
+	},
+	{
+		cmdArgs: []string{
+			"purge",
+		},
+		cmdDesc: "Purge",
 	},
 }
 
@@ -1195,6 +1343,11 @@ func execHomelabCmdTestWithBuf(ctxInfo *testutils.TestContextInfo, logLevel *zzz
 		lvl = *logLevel
 	}
 	ctxInfo.Logger = testutils.NewCapturingVanillaTestLogger(lvl, buf)
+	if ctxInfo.ContainerPurgeKillDelay == 0 {
+		// Reduce this delay to keep the tests executing quickly.
+		ctxInfo.ContainerPurgeKillDelay = 100 * time.Millisecond
+	}
+
 	ctx := testutils.NewTestContext(ctxInfo)
 	err := Exec(ctx, buf, buf, args...)
 	return buf, err

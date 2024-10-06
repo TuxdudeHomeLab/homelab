@@ -394,8 +394,8 @@ func TestContainerStart(t *testing.T) {
 				return
 			}
 
-			dockerClient := docker.NewClient(ctx)
-			defer dockerClient.Close()
+			dc := docker.NewClient(ctx)
+			defer dc.Close()
 
 			ct, gotErr := dep.queryContainer(tc.cRef)
 			if gotErr != nil {
@@ -407,7 +407,7 @@ func TestContainerStart(t *testing.T) {
 				tc.preExec(ctx)
 			}
 
-			gotStarted, gotErr := ct.Start(ctx, dockerClient)
+			gotStarted, gotErr := ct.Start(ctx, dc)
 			if gotErr != nil {
 				testhelpers.LogErrorNotNilWithOutput(t, "container.start()", tc.name, buf, gotErr)
 				return
@@ -864,8 +864,8 @@ func TestContainerStartErrors(t *testing.T) {
 				return
 			}
 
-			dockerClient := docker.NewClient(ctx)
-			defer dockerClient.Close()
+			dc := docker.NewClient(ctx)
+			defer dc.Close()
 
 			ct, gotErr := dep.queryContainer(tc.cRef)
 			if gotErr != nil {
@@ -873,7 +873,7 @@ func TestContainerStartErrors(t *testing.T) {
 				return
 			}
 
-			gotStarted, gotErr := ct.Start(ctx, dockerClient)
+			gotStarted, gotErr := ct.Start(ctx, dc)
 			if gotErr == nil {
 				testhelpers.LogErrorNilWithOutput(t, "container.start()", tc.name, buf, tc.want)
 				return
@@ -1134,8 +1134,8 @@ func TestContainerStop(t *testing.T) {
 				return
 			}
 
-			dockerClient := docker.NewClient(ctx)
-			defer dockerClient.Close()
+			dc := docker.NewClient(ctx)
+			defer dc.Close()
 
 			ct, gotErr := dep.queryContainer(tc.cRef)
 			if gotErr != nil {
@@ -1147,7 +1147,7 @@ func TestContainerStop(t *testing.T) {
 				tc.preExec(ctx)
 			}
 
-			gotStoppedReturnVal, gotErr := ct.Stop(ctx, dockerClient)
+			gotStoppedReturnVal, gotErr := ct.Stop(ctx, dc)
 			if gotErr != nil {
 				testhelpers.LogErrorNotNilWithOutput(t, "container.stop()", tc.name, buf, gotErr)
 				return
@@ -1287,8 +1287,8 @@ func TestContainerStopErrors(t *testing.T) {
 				return
 			}
 
-			dockerClient := docker.NewClient(ctx)
-			defer dockerClient.Close()
+			dc := docker.NewClient(ctx)
+			defer dc.Close()
 
 			ct, gotErr := dep.queryContainer(tc.cRef)
 			if gotErr != nil {
@@ -1296,7 +1296,7 @@ func TestContainerStopErrors(t *testing.T) {
 				return
 			}
 
-			gotStoppedReturnVal, gotErr := ct.Stop(ctx, dockerClient)
+			gotStoppedReturnVal, gotErr := ct.Stop(ctx, dc)
 			if gotErr == nil {
 				testhelpers.LogErrorNilWithOutput(t, "container.stop()", tc.name, buf, tc.want)
 				return
@@ -1305,6 +1305,570 @@ func TestContainerStopErrors(t *testing.T) {
 				testhelpers.LogCustomWithOutput(t, "container.stop() return value", tc.name, buf, "gotStopped (true) != wantStopped (false)")
 			}
 			if !testhelpers.RegexMatchWithOutput(t, "container.stop()", tc.name, buf, "gotErr error string", tc.want, gotErr.Error()) {
+				return
+			}
+		})
+	}
+}
+
+var containerPurgeTests = []struct {
+	name       string
+	config     config.Homelab
+	cRef       config.ContainerReference
+	ctxInfo    *testutils.TestContextInfo
+	preExec    func(context.Context)
+	wantPurged bool
+}{
+	{
+		name: "Container Purge - Doesn't Exist Already",
+		config: buildSingleContainerConfig(
+			config.ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz"),
+		cRef: config.ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{}),
+		},
+		wantPurged: false,
+	},
+	{
+		name: "Container Purge - In Created State",
+		config: buildSingleContainerConfig(
+			config.ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz"),
+		cRef: config.ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				Containers: []*fakedocker.FakeContainerInitInfo{
+					{
+						Name:  "g1-c1",
+						Image: "abc/xyz",
+						State: docker.ContainerStateCreated,
+					},
+				},
+			}),
+		},
+		wantPurged: true,
+	},
+	{
+		name: "Container Purge - In Running State",
+		config: buildSingleContainerConfig(
+			config.ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz"),
+		cRef: config.ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				Containers: []*fakedocker.FakeContainerInitInfo{
+					{
+						Name:  "g1-c1",
+						Image: "abc/xyz",
+						State: docker.ContainerStateRunning,
+					},
+				},
+			}),
+		},
+		wantPurged: true,
+	},
+	{
+		name: "Container Purge - In Paused State",
+		config: buildSingleContainerConfig(
+			config.ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz"),
+		cRef: config.ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				Containers: []*fakedocker.FakeContainerInitInfo{
+					{
+						Name:  "g1-c1",
+						Image: "abc/xyz",
+						State: docker.ContainerStatePaused,
+					},
+				},
+			}),
+		},
+		wantPurged: true,
+	},
+	{
+		name: "Container Purge - In Restarting State",
+		config: buildSingleContainerConfig(
+			config.ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz"),
+		cRef: config.ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				Containers: []*fakedocker.FakeContainerInitInfo{
+					{
+						Name:  "g1-c1",
+						Image: "abc/xyz",
+						State: docker.ContainerStateRestarting,
+					},
+				},
+			}),
+		},
+		wantPurged: true,
+	},
+	{
+		name: "Container Purge - In Removing State",
+		config: buildSingleContainerConfig(
+			config.ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz"),
+		cRef: config.ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				Containers: []*fakedocker.FakeContainerInitInfo{
+					{
+						Name:  "g1-c1",
+						Image: "abc/xyz",
+						State: docker.ContainerStateRemoving,
+					},
+				},
+			}),
+		},
+		preExec: func(ctx context.Context) {
+			go func() {
+				time.Sleep(200 * time.Millisecond)
+				d := fakedocker.FakeDockerHostFromContext(ctx)
+				err := d.ForceRemoveContainer("g1-c1")
+				if err != nil {
+					panic(err)
+				}
+			}()
+		},
+		wantPurged: true,
+	},
+	{
+		name: "Container Purge - In Exited State",
+		config: buildSingleContainerConfig(
+			config.ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz"),
+		cRef: config.ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				Containers: []*fakedocker.FakeContainerInitInfo{
+					{
+						Name:  "g1-c1",
+						Image: "abc/xyz",
+						State: docker.ContainerStateExited,
+					},
+				},
+			}),
+		},
+		wantPurged: true,
+	},
+	{
+		name: "Container Purge - In Dead State",
+		config: buildSingleContainerConfig(
+			config.ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz"),
+		cRef: config.ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				Containers: []*fakedocker.FakeContainerInitInfo{
+					{
+						Name:  "g1-c1",
+						Image: "abc/xyz",
+						State: docker.ContainerStateDead,
+					},
+				},
+			}),
+		},
+		wantPurged: true,
+	},
+	{
+		name: "Container Purge - In Running State Requiring Multiple Stops",
+		config: buildSingleContainerConfig(
+			config.ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz"),
+		cRef: config.ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				Containers: []*fakedocker.FakeContainerInitInfo{
+					{
+						Name:               "g1-c1",
+						Image:              "abc/xyz",
+						State:              docker.ContainerStateRunning,
+						RequiredExtraStops: 5,
+					},
+				},
+			}),
+		},
+		wantPurged: true,
+	},
+	{
+		name: "Container Purge - In Running State Requiring Multiple Kills",
+		config: buildSingleContainerConfig(
+			config.ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz"),
+		cRef: config.ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				Containers: []*fakedocker.FakeContainerInitInfo{
+					{
+						Name:               "g1-c1",
+						Image:              "abc/xyz",
+						State:              docker.ContainerStateRunning,
+						RequiredExtraStops: 1000,
+						RequiredExtraKills: 4,
+					},
+				},
+			}),
+		},
+		wantPurged: true,
+	},
+}
+
+func TestContainerPurge(t *testing.T) {
+	for _, test := range containerPurgeTests {
+		tc := test
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			buf := new(bytes.Buffer)
+			tc.ctxInfo.Logger = testutils.NewCapturingTestLogger(zzzlog.LvlDebug, buf)
+			// Enable debug inspect level while running the container start tests
+			// for extra code coverage.
+			if tc.ctxInfo.InspectLevel == inspect.HomelabInspectLevelNone {
+				tc.ctxInfo.InspectLevel = inspect.HomelabInspectLevelDebug
+			}
+			if tc.ctxInfo.ContainerPurgeKillDelay == 0 {
+				// Reduce this delay to keep the tests executing quickly.
+				tc.ctxInfo.ContainerPurgeKillDelay = 100 * time.Millisecond
+			}
+			ctx := testutils.NewTestContext(tc.ctxInfo)
+
+			dep, gotErr := FromConfig(ctx, &tc.config)
+			if gotErr != nil {
+				testhelpers.LogErrorNotNil(t, "FromConfig()", tc.name, gotErr)
+				return
+			}
+
+			dc := docker.NewClient(ctx)
+			defer dc.Close()
+
+			ct, gotErr := dep.queryContainer(tc.cRef)
+			if gotErr != nil {
+				testhelpers.LogErrorNotNil(t, "deployment.queryContainer()", tc.name, gotErr)
+				return
+			}
+
+			if tc.preExec != nil {
+				tc.preExec(ctx)
+			}
+
+			gotPurged, gotErr := ct.Purge(ctx, dc)
+			if gotErr != nil {
+				testhelpers.LogErrorNotNilWithOutput(t, "container.Purge()", tc.name, buf, gotErr)
+				return
+			}
+			if gotPurged != tc.wantPurged {
+				testhelpers.LogCustomWithOutput(t, "container.Purge()", tc.name, buf, fmt.Sprintf("gotPurged (%t) != wantPurged (%t)", gotPurged, tc.wantPurged))
+			}
+
+			d := fakedocker.FakeDockerHostFromContext(ctx)
+			gotState := d.GetContainerState(fmt.Sprintf("%s-%s", tc.cRef.Group, tc.cRef.Container))
+			if gotState != docker.ContainerStateNotFound {
+				testhelpers.LogCustomWithOutput(t, "Container state after container.Purge()", tc.name, buf, fmt.Sprintf("gotState (%s) when container is expected to be purged", gotState))
+			}
+		})
+	}
+}
+
+var containerPurgeErrorTests = []struct {
+	name      string
+	config    config.Homelab
+	cRef      config.ContainerReference
+	ctxInfo   *testutils.TestContextInfo
+	wantPanic bool
+	want      string
+}{
+	{
+		name: "Container Purge - Kill Existing Container Fails",
+		config: buildSingleContainerConfig(
+			config.ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz"),
+		cRef: config.ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				Containers: []*fakedocker.FakeContainerInitInfo{
+					{
+						Name:               "g1-c1",
+						Image:              "abc/xyz",
+						State:              docker.ContainerStateRunning,
+						RequiredExtraStops: 1000,
+					},
+				},
+				FailContainerKill: utils.StringSet{
+					"g1-c1": {},
+				},
+				ValidImagesForPull: utils.StringSet{
+					"abc/xyz": {},
+				},
+			}),
+		},
+		want: `Failed to purge container g1-c1, reason:failed to purge container g1-c1 after 6 attempts`,
+	},
+	{
+		name: "Container Purge - Unkillable Existing Container",
+		config: buildSingleContainerConfig(
+			config.ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz"),
+		cRef: config.ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				Containers: []*fakedocker.FakeContainerInitInfo{
+					{
+						Name:               "g1-c1",
+						Image:              "abc/xyz",
+						State:              docker.ContainerStateRunning,
+						RequiredExtraStops: 1000,
+						RequiredExtraKills: 5,
+					},
+				},
+				ValidImagesForPull: utils.StringSet{
+					"abc/xyz": {},
+				},
+			}),
+		},
+		want: `Failed to purge container g1-c1, reason:failed to purge container g1-c1 after 6 attempts`,
+	},
+	{
+		name: "Container Purge - Container State Unknown",
+		config: buildSingleContainerConfig(
+			config.ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz"),
+		cRef: config.ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				Containers: []*fakedocker.FakeContainerInitInfo{
+					{
+						Name:  "g1-c1",
+						Image: "abc/xyz",
+						State: docker.ContainerStateUnknown,
+					},
+				},
+				ValidImagesForPull: utils.StringSet{
+					"abc/xyz": {},
+				},
+			}),
+		},
+		wantPanic: true,
+		want:      `container g1-c1 is in an unsupported state Unknown, possibly indicating a bug in the code`,
+	},
+	{
+		name: "Container Purge - Inspect Existing Container Failure",
+		config: buildSingleContainerConfig(
+			config.ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz"),
+		cRef: config.ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				Containers: []*fakedocker.FakeContainerInitInfo{
+					{
+						Name:  "g1-c1",
+						Image: "abc/xyz",
+						State: docker.ContainerStateRunning,
+					},
+				},
+				FailContainerInspect: utils.StringSet{
+					"g1-c1": {},
+				},
+				ValidImagesForPull: utils.StringSet{
+					"abc/xyz": {},
+				},
+			}),
+		},
+		want: `Failed to purge container g1-c1, reason:failed to retrieve the container state, reason: failed to inspect container g1-c1 on the fake docker host`,
+	},
+	{
+		name: "Container Purge - Stop Existing Container Failure",
+		config: buildSingleContainerConfig(
+			config.ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz"),
+		cRef: config.ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				Containers: []*fakedocker.FakeContainerInitInfo{
+					{
+						Name:  "g1-c1",
+						Image: "abc/xyz",
+						State: docker.ContainerStateRunning,
+					},
+				},
+				FailContainerStop: utils.StringSet{
+					"g1-c1": {},
+				},
+				ValidImagesForPull: utils.StringSet{
+					"abc/xyz": {},
+				},
+			}),
+		},
+		want: `Failed to purge container g1-c1, reason:failed to stop the container, reason: failed to stop container g1-c1 on the fake docker host`,
+	},
+	{
+		name: "Container Purge - Remove Existing Container Failure",
+		config: buildSingleContainerConfig(
+			config.ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz"),
+		cRef: config.ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				Containers: []*fakedocker.FakeContainerInitInfo{
+					{
+						Name:  "g1-c1",
+						Image: "abc/xyz",
+						State: docker.ContainerStateRestarting,
+					},
+				},
+				FailContainerRemove: utils.StringSet{
+					"g1-c1": {},
+				},
+				ValidImagesForPull: utils.StringSet{
+					"abc/xyz": {},
+				},
+			}),
+		},
+		want: `Failed to purge container g1-c1, reason:failed to remove the container, reason: failed to remove container g1-c1 on the fake docker host`,
+	},
+}
+
+func TestContainerPurgeErrors(t *testing.T) {
+	for _, test := range containerPurgeErrorTests {
+		tc := test
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			buf := new(bytes.Buffer)
+			tc.ctxInfo.Logger = testutils.NewCapturingTestLogger(zzzlog.LvlDebug, buf)
+			if tc.ctxInfo.ContainerPurgeKillDelay == 0 {
+				// Reduce this delay to keep the tests executing quickly.
+				tc.ctxInfo.ContainerPurgeKillDelay = 100 * time.Millisecond
+			}
+			ctx := testutils.NewTestContext(tc.ctxInfo)
+
+			if tc.wantPanic {
+				defer testhelpers.ExpectPanicWithOutput(t, "container.Purge()", tc.name, buf, tc.want)
+			}
+
+			dep, gotErr := FromConfig(ctx, &tc.config)
+			if gotErr != nil {
+				testhelpers.LogErrorNotNil(t, "FromConfig()", tc.name, gotErr)
+				return
+			}
+
+			dc := docker.NewClient(ctx)
+			defer dc.Close()
+
+			ct, gotErr := dep.queryContainer(tc.cRef)
+			if gotErr != nil {
+				testhelpers.LogErrorNotNil(t, "deployment.queryContainer()", tc.name, gotErr)
+				return
+			}
+
+			gotPurged, gotErr := ct.Purge(ctx, dc)
+			if gotErr == nil {
+				testhelpers.LogErrorNilWithOutput(t, "container.Purge()", tc.name, buf, tc.want)
+				return
+			}
+			if gotPurged {
+				testhelpers.LogCustomWithOutput(t, "container.Purge()", tc.name, buf, "gotPurged (true) != wantPurged (false)")
+				return
+			}
+
+			if !testhelpers.RegexMatchWithOutput(t, "container.Purge()", tc.name, buf, "gotErr error string", tc.want, gotErr.Error()) {
 				return
 			}
 		})
