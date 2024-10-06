@@ -22,7 +22,7 @@ func ShowConfigCmd(ctx context.Context, globalOptions *clicommon.GlobalCmdOption
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
 			cmd.SilenceErrors = true
-			err := execShowConfigCmd(ctx, cmd, args, globalOptions)
+			err := execShowConfigCmd(homelabContext(ctx), cmd, args, globalOptions)
 			if err != nil {
 				return errors.NewHomelabRuntimeError(err)
 			}

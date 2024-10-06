@@ -281,22 +281,6 @@ Created network net2
 Started container g2-c3`,
 	},
 	{
-		name: "Homelab Command - Start - All Groups With Real User, Host And Docker",
-		args: []string{
-			"start",
-			"--all-groups",
-			"--configs-dir",
-			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
-		},
-		ctxInfo: &testutils.TestContextInfo{
-			UseRealHostInfo: true,
-			UseRealUserInfo: true,
-		},
-		want: `Container g1-c1 not allowed to run on host [^\s]+
-Container g1-c2 not allowed to run on host [^\s]+
-Container g2-c3 not allowed to run on host [^\s]+`,
-	},
-	{
 		name: "Homelab Command - Start - All Groups",
 		args: []string{
 			"start",
@@ -656,6 +640,194 @@ func TestExecHomelabCmd(t *testing.T) {
 			t.Parallel()
 
 			out, gotErr := execHomelabCmdTest(tc.ctxInfo, nil, tc.args...)
+			if gotErr != nil {
+				testhelpers.LogErrorNotNilWithOutput(t, "Exec()", tc.name, out, gotErr)
+				return
+			}
+
+			if !testhelpers.RegexMatchJoinNewLines(t, "Exec()", tc.name, "command output", tc.want, out.String()) {
+				return
+			}
+		})
+	}
+}
+
+var executeHomelabCmdRealEverythingTests = []struct {
+	name string
+	args []string
+	want string
+}{
+	{
+		name: "Homelab Command - Show Config - Real Everything",
+		args: []string{
+			"show-config",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/show-config-cmd", testhelpers.Pwd()),
+		},
+		want: `Homelab config:
+{
+  "global": {
+    "baseDir": "testdata/dummy-base-dir"
+  },
+  "ipam": {
+    "networks": {
+      "bridgeModeNetworks": \[
+        {
+          "name": "net1",
+          "hostInterfaceName": "docker-net1",
+          "cidr": "172\.18\.100\.0/24",
+          "priority": 1,
+          "containers": \[
+            {
+              "ip": "172\.18\.100\.11",
+              "container": {
+                "group": "g1",
+                "container": "c1"
+              }
+            },
+            {
+              "ip": "172\.18\.100\.12",
+              "container": {
+                "group": "g1",
+                "container": "c2"
+              }
+            }
+          \]
+        },
+        {
+          "name": "net2",
+          "hostInterfaceName": "docker-net2",
+          "cidr": "172\.18\.101\.0/24",
+          "priority": 1,
+          "containers": \[
+            {
+              "ip": "172\.18\.101\.21",
+              "container": {
+                "group": "g2",
+                "container": "c3"
+              }
+            }
+          \]
+        }
+      \]
+    }
+  },
+  "hosts": \[
+    {
+      "name": "fakehost",
+      "allowedContainers": \[
+        {
+          "group": "g1",
+          "container": "c1"
+        }
+      \]
+    },
+    {
+      "name": "host2"
+    }
+  \],
+  "groups": \[
+    {
+      "name": "g1",
+      "order": 1
+    },
+    {
+      "name": "g2",
+      "order": 2
+    }
+  \],
+  "containers": \[
+    {
+      "info": {
+        "group": "g1",
+        "container": "c1"
+      },
+      "image": {
+        "image": "abc/xyz"
+      },
+      "lifecycle": {
+        "order": 1
+      }
+    },
+    {
+      "info": {
+        "group": "g1",
+        "container": "c2"
+      },
+      "image": {
+        "image": "abc/xyz2"
+      },
+      "lifecycle": {
+        "order": 2
+      }
+    },
+    {
+      "info": {
+        "group": "g2",
+        "container": "c3"
+      },
+      "image": {
+        "image": "abc/xyz3"
+      },
+      "lifecycle": {
+        "order": 1
+      }
+    }
+  \]
+}`,
+	},
+	{
+		name: "Homelab Command - Start - All Groups - Real Everything",
+		args: []string{
+			"start",
+			"--all-groups",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+		},
+		want: `Container g1-c1 not allowed to run on host [^\s]+
+Container g1-c2 not allowed to run on host [^\s]+
+Container g2-c3 not allowed to run on host [^\s]+`,
+	},
+	{
+		name: "Homelab Command - Stop - All Groups - Real Everything",
+		args: []string{
+			"stop",
+			"--all-groups",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+		},
+		want: `Container g1-c1 cannot be stopped since it was not found
+Container g1-c2 cannot be stopped since it was not found
+Container g2-c3 cannot be stopped since it was not found`,
+	},
+	{
+		name: "Homelab Command - Purge - All Groups - Real Everything",
+		args: []string{
+			"purge",
+			"--all-groups",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+		},
+		want: `Container g1-c1 cannot be purged since it was not found
+Container g1-c2 cannot be purged since it was not found
+Container g2-c3 cannot be purged since it was not found`,
+	},
+}
+
+func TestExecHomelabCmdRealEverything(t *testing.T) {
+	for _, test := range executeHomelabCmdRealEverythingTests {
+		tc := test
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			out, gotErr := execHomelabCmdTest(
+				&testutils.TestContextInfo{
+					UseRealHostInfo: true,
+					UseRealUserInfo: true,
+				},
+				nil,
+				tc.args...,
+			)
 			if gotErr != nil {
 				testhelpers.LogErrorNotNilWithOutput(t, "Exec()", tc.name, out, gotErr)
 				return
