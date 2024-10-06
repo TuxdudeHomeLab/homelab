@@ -272,6 +272,28 @@ func (h *Homelab) Parse(ctx context.Context, r io.Reader) error {
 	return nil
 }
 
+func (g *Global) ApplyConfigEnv(env *env.ConfigEnvManager) {
+	for i, m := range g.MountDefs {
+		g.MountDefs[i].Src = env.Apply(m.Src)
+		g.MountDefs[i].Dst = env.Apply(m.Dst)
+		g.MountDefs[i].Options = env.Apply(m.Options)
+	}
+	g.Container.DomainName = env.Apply(g.Container.DomainName)
+	for i, d := range g.Container.DNSSearch {
+		g.Container.DNSSearch[i] = env.Apply(d)
+	}
+	for i, e := range g.Container.Env {
+		g.Container.Env[i].Var = env.Apply(e.Var)
+		g.Container.Env[i].Value = env.Apply(e.Value)
+		g.Container.Env[i].ValueCommand = env.Apply(e.ValueCommand)
+	}
+	for i, m := range g.Container.Mounts {
+		g.Container.Mounts[i].Src = env.Apply(m.Src)
+		g.Container.Mounts[i].Dst = env.Apply(m.Dst)
+		g.Container.Mounts[i].Options = env.Apply(m.Options)
+	}
+}
+
 func (c *Container) ApplyConfigEnv(env *env.ConfigEnvManager) {
 	c.Lifecycle.StartPreHook = env.Apply(c.Lifecycle.StartPreHook)
 	c.User.User = env.Apply(c.User.User)

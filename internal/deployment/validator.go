@@ -26,6 +26,10 @@ func validateGlobalConfig(ctx context.Context, parentEnv *env.ConfigEnvManager, 
 		return nil, err
 	}
 
+	// Apply the config env prior to validating other info within the global config.
+	env := parentEnv.NewGlobalConfigEnvManager(ctx, conf.BaseDir, newEnvMap, newEnvOrder)
+	conf.ApplyConfigEnv(env)
+
 	if err := validateMountsConfig(conf.MountDefs, nil, nil, "global config mount defs"); err != nil {
 		return nil, err
 	}
@@ -34,7 +38,7 @@ func validateGlobalConfig(ctx context.Context, parentEnv *env.ConfigEnvManager, 
 		return nil, err
 	}
 
-	return parentEnv.NewGlobalConfigEnvManager(ctx, conf.BaseDir, newEnvMap, newEnvOrder), nil
+	return env, nil
 }
 
 func validateBaseDir(baseDir string) error {
