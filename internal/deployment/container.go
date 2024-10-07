@@ -124,9 +124,12 @@ func (c *Container) startInternal(ctx context.Context, dc *docker.Client) error 
 
 	// 3. Purge (i.e. stop and remove) any previously existing containers
 	// under the same name.
-	_, err = c.purgeInternal(ctx, dc)
+	purged, err := c.purgeInternal(ctx, dc)
 	if err != nil {
 		return err
+	}
+	if purged {
+		log(ctx).Infof("Purged container %s", c.Name())
 	}
 
 	// 4. For the primary network interface of the container, create
