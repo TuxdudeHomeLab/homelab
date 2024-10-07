@@ -815,12 +815,12 @@ containers:
 					Binds: []string{
 						"/abc/def/ghi:/pqr/stu/vwx:ro",
 						"/abc1/def1:/pqr2/stu2/vwx2",
-						"/path/to/my/self/signed/cert/on/host:/path/to/my/self/signed/cert/on/container",
 						"/foo:/bar:ro",
 						"testdata/dummy-base-dir/abc:/abc",
 						"testdata/dummy-base-dir/group1/ct1/some/random/dir:/xyz",
 						"testdata/dummy-base-dir/group1/ct1/configs/generated/config.yml:/data/blocky/config/config.yml:ro",
 						"testdata/dummy-base-dir/group1/ct1/data/my-data:/foo123/bar123/my-data",
+						"/path/to/my/self/signed/cert/on/host:/path/to/my/self/signed/cert/on/container",
 						":/tmp/cache-fakeuser",
 					},
 					NetworkMode: "group1-bridge",
@@ -937,7 +937,7 @@ func TestBuildDeploymentUsingReader(t *testing.T) {
 				return
 			}
 
-			if !testhelpers.CmpDiff(t, "FromReader()", tc.name, "docker configs", tc.wantDockerConfigs, got.containerDockerConfigs) {
+			if !testhelpers.CmpDiff(t, "FromReader()", tc.name, "docker configs", tc.wantDockerConfigs, got.dockerConfigs) {
 				return
 			}
 		})
@@ -1276,7 +1276,7 @@ func TestBuildDeploymentFromConfigsPath(t *testing.T) {
 				return
 			}
 
-			if !testhelpers.CmpDiff(t, "FromConfigsPath()", tc.name, "docker configs", tc.wantDockerConfigs, got.containerDockerConfigs) {
+			if !testhelpers.CmpDiff(t, "FromConfigsPath()", tc.name, "docker configs", tc.wantDockerConfigs, got.dockerConfigs) {
 				return
 			}
 		})

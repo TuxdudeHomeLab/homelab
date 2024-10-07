@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	dcontainer "github.com/docker/docker/api/types/container"
 	"github.com/tuxdude/zzzlog"
 	"github.com/tuxdudehomelab/homelab/internal/config"
 	"github.com/tuxdudehomelab/homelab/internal/docker"
@@ -1869,6 +1870,180 @@ func TestContainerPurgeErrors(t *testing.T) {
 			}
 
 			if !testhelpers.RegexMatchWithOutput(t, "container.Purge()", tc.name, buf, "gotErr error string", tc.want, gotErr.Error()) {
+				return
+			}
+		})
+	}
+}
+
+var containerDockerConfigTests = []struct {
+	name              string
+	config            config.Homelab
+	cRef              config.ContainerReference
+	ctxInfo           *testutils.TestContextInfo
+	wantDockerConfigs *containerDockerConfigs
+}{
+	{
+		name: "Container Docker Configs - Mounts",
+		config: config.Homelab{
+			Global: config.Global{
+				BaseDir: testhelpers.HomelabBaseDir(),
+				MountDefs: []config.Mount{
+					{
+						Name:     "mount-def-1",
+						Type:     "bind",
+						Src:      "/abc/def/ghi",
+						Dst:      "/pqr/stu/vwx",
+						ReadOnly: true,
+					},
+					{
+						Name: "mount-def-2",
+						Type: "bind",
+						Src:  "/abc1/def1",
+						Dst:  "/pqr2/stu2/vwx2",
+					},
+					{
+						Name: "homelab-self-signed-tls-cert",
+						Type: "bind",
+						Src:  "/path/to/my/self/signed/cert/on/host",
+						Dst:  "/path/to/my/self/signed/cert/on/container",
+					},
+				},
+				Container: config.GlobalContainer{
+					Mounts: []config.Mount{
+						{
+							Name: "mount-def-1",
+						},
+						{
+							Name: "mount-def-2",
+						},
+						{
+							Name:     "mount-def-3",
+							Src:      "/foo",
+							Dst:      "/bar",
+							ReadOnly: true,
+						},
+					},
+				},
+			},
+			Groups: []config.ContainerGroup{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []config.Container{
+				{
+					Info: config.ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: config.ContainerImage{
+						Image: "abc/xyz:latest",
+					},
+					Lifecycle: config.ContainerLifecycle{
+						Order: 1,
+					},
+					Filesystem: config.ContainerFilesystem{
+						Mounts: []config.Mount{
+							{
+								Name: "some-other-mount-1",
+								Type: "bind",
+								Src:  "testdata/dummy-base-dir/abc",
+								Dst:  "/abc",
+							},
+							{
+								Name: "some-other-mount-2",
+								Type: "bind",
+								Src:  "testdata/dummy-base-dir/g1/c1/some/random/dir",
+								Dst:  "/xyz",
+							},
+							{
+								Name:     "blocky-config-mount",
+								Type:     "bind",
+								Src:      "testdata/dummy-base-dir/g1/c1/configs/generated/config.yml",
+								Dst:      "/data/blocky/config/config.yml",
+								ReadOnly: true,
+							},
+							{
+								Name: "homelab-self-signed-tls-cert",
+							},
+							{
+								Name: "some-other-mount-3",
+								Type: "bind",
+								Src:  "testdata/dummy-base-dir/g1/c1/data/my-data",
+								Dst:  "/foo123/bar123/my-data",
+							},
+						},
+					},
+				},
+			},
+		},
+		cRef: config.ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
+		},
+		wantDockerConfigs: &containerDockerConfigs{
+			ContainerConfig: &dcontainer.Config{
+				Image: "abc/xyz:latest",
+			},
+			HostConfig: &dcontainer.HostConfig{
+				Binds: []string{
+					"/abc/def/ghi:/pqr/stu/vwx:ro",
+					"/abc1/def1:/pqr2/stu2/vwx2",
+					"/foo:/bar:ro",
+					"testdata/dummy-base-dir/abc:/abc",
+					"testdata/dummy-base-dir/g1/c1/some/random/dir:/xyz",
+					"testdata/dummy-base-dir/g1/c1/configs/generated/config.yml:/data/blocky/config/config.yml:ro",
+					"/path/to/my/self/signed/cert/on/host:/path/to/my/self/signed/cert/on/container",
+					"testdata/dummy-base-dir/g1/c1/data/my-data:/foo123/bar123/my-data",
+				},
+				NetworkMode: "none",
+			},
+		},
+	},
+}
+
+func TestContainerDockerConfigs(t *testing.T) {
+	for _, test := range containerDockerConfigTests {
+		tc := test
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			buf := new(bytes.Buffer)
+			tc.ctxInfo.Logger = testutils.NewCapturingTestLogger(zzzlog.LvlDebug, buf)
+			// Enable debug inspect level while running the container start tests
+			// for extra code coverage.
+			if tc.ctxInfo.InspectLevel == inspect.HomelabInspectLevelNone {
+				tc.ctxInfo.InspectLevel = inspect.HomelabInspectLevelDebug
+			}
+			if tc.ctxInfo.ContainerPurgeKillDelay == 0 {
+				// Reduce this delay to keep the tests executing quickly.
+				tc.ctxInfo.ContainerPurgeKillDelay = 100 * time.Millisecond
+			}
+			ctx := testutils.NewTestContext(tc.ctxInfo)
+
+			dep, gotErr := FromConfig(ctx, &tc.config)
+			if gotErr != nil {
+				testhelpers.LogErrorNotNil(t, "FromConfig()", tc.name, gotErr)
+				return
+			}
+
+			ct, gotErr := dep.queryContainer(tc.cRef)
+			if gotErr != nil {
+				testhelpers.LogErrorNotNil(t, "deployment.queryContainer()", tc.name, gotErr)
+				return
+			}
+
+			got, gotErr := ct.generateDockerConfigs()
+			if gotErr != nil {
+				testhelpers.LogErrorNotNilWithOutput(t, "container.generateDockerConfigs()", tc.name, buf, gotErr)
+				return
+			}
+
+			if !testhelpers.CmpDiff(t, "container.generateDockerConfigs()", tc.name, "docker configs", tc.wantDockerConfigs, got) {
 				return
 			}
 		})

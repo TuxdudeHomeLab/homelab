@@ -158,6 +158,7 @@ func validateMountsConfig(conf, commonConfig, globalDefs []config.Mount, locatio
 			return nil
 		}
 
+		// TODO: Also support tmpfs mounts.
 		if m.Type != "bind" {
 			return fmt.Errorf("unsupported mount type %s for mount %s in %s", m.Type, m.Name, location)
 		}

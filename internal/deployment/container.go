@@ -145,11 +145,11 @@ func (c *Container) startInternal(ctx context.Context, dc *docker.Client) error 
 	}
 
 	// 5. Create the container.
-	cConfig, hConfig, nConfig, err := c.generateDockerConfigs()
+	cdc, err := c.generateDockerConfigs()
 	if err != nil {
 		return err
 	}
-	err = dc.CreateContainer(ctx, c.Name(), cConfig, hConfig, nConfig)
+	err = dc.CreateContainer(ctx, c.Name(), cdc.ContainerConfig, cdc.HostConfig, cdc.NetworkConfig)
 	if err != nil {
 		return err
 	}
@@ -269,9 +269,13 @@ func (c *Container) purgeInternal(ctx context.Context, dc *docker.Client) (bool,
 	return true, nil
 }
 
-func (c *Container) generateDockerConfigs() (*dcontainer.Config, *dcontainer.HostConfig, *dnetwork.NetworkingConfig, error) {
+func (c *Container) generateDockerConfigs() (*containerDockerConfigs, error) {
 	pMap, pSet := c.publishedPorts()
-	return c.dockerContainerConfig(pSet), c.dockerHostConfig(pMap), c.dockerNetworkConfig(), nil
+	return &containerDockerConfigs{
+		ContainerConfig: c.dockerContainerConfig(pSet),
+		HostConfig:      c.dockerHostConfig(pMap),
+		NetworkConfig:   c.dockerNetworkConfig(),
+	}, nil
 }
 
 func (c *Container) dockerContainerConfig(pSet nat.PortSet) *dcontainer.Config {
@@ -411,6 +415,9 @@ func (c *Container) stopTimeout() *int {
 	if t == 0 {
 		t = c.globalConfig.Container.StopTimeout
 	}
+	if t == 0 {
+		return nil
+	}
 	return &t
 }
 
@@ -420,41 +427,41 @@ func (c *Container) imageReference() string {
 
 func (c *Container) bindMounts() []string {
 	// TODO: Do this once for the entire deployment and reuse it.
-	bm := make(map[string]string, 0)
-	mountNames := make([]string, 0)
+	globalMountDefs := make(map[string]string, 0)
 	for _, md := range c.globalConfig.MountDefs {
-		bm[md.Name] = mountConfigToString(&md)
-		mountNames = append(mountNames, md.Name)
+		globalMountDefs[md.Name] = mountConfigToString(&md)
 	}
 
-	binds := make(map[string]string, 0)
-	// Get all the global container config mounts.
+	containerMounts := make(map[string]string, 0)
+	containerMountNames := make([]string, 0)
 	// TODO: Do this once for the entire deployment and reuse it.
+	// Get all the global container config mounts.
 	for _, mount := range c.globalConfig.Container.Mounts {
-		val, found := bm[mount.Name]
-		if found {
-			binds[mount.Name] = val
+		if val, found := globalMountDefs[mount.Name]; found {
+			containerMounts[mount.Name] = val
 		} else {
-			binds[mount.Name] = mountConfigToString(&mount)
-			mountNames = append(mountNames, mount.Name)
+			containerMounts[mount.Name] = mountConfigToString(&mount)
 		}
+		containerMountNames = append(containerMountNames, mount.Name)
 	}
 	// Get all the container specific mount configs and apply
 	// them as overrides for the global.
 	for _, mount := range c.config.Filesystem.Mounts {
-		val, found := bm[mount.Name]
-		if found {
-			binds[mount.Name] = val
+		if val, found := containerMounts[mount.Name]; found {
+			containerMounts[mount.Name] = val
+		} else if val, found := globalMountDefs[mount.Name]; found {
+			containerMounts[mount.Name] = val
+			containerMountNames = append(containerMountNames, mount.Name)
 		} else {
-			binds[mount.Name] = mountConfigToString(&mount)
-			mountNames = append(mountNames, mount.Name)
+			containerMounts[mount.Name] = mountConfigToString(&mount)
+			containerMountNames = append(containerMountNames, mount.Name)
 		}
 	}
 
 	// Convert the result to include only the bind mount strings.
 	res := make([]string, 0)
-	for _, mount := range mountNames {
-		res = append(res, binds[mount])
+	for _, mount := range containerMountNames {
+		res = append(res, containerMounts[mount])
 	}
 	if len(res) == 0 {
 		return nil
@@ -498,6 +505,9 @@ func (c *Container) restartPolicy() dcontainer.RestartPolicy {
 	if len(mode) == 0 {
 		mode = c.globalConfig.Container.RestartPolicy.Mode
 		maxRetry = c.globalConfig.Container.RestartPolicy.MaxRetryCount
+	}
+	if len(mode) == 0 && maxRetry == 0 {
+		return dcontainer.RestartPolicy{}
 	}
 
 	rpm, err := docker.RestartPolicyModeFromString(mode)

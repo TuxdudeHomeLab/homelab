@@ -12,13 +12,13 @@ import (
 )
 
 type Deployment struct {
-	Config                 *config.Homelab
-	Groups                 ContainerGroupMap
-	GroupsOrder            []string
-	Networks               NetworkMap
-	NetworksOrder          []string
-	allowedContainers      containerSet
-	containerDockerConfigs containerDockerConfigMap
+	Config            *config.Homelab
+	Groups            ContainerGroupMap
+	GroupsOrder       []string
+	Networks          NetworkMap
+	NetworksOrder     []string
+	allowedContainers containerSet
+	dockerConfigs     containerDockerConfigMap
 }
 
 func FromConfigsPath(ctx context.Context, configsPath string) (*Deployment, error) {
@@ -41,8 +41,8 @@ func FromReader(ctx context.Context, reader io.Reader) (*Deployment, error) {
 
 func FromConfig(ctx context.Context, conf *config.Homelab) (*Deployment, error) {
 	d := Deployment{
-		Config:                 conf,
-		containerDockerConfigs: containerDockerConfigMap{},
+		Config:        conf,
+		dockerConfigs: containerDockerConfigMap{},
 	}
 
 	systemEnv := env.NewSystemConfigEnvManager(ctx)
@@ -79,16 +79,11 @@ func FromConfig(ctx context.Context, conf *config.Homelab) (*Deployment, error) 
 	for _, g := range d.Groups {
 		g.updateContainersOrder()
 		for _, ct := range g.containers {
-			cConfig, hConfig, nConfig, err := ct.generateDockerConfigs()
+			cdc, err := ct.generateDockerConfigs()
 			if err != nil {
 				log(ctx).Fatalf("Error generating docker configs for container %s, reason: %v", ct, err)
 			}
-			cdc := containerDockerConfigs{
-				ContainerConfig: cConfig,
-				HostConfig:      hConfig,
-				NetworkConfig:   nConfig,
-			}
-			d.containerDockerConfigs[ct.config.Info] = &cdc
+			d.dockerConfigs[ct.config.Info] = cdc
 		}
 	}
 
