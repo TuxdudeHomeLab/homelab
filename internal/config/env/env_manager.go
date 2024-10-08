@@ -17,6 +17,7 @@ var (
 	configEnvUserPrimaryGroupName  = "USER_PRIMARY_GROUP_NAME"
 	configEnvUserPrimaryGroupID    = "USER_PRIMARY_GROUP_ID"
 	configEnvHomelabBaseDir        = "HOMELAB_BASE_DIR"
+	configEnvContainerGroupBaseDir = "CONTAINER_GROUP_BASE_DIR"
 	configEnvContainerBaseDir      = "CONTAINER_BASE_DIR"
 	configEnvContainerConfigsDir   = "CONTAINER_CONFIGS_DIR"
 	configEnvContainerDatasDir     = "CONTAINER_DATA_DIR"
@@ -55,18 +56,20 @@ func (c *ConfigEnvManager) NewGlobalConfigEnvManager(ctx context.Context, homela
 	}
 }
 
-func (c *ConfigEnvManager) NewContainerConfigEnvManager(ctx context.Context, containerBaseDir string, env EnvMap, order EnvOrder) *ConfigEnvManager {
+func (c *ConfigEnvManager) NewContainerConfigEnvManager(ctx context.Context, containerGroupBaseDir, containerBaseDir string, env EnvMap, order EnvOrder) *ConfigEnvManager {
 	// Apply env variables specific to this container that are relevant
 	// within the container config.
 	newEnv := c.env.override(
 		ctx,
 		EnvMap{
-			configEnvContainerBaseDir:    containerBaseDir,
-			configEnvContainerConfigsDir: containerConfigsDir(containerBaseDir),
-			configEnvContainerDatasDir:   containerDataDir(containerBaseDir),
-			configEnvContainerScriptsDir: containerScriptsDir(containerBaseDir),
+			configEnvContainerGroupBaseDir: containerGroupBaseDir,
+			configEnvContainerBaseDir:      containerBaseDir,
+			configEnvContainerConfigsDir:   containerConfigsDir(containerBaseDir),
+			configEnvContainerDatasDir:     containerDataDir(containerBaseDir),
+			configEnvContainerScriptsDir:   containerScriptsDir(containerBaseDir),
 		},
 		EnvOrder{
+			configEnvContainerGroupBaseDir,
 			configEnvContainerBaseDir,
 			configEnvContainerConfigsDir,
 			configEnvContainerDatasDir,

@@ -65,6 +65,12 @@ var applyConfigEnvToContainerTests = []struct {
 						Dst:  "/abc/xyz",
 					},
 					{
+						Name: "some-other-mount-3",
+						Type: "bind",
+						Src:  "$$CONTAINER_GROUP_BASE_DIR$$/tuv/wxy",
+						Dst:  "/foo123/bar123/baz123",
+					},
+					{
 						Name:    "tmpfs-mount",
 						Type:    "tmpfs",
 						Dst:     "/tmp/cache-$$USER_PRIMARY_GROUP_NAME$$",
@@ -195,6 +201,12 @@ var applyConfigEnvToContainerTests = []struct {
 						Dst:  "/abc/xyz",
 					},
 					{
+						Name: "some-other-mount-3",
+						Type: "bind",
+						Src:  "/tmp/base-dir/g1/tuv/wxy",
+						Dst:  "/foo123/bar123/baz123",
+					},
+					{
 						Name:    "tmpfs-mount",
 						Type:    "tmpfs",
 						Dst:     "/tmp/cache-fakegroup1",
@@ -264,7 +276,7 @@ func TestApplyConfigEnvToContainer(t *testing.T) {
 
 			e := env.NewSystemConfigEnvManager(ctx)
 			e = e.NewGlobalConfigEnvManager(ctx, "/tmp/base-dir", tc.globalEnvMap, tc.globalEnvOrder)
-			e = e.NewContainerConfigEnvManager(ctx, "/tmp/base-dir/g1/c1", tc.containerEnvMap, tc.containerEnvOrder)
+			e = e.NewContainerConfigEnvManager(ctx, "/tmp/base-dir/g1", "/tmp/base-dir/g1/c1", tc.containerEnvMap, tc.containerEnvOrder)
 
 			got := deepcopy.MustCopy(tc.container)
 			got.ApplyConfigEnv(e)

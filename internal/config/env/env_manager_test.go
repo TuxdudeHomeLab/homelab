@@ -222,6 +222,27 @@ var containerConfigEnvManagerApplyTests = []struct {
 	want              string
 }{
 	{
+		name: "Container Config Env Manager - Apply - CONTAINER_GROUP_BASE_DIR",
+		globalEnvMap: EnvMap{
+			"MY_ENV_1": "my-env-1",
+			"MY_ENV_2": "my-env-2",
+		},
+		globalEnvOrder: EnvOrder{
+			"MY_ENV_1",
+			"MY_ENV_2",
+		},
+		containerEnvMap: EnvMap{
+			"MY_CT_ENV_1": "my-ct-env-1",
+			"MY_CT_ENV_2": "my-ct-env-2",
+		},
+		containerEnvOrder: EnvOrder{
+			"MY_CT_ENV_1",
+			"MY_CT_ENV_2",
+		},
+		input: "$$CONTAINER_GROUP_BASE_DIR$$/foo/bar/baz",
+		want:  "/home/foobar/dummy-base-dir/g1/foo/bar/baz",
+	},
+	{
 		name: "Container Config Env Manager - Apply - CONTAINER_BASE_DIR",
 		globalEnvMap: EnvMap{
 			"MY_ENV_1": "my-env-1",
@@ -490,7 +511,7 @@ func TestContainerConfigEnvManagerApply(t *testing.T) {
 
 			env := NewSystemConfigEnvManager(ctx)
 			env = env.NewGlobalConfigEnvManager(ctx, "/home/foobar/dummy-base-dir", tc.globalEnvMap, tc.globalEnvOrder)
-			env = env.NewContainerConfigEnvManager(ctx, "/home/foobar/dummy-base-dir/g1/c1", tc.containerEnvMap, tc.containerEnvOrder)
+			env = env.NewContainerConfigEnvManager(ctx, "/home/foobar/dummy-base-dir/g1", "/home/foobar/dummy-base-dir/g1/c1", tc.containerEnvMap, tc.containerEnvOrder)
 			got := env.Apply(tc.input)
 			if got != tc.want {
 				testhelpers.LogCustom(t, "ContainerConfigEnvManager.Apply()", tc.name, fmt.Sprintf("got '%s' != want '%s'", got, tc.want))

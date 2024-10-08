@@ -507,7 +507,7 @@ func validateContainersConfig(ctx context.Context, parentEnv *env.ConfigEnvManag
 		if err != nil {
 			return err
 		}
-		ctEnv := parentEnv.NewContainerConfigEnvManager(ctx, containerBaseDir(globalConfig.BaseDir, ct.Info), ctConfigEnvMap, ctConfigEnvOrder)
+		ctEnv := parentEnv.NewContainerConfigEnvManager(ctx, containerGroupBaseDir(globalConfig.BaseDir, ct.Info), containerBaseDir(globalConfig.BaseDir, ct.Info), ctConfigEnvMap, ctConfigEnvOrder)
 		ct.ApplyConfigEnv(ctEnv)
 
 		if len(ct.Image.Image) == 0 {
@@ -594,6 +594,10 @@ func newBridgeModeEndpoint(network *Network, ip string) *containerNetworkEndpoin
 
 func newContainerModeEndpoint(network *Network) *containerNetworkEndpoint {
 	return &containerNetworkEndpoint{network: network}
+}
+
+func containerGroupBaseDir(homelabBaseDir string, ct config.ContainerReference) string {
+	return fmt.Sprintf("%s/%s", homelabBaseDir, ct.Group)
 }
 
 func containerBaseDir(homelabBaseDir string, ct config.ContainerReference) string {
