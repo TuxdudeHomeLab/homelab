@@ -56,11 +56,7 @@ func execStopCmd(ctx context.Context, options *stopCmdOptions, globalOptions *cl
 		&options.cgOptions,
 		dep,
 		func(c *deployment.Container, dc *docker.Client) error {
-			stopped, err := c.Stop(ctx, dc)
-			if err == nil && !stopped {
-				log(ctx).Warnf("Container %s cannot be stopped since it was not found", c.Name())
-				log(ctx).WarnEmpty()
-			}
+			_, err := c.Stop(ctx, dc)
 			return err
 		},
 	)

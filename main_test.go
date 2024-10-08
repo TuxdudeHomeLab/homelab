@@ -77,11 +77,13 @@ Use "homelab \[command\] --help" for more information about a command\.`,
 		wantStatus: 0,
 		wantOutput: `(?s).+INFO.+Pulling image: abc/xyz
 .+INFO.+Created network net1
-.+INFO.+Started container g1-c1
+.+INFO.+Creating container g1-c1
+.+INFO.+Starting container g1-c1
 .+WARN.+Container g1-c2 not allowed to run on host FakeHost
 .+INFO.+Pulling image: abc/xyz3
 .+INFO.+Created network net2
-.+INFO.+Started container g2-c3`,
+.+INFO.+Creating container g2-c3
+.+INFO.+Starting container g2-c3`,
 	},
 	{
 		name: "Main - Start - Non Existing Configs Path",

@@ -274,11 +274,13 @@ Container g2-c3 not allowed to run on host [^\s]+`,
 		},
 		want: `Pulling image: abc/xyz
 Created network net1
-Started container g1-c1
+Creating container g1-c1
+Starting container g1-c1
 Container g1-c2 not allowed to run on host FakeHost
 Pulling image: abc/xyz3
 Created network net2
-Started container g2-c3`,
+Creating container g2-c3
+Starting container g2-c3`,
 	},
 	{
 		name: "Homelab Command - Start - All Groups",
@@ -298,11 +300,13 @@ Started container g2-c3`,
 		},
 		want: `Pulling image: abc/xyz
 Created network net1
-Started container g1-c1
+Creating container g1-c1
+Starting container g1-c1
 Container g1-c2 not allowed to run on host FakeHost
 Pulling image: abc/xyz3
 Created network net2
-Started container g2-c3`,
+Creating container g2-c3
+Starting container g2-c3`,
 	},
 	{
 		name: "Homelab Command - Start - All Groups - Container Create Warning",
@@ -325,15 +329,17 @@ Started container g2-c3`,
 		},
 		want: `Pulling image: abc/xyz
 Created network net1
+Creating container g1-c1
 Warnings encountered while creating the container g1-c1
 1 - first warning generated during container create for g1-c1 on the fake docker host
 2 - second warning generated during container create for g1-c1 on the fake docker host
 3 - third warning generated during container create for g1-c1 on the fake docker host
-Started container g1-c1
+Starting container g1-c1
 Container g1-c2 not allowed to run on host FakeHost
 Pulling image: abc/xyz3
 Created network net2
-Started container g2-c3`,
+Creating container g2-c3
+Starting container g2-c3`,
 	},
 	{
 		name: "Homelab Command - Start - All Groups - Network Create Warning",
@@ -358,11 +364,13 @@ Started container g2-c3`,
 Warning encountered while creating the network net1
 warning generated during network create for network net1 on the fake docker host
 Created network net1
-Started container g1-c1
+Creating container g1-c1
+Starting container g1-c1
 Container g1-c2 not allowed to run on host FakeHost
 Pulling image: abc/xyz3
 Created network net2
-Started container g2-c3`,
+Creating container g2-c3
+Starting container g2-c3`,
 	},
 	{
 		name: "Homelab Command - Start - All Groups - One Existing Image",
@@ -385,11 +393,13 @@ Started container g2-c3`,
 		},
 		want: `Pulling image: abc/xyz
 Created network net1
-Started container g1-c1
+Creating container g1-c1
+Starting container g1-c1
 Container g1-c2 not allowed to run on host FakeHost
 Pulled newer version of image abc/xyz3: [a-z0-9]{64}
 Created network net2
-Started container g2-c3`,
+Creating container g2-c3
+Starting container g2-c3`,
 	},
 	{
 		name: "Homelab Command - Start - All Groups With Multiple Same Order Containers",
@@ -410,13 +420,16 @@ Started container g2-c3`,
 		},
 		want: `Pulling image: abc/xyz
 Created network net1
-Started container g1-c1
+Creating container g1-c1
+Starting container g1-c1
 Container g1-c2 not allowed to run on host FakeHost
 Pulling image: abc/xyz3
-Started container g1-c3
+Creating container g1-c3
+Starting container g1-c3
 Pulling image: abc/xyz4
 Created network net2
-Started container g2-c4`,
+Creating container g2-c4
+Starting container g2-c4`,
 	},
 	{
 		name: "Homelab Command - Start - All Groups With No Network Endpoints Containers",
@@ -437,14 +450,17 @@ Started container g2-c4`,
 		},
 		want: `Pulling image: abc/xyz
 Created network net1
-Started container g1-c1
+Creating container g1-c1
+Starting container g1-c1
 Container g1-c2 not allowed to run on host FakeHost
 Pulling image: abc/xyz3
 Container g1-c3 has no network endpoints configured, this is uncommon!
-Started container g1-c3
+Creating container g1-c3
+Starting container g1-c3
 Pulling image: abc/xyz4
 Created network net2
-Started container g2-c4`,
+Creating container g2-c4
+Starting container g2-c4`,
 	},
 	{
 		name: "Homelab Command - Start - One Group",
@@ -464,7 +480,8 @@ Started container g2-c4`,
 		},
 		want: `Pulling image: abc/xyz
 Created network net1
-Started container g1-c1
+Creating container g1-c1
+Starting container g1-c1
 Container g1-c2 not allowed to run on host FakeHost`,
 	},
 	{
@@ -487,7 +504,8 @@ Container g1-c2 not allowed to run on host FakeHost`,
 		},
 		want: `Pulling image: abc/xyz
 Created network net1
-Started container g1-c1`,
+Creating container g1-c1
+Starting container g1-c1`,
 	},
 	{
 		name: "Homelab Command - Stop - All Groups",
@@ -513,9 +531,9 @@ Started container g1-c1`,
 				},
 			}),
 		},
-		want: `Stopped container g1-c1
+		want: `Container g1-c1 cannot be stopped since it is in state Created
 Container g1-c2 cannot be stopped since it was not found
-Stopped container g2-c3`,
+Container g2-c3 cannot be stopped since it is in state Removing`,
 	},
 	{
 		name: "Homelab Command - Stop - One Group",
@@ -537,7 +555,7 @@ Stopped container g2-c3`,
 				},
 			}),
 		},
-		want: `Stopped container g1-c1
+		want: `Stopping container g1-c1
 Container g1-c2 cannot be stopped since it was not found`,
 	},
 	{
@@ -584,8 +602,9 @@ Container g1-c2 cannot be stopped since it was not found`,
 				},
 			}),
 		},
-		want: `Purged container g1-c1
-Purged container g1-c2
+		want: `Removing container g1-c1
+Stopping container g1-c2
+Removing container g1-c2
 Container g2-c3 cannot be purged since it was not found`,
 	},
 	{
@@ -608,7 +627,8 @@ Container g2-c3 cannot be purged since it was not found`,
 				},
 			}),
 		},
-		want: `Purged container g1-c1
+		want: `Stopping container g1-c1
+Removing container g1-c1
 Container g1-c2 cannot be purged since it was not found`,
 	},
 	{
