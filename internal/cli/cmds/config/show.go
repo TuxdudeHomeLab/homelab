@@ -1,28 +1,28 @@
-package cmds
+package config
 
 import (
 	"context"
 
 	"github.com/spf13/cobra"
 	"github.com/tuxdudehomelab/homelab/internal/cli/clicommon"
+	"github.com/tuxdudehomelab/homelab/internal/cli/clicontext"
 	"github.com/tuxdudehomelab/homelab/internal/cli/errors"
 	"github.com/tuxdudehomelab/homelab/internal/utils"
 )
 
 const (
-	showConfigCmdStr = "show-config"
+	showCmdStr = "show"
 )
 
 func ShowConfigCmd(ctx context.Context, globalOptions *clicommon.GlobalCmdOptions) *cobra.Command {
 	return &cobra.Command{
-		Use:     showConfigCmdStr,
-		GroupID: clicommon.ConfigCmdGroupID,
-		Short:   "Shows the homelab config",
-		Long:    `Displays the homelab configuration.`,
+		Use:   showCmdStr,
+		Short: "Shows the homelab config",
+		Long:  `Displays the homelab configuration.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
 			cmd.SilenceErrors = true
-			err := execShowConfigCmd(homelabContext(ctx), cmd, args, globalOptions)
+			err := execShowConfigCmd(clicontext.HomelabContext(ctx), cmd, args, globalOptions)
 			if err != nil {
 				return errors.NewHomelabRuntimeError(err)
 			}
@@ -32,7 +32,7 @@ func ShowConfigCmd(ctx context.Context, globalOptions *clicommon.GlobalCmdOption
 }
 
 func execShowConfigCmd(ctx context.Context, cmd *cobra.Command, args []string, globalOptions *clicommon.GlobalCmdOptions) error {
-	dep, err := clicommon.BuildDeployment(ctx, "show-config", globalOptions)
+	dep, err := clicommon.BuildDeployment(ctx, "config show", globalOptions)
 	if err != nil {
 		return err
 	}

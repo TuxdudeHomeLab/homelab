@@ -49,7 +49,8 @@ Use "homelab \[command\] --help" for more information about a command\.`,
 	{
 		name: "Homelab Command - Show Config",
 		args: []string{
-			"show-config",
+			"config",
+			"show",
 			"--configs-dir",
 			fmt.Sprintf("%s/testdata/show-config-cmd", testhelpers.Pwd()),
 		},
@@ -171,7 +172,8 @@ Use "homelab \[command\] --help" for more information about a command\.`,
 	{
 		name: "Homelab Command - Show Config - Custom CLI Config Path",
 		args: []string{
-			"show-config",
+			"config",
+			"show",
 			"--cli-config",
 			fmt.Sprintf("%s/testdata/cli-configs/show-config-cmd/config.yaml", testhelpers.Pwd()),
 		},
@@ -680,7 +682,8 @@ var executeHomelabCmdRealEverythingTests = []struct {
 	{
 		name: "Homelab Command - Show Config - Real Everything",
 		args: []string{
-			"show-config",
+			"config",
+			"show",
 			"--configs-dir",
 			fmt.Sprintf("%s/testdata/show-config-cmd", testhelpers.Pwd()),
 		},
@@ -985,12 +988,22 @@ var executeHomelabCmdErrorTests = []struct {
 	want    string
 }{
 	{
-		name: "Homelab Command - Missing Subcommand",
-		args: []string{},
+		name: "Homelab Base Command - Missing Subcommand",
+		args: nil,
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
 		},
 		want: `homelab sub-command is required`,
+	},
+	{
+		name: "Homelab Config Command - Missing Subcommand",
+		args: []string{
+			"config",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
+		},
+		want: `homelab config sub-command is required`,
 	},
 	{
 		name: "Homelab Command - Start - Failure",
@@ -1101,24 +1114,26 @@ var executeHomelabCmdEnvErrorTests = []struct {
 	{
 		name: "Homelab Command - Show Config - Default CLI Config Path - Home Directory Doesn't Exist",
 		args: []string{
-			"show-config",
+			"config",
+			"show",
 		},
 		ctxInfo: &testutils.TestContextInfo{},
 		envs: testhelpers.TestEnvMap{
 			"HOME": "",
 		},
-		want: `show-config failed while determining the configs path, reason: failed to obtain the user's home directory for reading the homelab CLI config, reason: \$HOME is not defined`,
+		want: `config show failed while determining the configs path, reason: failed to obtain the user's home directory for reading the homelab CLI config, reason: \$HOME is not defined`,
 	},
 	{
 		name: "Homelab Command - Show Config - Default CLI Config Path Doesn't Exist",
 		args: []string{
-			"show-config",
+			"config",
+			"show",
 		},
 		ctxInfo: &testutils.TestContextInfo{},
 		envs: testhelpers.TestEnvMap{
 			"HOME": "/foo/bar",
 		},
-		want: `show-config failed while determining the configs path, reason: failed to open homelab CLI config file, reason: open /foo/bar/\.homelab/config\.yaml: no such file or directory`,
+		want: `config show failed while determining the configs path, reason: failed to open homelab CLI config file, reason: open /foo/bar/\.homelab/config\.yaml: no such file or directory`,
 	},
 }
 
@@ -1176,35 +1191,41 @@ func TestExecHomelabCmdEnvPanics(t *testing.T) {
 }
 
 var executeHomelabConfigCmds = []struct {
-	cmdArgs []string
-	cmdDesc string
+	cmdArgs        []string
+	cmdNameInError string
+	cmdDesc        string
 }{
 	{
 		cmdArgs: []string{
-			"show-config",
+			"config",
+			"show",
 		},
-		cmdDesc: "Show Config",
+		cmdNameInError: "config show",
+		cmdDesc:        "Show Config",
 	},
 	{
 		cmdArgs: []string{
 			"start",
 			"--all-groups",
 		},
-		cmdDesc: "Start",
+		cmdNameInError: "start",
+		cmdDesc:        "Start",
 	},
 	{
 		cmdArgs: []string{
 			"stop",
 			"--all-groups",
 		},
-		cmdDesc: "Stop",
+		cmdNameInError: "stop",
+		cmdDesc:        "Stop",
 	},
 	{
 		cmdArgs: []string{
 			"purge",
 			"--all-groups",
 		},
-		cmdDesc: "Purge",
+		cmdNameInError: "purge",
+		cmdDesc:        "Purge",
 	},
 }
 
@@ -1256,7 +1277,6 @@ var executeHomelabConfigCmdErrorTests = []struct {
 	{
 		name: "Homelab Command - %s - Invalid Garbage CLI Config",
 		args: []string{
-			"show-config",
 			"--cli-config",
 			fmt.Sprintf("%s/testdata/cli-configs/invalid-garbage-config/config.yaml", testhelpers.Pwd()),
 		},
@@ -1271,7 +1291,6 @@ var executeHomelabConfigCmdErrorTests = []struct {
 	{
 		name: "Homelab Command - %s  - Invalid CLI Config With Empty Configs Path",
 		args: []string{
-			"show-config",
 			"--cli-config",
 			fmt.Sprintf("%s/testdata/cli-configs/invalid-config-with-empty-configs-path/config.yaml", testhelpers.Pwd()),
 		},
@@ -1285,7 +1304,6 @@ var executeHomelabConfigCmdErrorTests = []struct {
 	{
 		name: "Homelab Command - %s - Invalid CLI Config With Invalid Configs Path",
 		args: []string{
-			"show-config",
 			"--cli-config",
 			fmt.Sprintf("%s/testdata/cli-configs/invalid-config-with-invalid-configs-path/config.yaml", testhelpers.Pwd()),
 		},
@@ -1308,7 +1326,7 @@ func TestExecHomelabConfigCmdErrors(t *testing.T) {
 				t.Parallel()
 
 				args := append(cmd.cmdArgs, tc.args...)
-				want := fmt.Sprintf(tc.want, cmd.cmdArgs[0])
+				want := fmt.Sprintf(tc.want, cmd.cmdNameInError)
 
 				_, gotErr := execHomelabCmdTest(tc.ctxInfo(), nil, args...)
 				if gotErr == nil {

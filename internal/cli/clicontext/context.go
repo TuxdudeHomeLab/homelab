@@ -1,4 +1,4 @@
-package cmds
+package clicontext
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"github.com/tuxdudehomelab/homelab/internal/user"
 )
 
-func homelabContext(ctx context.Context) context.Context {
+func HomelabContext(ctx context.Context) context.Context {
 	if _, found := user.UserInfoFromContext(ctx); !found {
 		ctx = user.WithUserInfo(ctx, user.NewUserInfo(ctx))
 	}
