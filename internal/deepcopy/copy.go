@@ -70,7 +70,7 @@ func copyArray(src reflect.Value) (reflect.Value, error) {
 	}
 
 	dst := reflect.New(src.Type()).Elem()
-	for i := 0; i < src.Len(); i++ {
+	for i := range src.Len() {
 		dstElement, err := copyInternal(src.Index(i))
 		if err != nil {
 			return reflect.Value{}, err
@@ -124,7 +124,7 @@ func copySlice(src reflect.Value) (reflect.Value, error) {
 	}
 
 	dst := reflect.MakeSlice(src.Type(), src.Len(), src.Cap())
-	for i := 0; i < src.Len(); i++ {
+	for i := range src.Len() {
 		dstElement, err := copyInternal(src.Index(i))
 		if err != nil {
 			return reflect.Value{}, err
@@ -137,7 +137,7 @@ func copySlice(src reflect.Value) (reflect.Value, error) {
 func copyStruct(src reflect.Value) (reflect.Value, error) {
 	dst := reflect.New(src.Type()).Elem()
 
-	for i := 0; i < dst.NumField(); i++ {
+	for i := range dst.NumField() {
 		srcF := src.Field(i)
 		patchField(&srcF)
 
