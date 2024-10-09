@@ -1358,6 +1358,7 @@ var executeHomelabCmdEnvErrorTests = []struct {
 	},
 }
 
+//nolint:paralleltest // Test sets environment variables.
 func TestExecHomelabCmdEnvErrors(t *testing.T) {
 	for _, tc := range executeHomelabCmdEnvErrorTests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -1400,6 +1401,7 @@ var executeHomelabCmdEnvPanicTests = []struct {
 	},
 }
 
+//nolint:paralleltest // Test sets environment variables.
 func TestExecHomelabCmdEnvPanics(t *testing.T) {
 	for _, tc := range executeHomelabCmdEnvPanicTests {
 		t.Run(tc.name, func(t *testing.T) {

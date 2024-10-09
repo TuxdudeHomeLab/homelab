@@ -166,6 +166,7 @@ Use "homelab \[command\] --help" for more information about a command\.`,
 	},
 }
 
+//nolint:paralleltest // Test sets environment variables.
 func TestMainRunEnv(t *testing.T) {
 	for _, tc := range mainRunEnvTests {
 		t.Run(tc.name, func(t *testing.T) {
