@@ -79,8 +79,7 @@ func (n *Network) create(ctx context.Context, dc *docker.Client) error {
 	return nil
 }
 
-// TODO: Remove this after this function is used.
-// nolint (unused)
+//nolint:nolintlint,unused // TODO: Remove this after this function is used.
 func (n *Network) remove(ctx context.Context, dc *docker.Client) error {
 	if dc.NetworkExists(ctx, n.name()) {
 		err := dc.RemoveNetwork(ctx, n.name())
@@ -95,8 +94,7 @@ func (n *Network) connectContainer(ctx context.Context, dc *docker.Client, conta
 	return dc.ConnectContainerToBridgeModeNetwork(ctx, containerName, n.name(), ip)
 }
 
-// TODO: Remove this after this function is used.
-// nolint (unused)
+//nolint:nolintlint,unused // TODO: Remove this after this function is used.
 func (n *Network) disconnectContainer(ctx context.Context, dc *docker.Client, containerName string) error {
 	return dc.DisconnectContainerFromNetwork(ctx, containerName, n.name())
 }

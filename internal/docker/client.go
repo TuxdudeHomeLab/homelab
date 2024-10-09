@@ -213,8 +213,7 @@ func (d *Client) CreateNetwork(ctx context.Context, networkName string, options 
 	return nil
 }
 
-// TODO: Remove this after this function is used.
-// nolint (unused)
+//nolint:nolintlint,unused // TODO: Remove this after this function is used.
 func (d *Client) RemoveNetwork(ctx context.Context, networkName string) error {
 	log(ctx).Debugf("Removing network %s ...", networkName)
 	err := d.client.NetworkRemove(ctx, networkName)
@@ -255,8 +254,7 @@ func (d *Client) ConnectContainerToBridgeModeNetwork(ctx context.Context, contai
 	return nil
 }
 
-// TODO: Remove this after this function is used.
-// nolint (unused)
+//nolint:nolintlint,unused // TODO: Remove this after this function is used.
 func (d *Client) DisconnectContainerFromNetwork(ctx context.Context, containerName, networkName string) error {
 	log(ctx).Debugf("Disconnecting container %s from network %s ...", containerName, networkName)
 	err := d.client.NetworkDisconnect(ctx, networkName, containerName, false)
