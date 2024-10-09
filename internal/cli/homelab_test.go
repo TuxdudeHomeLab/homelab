@@ -1780,7 +1780,8 @@ var executeHomelabGroupCmdCompletionTests = []struct {
 				DockerHost: fakedocker.NewEmptyFakeDockerHost(),
 			}
 		},
-		want: `g1
+		want: `all
+g1
 g2
 :36
 Completion ended with directive: ShellCompDirectiveNoFileComp, ShellCompDirectiveKeepOrder`,

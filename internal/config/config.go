@@ -319,9 +319,11 @@ func (h *HomelabGroupsOnly) Parse(ctx context.Context, r io.Reader) error {
 }
 
 func (h *HomelabGroupsOnly) ListGroups() []string {
-	var groups []string
+	groups := []string{"all"}
 	for _, g := range h.Groups {
-		groups = append(groups, g.Name)
+		if g.Name != "all" {
+			groups = append(groups, g.Name)
+		}
 	}
 	slices.Sort(groups)
 	return groups
