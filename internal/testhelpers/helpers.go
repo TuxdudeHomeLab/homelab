@@ -9,6 +9,10 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
+var (
+	multiNewLineRegex = regexp.MustCompile(`\n+`)
+)
+
 type TestEnvMap map[string]string
 
 func SetTestEnv(t *testing.T, envs TestEnvMap) {
@@ -102,10 +106,6 @@ func RegexMatchWithOutput(t *testing.T, methodUnderTest string, testCase string,
 
 func RegexMatchJoinNewLines(t *testing.T, methodUnderTest string, testCase string, desc string, want string, got string) bool {
 	t.Helper()
-	multiNewLineRegex, err := regexp.Compile(`\n+`)
-	if err != nil {
-		panic(err)
-	}
 	got = strings.TrimSpace(multiNewLineRegex.ReplaceAllString(got, "\n"))
 	return RegexMatch(t, methodUnderTest, testCase, desc, want, got)
 }
