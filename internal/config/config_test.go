@@ -105,10 +105,10 @@ var applyConfigEnvToContainerTests = []struct {
 				},
 				PublishedPorts: []PublishedPort{
 					{
-						ContainerPort: 12345,
+						ContainerPort: "$$MY_CONTAINER_PORT$$",
 						Protocol:      "tcp",
 						HostIP:        "$$HOST_IP$$",
-						HostPort:      678,
+						HostPort:      "$$MY_HOST_PORT$$",
 					},
 				},
 			},
@@ -140,6 +140,7 @@ var applyConfigEnvToContainerTests = []struct {
 			"ENV_DNS_SERVER":     "10.11.11.11",
 			"ENV_DNS_OPTION":     "dns-option-2",
 			"ENV_DNS_SEARCH":     "dns-ct-search-2",
+			"MY_HOST_PORT":       "678",
 		},
 		globalEnvOrder: env.EnvOrder{
 			"ENV_GROUP_FOO",
@@ -152,16 +153,19 @@ var applyConfigEnvToContainerTests = []struct {
 			"ENV_DNS_SERVER",
 			"ENV_DNS_OPTION",
 			"ENV_DNS_SEARCH",
+			"MY_HOST_PORT",
 		},
 		containerEnvMap: env.EnvMap{
 			"ENV_VAR_1":         "MY_ENV_1",
 			"ENV_VAR_1_VAL":     "my-env-1-val",
 			"ENV_VAR_2_VAL_CMD": "cat /foo/bar.txt",
+			"MY_CONTAINER_PORT": "12345",
 		},
 		containerEnvOrder: env.EnvOrder{
 			"ENV_VAR_1",
 			"ENV_VAR_1_VAL",
 			"ENV_VAR_2_VAL_CMD",
+			"MY_CONTAINER_PORT",
 		},
 		want: Container{
 			Info: ContainerReference{
@@ -245,10 +249,10 @@ var applyConfigEnvToContainerTests = []struct {
 				},
 				PublishedPorts: []PublishedPort{
 					{
-						ContainerPort: 12345,
+						ContainerPort: "12345",
 						Protocol:      "tcp",
 						HostIP:        "10.76.77.78",
-						HostPort:      678,
+						HostPort:      "678",
 					},
 				},
 			},

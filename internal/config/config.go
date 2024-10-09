@@ -269,10 +269,10 @@ type ContainerEnv struct {
 
 // PublishedPort represents a port published from a container.
 type PublishedPort struct {
-	ContainerPort int    `yaml:"containerPort,omitempty" json:"containerPort,omitempty"`
+	ContainerPort string `yaml:"containerPort,omitempty" json:"containerPort,omitempty"`
 	Protocol      string `yaml:"proto,omitempty" json:"proto,omitempty"`
 	HostIP        string `yaml:"hostIp,omitempty" json:"hostIp,omitempty"`
-	HostPort      int    `yaml:"hostPort,omitempty" json:"hostPort,omitempty"`
+	HostPort      string `yaml:"hostPort,omitempty" json:"hostPort,omitempty"`
 }
 
 // Label represents a label set on a container.
@@ -390,7 +390,10 @@ func (c *Container) ApplyConfigEnv(env *env.ConfigEnvManager) {
 		c.Network.ExtraHosts[i] = env.Apply(e)
 	}
 	for i, p := range c.Network.PublishedPorts {
+		c.Network.PublishedPorts[i].ContainerPort = env.Apply(p.ContainerPort)
+		c.Network.PublishedPorts[i].Protocol = env.Apply(p.Protocol)
 		c.Network.PublishedPorts[i].HostIP = env.Apply(p.HostIP)
+		c.Network.PublishedPorts[i].HostPort = env.Apply(p.HostPort)
 	}
 	for i, e := range c.Runtime.Env {
 		c.Runtime.Env[i].Var = env.Apply(e.Var)

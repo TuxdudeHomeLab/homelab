@@ -45,6 +45,10 @@ global:
       value: dns-opt-123
     - var: ENV_DNS_SEARCH
       value: custom-dns-search
+    - var: MY_HOST_PORT_1
+      value: 2122
+    - var: MY_CT_PORT_1
+      value: 4321
   mountDefs:
     - name: mount-def-1
       type: bind
@@ -176,6 +180,10 @@ containers:
           value: my-env-val
         - var: ENV_MY_ENV_2_VAL_CMD
           value: cat /foo/bar/baz.txt
+        - var: MY_HOST_PORT_2
+          value: 6789
+        - var: MY_CT_PORT_2
+          value: 8765
     image:
       image: tuxdude/homelab-base:master
       skipImagePull: false
@@ -255,14 +263,14 @@ containers:
         - my-extra-host-1
         - $$HOST_NAME$$-extra
       publishedPorts:
-        - containerPort: 53
+        - containerPort: $$MY_CT_PORT_1$$
           proto: tcp
           hostIp: $$HOST_IP$$
-          hostPort: 53
-        - containerPort: 53
+          hostPort: $$MY_HOST_PORT_1$$
+        - containerPort: $$MY_CT_PORT_2$$
           proto: udp
           hostIp: 127.0.0.1
-          hostPort: 53
+          hostPort: $$MY_HOST_PORT_2$$
     security:
       privileged: true
       sysctls:
@@ -347,6 +355,14 @@ containers:
 					{
 						Var:   "ENV_DNS_SEARCH",
 						Value: "custom-dns-search",
+					},
+					{
+						Var:   "MY_HOST_PORT_1",
+						Value: "2122",
+					},
+					{
+						Var:   "MY_CT_PORT_1",
+						Value: "4321",
 					},
 				},
 				MountDefs: []config.Mount{
@@ -585,6 +601,14 @@ containers:
 								Var:   "ENV_MY_ENV_2_VAL_CMD",
 								Value: "cat /foo/bar/baz.txt",
 							},
+							{
+								Var:   "MY_HOST_PORT_2",
+								Value: "6789",
+							},
+							{
+								Var:   "MY_CT_PORT_2",
+								Value: "8765",
+							},
 						},
 					},
 					Image: config.ContainerImage{
@@ -701,16 +725,16 @@ containers:
 						},
 						PublishedPorts: []config.PublishedPort{
 							{
-								ContainerPort: 53,
+								ContainerPort: "4321",
 								Protocol:      "tcp",
 								HostIP:        "10.76.77.78",
-								HostPort:      53,
+								HostPort:      "2122",
 							},
 							{
-								ContainerPort: 53,
+								ContainerPort: "8765",
 								Protocol:      "udp",
 								HostIP:        "127.0.0.1",
-								HostPort:      53,
+								HostPort:      "6789",
 							},
 						},
 					},
@@ -788,8 +812,8 @@ containers:
 					Domainname: "my.custom.domain",
 					User:       "55555:44444",
 					ExposedPorts: nat.PortSet{
-						"53/tcp": struct{}{},
-						"53/udp": struct{}{},
+						"4321/tcp": struct{}{},
+						"8765/udp": struct{}{},
 					},
 					Tty: true,
 					Env: []string{
@@ -832,16 +856,16 @@ containers:
 					},
 					NetworkMode: "group1-bridge",
 					PortBindings: nat.PortMap{
-						"53/tcp": []nat.PortBinding{
+						"4321/tcp": []nat.PortBinding{
 							{
 								HostIP:   "10.76.77.78",
-								HostPort: "53",
+								HostPort: "2122",
 							},
 						},
-						"53/udp": []nat.PortBinding{
+						"8765/udp": []nat.PortBinding{
 							{
 								HostIP:   "127.0.0.1",
-								HostPort: "53",
+								HostPort: "6789",
 							},
 						},
 					},
@@ -4451,14 +4475,53 @@ var buildDeploymentFromConfigErrorTests = []struct {
 							{
 								Protocol: "tcp",
 								HostIP:   "127.0.0.1",
-								HostPort: 5001,
+								HostPort: "5001",
 							},
 						},
 					},
 				},
 			},
 		},
-		want: `published container port 0 cannot be non-positive in container {Group: g1 Container:c1} config`,
+		want: `unable to convert published container port  to an integer, reason: strconv.ParseInt: parsing "": invalid syntax`,
+	},
+	{
+		name: "Container Config Published Port - Container Port Non Integer",
+		config: config.Homelab{
+			Global: config.Global{
+				BaseDir: testhelpers.HomelabBaseDir(),
+			},
+			Groups: []config.ContainerGroup{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []config.Container{
+				{
+					Info: config.ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: config.ContainerImage{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: config.ContainerLifecycle{
+						Order: 1,
+					},
+					Network: config.ContainerNetwork{
+						PublishedPorts: []config.PublishedPort{
+							{
+								ContainerPort: "-6365foobar9563",
+								Protocol:      "tcp",
+								HostIP:        "127.0.0.1",
+								HostPort:      "5001",
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `unable to convert published container port -6365foobar9563 to an integer, reason: strconv.ParseInt: parsing "-6365foobar9563": invalid syntax`,
 	},
 	{
 		name: "Container Config Published Port - Container Port Negative",
@@ -4487,10 +4550,10 @@ var buildDeploymentFromConfigErrorTests = []struct {
 					Network: config.ContainerNetwork{
 						PublishedPorts: []config.PublishedPort{
 							{
-								ContainerPort: -1,
+								ContainerPort: "-1",
 								Protocol:      "tcp",
 								HostIP:        "127.0.0.1",
-								HostPort:      5001,
+								HostPort:      "5001",
 							},
 						},
 					},
@@ -4526,9 +4589,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 					Network: config.ContainerNetwork{
 						PublishedPorts: []config.PublishedPort{
 							{
-								ContainerPort: 10001,
+								ContainerPort: "10001",
 								HostIP:        "127.0.0.1",
-								HostPort:      5001,
+								HostPort:      "5001",
 							},
 						},
 					},
@@ -4564,10 +4627,10 @@ var buildDeploymentFromConfigErrorTests = []struct {
 					Network: config.ContainerNetwork{
 						PublishedPorts: []config.PublishedPort{
 							{
-								ContainerPort: 10001,
+								ContainerPort: "10001",
 								Protocol:      "garbage",
 								HostIP:        "127.0.0.1",
-								HostPort:      5001,
+								HostPort:      "5001",
 							},
 						},
 					},
@@ -4603,9 +4666,9 @@ var buildDeploymentFromConfigErrorTests = []struct {
 					Network: config.ContainerNetwork{
 						PublishedPorts: []config.PublishedPort{
 							{
-								ContainerPort: 10001,
+								ContainerPort: "10001",
 								Protocol:      "tcp",
-								HostPort:      5001,
+								HostPort:      "5001",
 							},
 						},
 					},
@@ -4641,10 +4704,10 @@ var buildDeploymentFromConfigErrorTests = []struct {
 					Network: config.ContainerNetwork{
 						PublishedPorts: []config.PublishedPort{
 							{
-								ContainerPort: 10001,
+								ContainerPort: "10001",
 								Protocol:      "tcp",
 								HostIP:        "abc.def.ghi.jkl",
-								HostPort:      5001,
+								HostPort:      "5001",
 							},
 						},
 					},
@@ -4680,7 +4743,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 					Network: config.ContainerNetwork{
 						PublishedPorts: []config.PublishedPort{
 							{
-								ContainerPort: 10001,
+								ContainerPort: "10001",
 								Protocol:      "tcp",
 								HostIP:        "127.0.0.1",
 							},
@@ -4689,7 +4752,46 @@ var buildDeploymentFromConfigErrorTests = []struct {
 				},
 			},
 		},
-		want: `published host port 0 cannot be non-positive in container {Group: g1 Container:c1} config`,
+		want: `unable to convert published host port  to an integer, reason: strconv.ParseInt: parsing "": invalid syntax`,
+	},
+	{
+		name: "Container Config Published Port - Host Port Non Integer",
+		config: config.Homelab{
+			Global: config.Global{
+				BaseDir: testhelpers.HomelabBaseDir(),
+			},
+			Groups: []config.ContainerGroup{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []config.Container{
+				{
+					Info: config.ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: config.ContainerImage{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: config.ContainerLifecycle{
+						Order: 1,
+					},
+					Network: config.ContainerNetwork{
+						PublishedPorts: []config.PublishedPort{
+							{
+								ContainerPort: "10001",
+								Protocol:      "tcp",
+								HostIP:        "127.0.0.1",
+								HostPort:      "9876garbage0123",
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `unable to convert published host port 9876garbage0123 to an integer, reason: strconv.ParseInt: parsing "9876garbage0123": invalid syntax`,
 	},
 	{
 		name: "Container Config Published Port - Host Port Negative",
@@ -4718,10 +4820,10 @@ var buildDeploymentFromConfigErrorTests = []struct {
 					Network: config.ContainerNetwork{
 						PublishedPorts: []config.PublishedPort{
 							{
-								ContainerPort: 10001,
+								ContainerPort: "10001",
 								Protocol:      "tcp",
 								HostIP:        "127.0.0.1",
-								HostPort:      -1,
+								HostPort:      "-1",
 							},
 						},
 					},

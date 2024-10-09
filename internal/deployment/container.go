@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"sort"
-	"strconv"
 	"time"
 
 	dcontainer "github.com/docker/docker/api/types/container"
@@ -503,11 +502,11 @@ func (c *Container) publishedPorts() (nat.PortMap, nat.PortSet) {
 	pMap := make(nat.PortMap)
 	pSet := make(nat.PortSet)
 	for _, p := range c.config.Network.PublishedPorts {
-		natPort := nat.Port(fmt.Sprintf("%d/%s", p.ContainerPort, p.Protocol))
+		natPort := nat.Port(fmt.Sprintf("%s/%s", p.ContainerPort, p.Protocol))
 		pMap[natPort] = []nat.PortBinding{
 			{
 				HostIP:   p.HostIP,
-				HostPort: strconv.Itoa(p.HostPort),
+				HostPort: p.HostPort,
 			},
 		}
 		pSet[natPort] = struct{}{}

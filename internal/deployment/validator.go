@@ -6,6 +6,7 @@ import (
 	"net/netip"
 	"os"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/docker/go-units"
@@ -186,20 +187,28 @@ func validateDevicesConfig(devices []config.Device, location string) error {
 
 func validatePublishedPortsConfig(ports []config.PublishedPort, location string) error {
 	for _, p := range ports {
-		if p.ContainerPort <= 0 {
-			return fmt.Errorf("published container port %d cannot be non-positive in %s", p.ContainerPort, location)
+		ctPort, err := strconv.ParseInt(p.ContainerPort, 10, 32)
+		if err != nil {
+			return fmt.Errorf("unable to convert published container port %s to an integer, reason: %w", p.ContainerPort, err)
+		}
+		if ctPort <= 0 {
+			return fmt.Errorf("published container port %d cannot be non-positive in %s", ctPort, location)
 		}
 		if p.Protocol != "tcp" && p.Protocol != "udp" {
-			return fmt.Errorf("published container port %d specifies an invalid protocol %s in %s", p.ContainerPort, p.Protocol, location)
+			return fmt.Errorf("published container port %s specifies an invalid protocol %s in %s", p.ContainerPort, p.Protocol, location)
 		}
 		if len(p.HostIP) == 0 {
-			return fmt.Errorf("published host IP cannot be empty for container port %d in %s", p.ContainerPort, location)
+			return fmt.Errorf("published host IP cannot be empty for container port %s in %s", p.ContainerPort, location)
 		}
 		if _, err := netip.ParseAddr(p.HostIP); err != nil {
-			return fmt.Errorf("published host IP %s for container port %d is invalid in %s, reason: %w", p.HostIP, p.ContainerPort, location, err)
+			return fmt.Errorf("published host IP %s for container port %s is invalid in %s, reason: %w", p.HostIP, p.ContainerPort, location, err)
 		}
-		if p.HostPort <= 0 {
-			return fmt.Errorf("published host port %d cannot be non-positive in %s", p.HostPort, location)
+		hostPort, err := strconv.ParseInt(p.HostPort, 10, 32)
+		if err != nil {
+			return fmt.Errorf("unable to convert published host port %s to an integer, reason: %w", p.HostPort, err)
+		}
+		if hostPort <= 0 {
+			return fmt.Errorf("published host port %d cannot be non-positive in %s", hostPort, location)
 		}
 	}
 	return nil
