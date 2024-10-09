@@ -47,7 +47,7 @@ func execGroupStartCmd(ctx context.Context, group string, opts *clicommon.Global
 	}
 
 	var action string
-	if group == "all" {
+	if group == clicommon.AllGroups {
 		action = "Starting containers in all groups"
 	} else {
 		action = fmt.Sprintf("Starting containers in group %s", group)

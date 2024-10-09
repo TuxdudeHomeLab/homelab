@@ -2,6 +2,7 @@ package clicommon
 
 import (
 	"context"
+	"slices"
 
 	"github.com/spf13/cobra"
 	"github.com/tuxdudehomelab/homelab/internal/config"
@@ -34,7 +35,12 @@ func groupsOnly(ctx context.Context, cmd string, opts *GlobalCmdOptions) ([]stri
 	if err != nil {
 		return nil, err
 	}
-	return h.ListGroups(), nil
+	groups := h.ListGroups()
+	if slices.Index(groups, AllGroups) == -1 {
+		groups = append(groups, AllGroups)
+	}
+	slices.Sort(groups)
+	return groups, nil
 }
 
 func containersOnly(ctx context.Context, cmd string, opts *GlobalCmdOptions) ([]string, error) {

@@ -10,6 +10,10 @@ import (
 	"github.com/tuxdudehomelab/homelab/internal/host"
 )
 
+const (
+	AllGroups = "all"
+)
+
 func ExecContainerGroupCmd(ctx context.Context, cmd, action, group, container string, dep *deployment.Deployment, fn func(context.Context, *deployment.Container, *host.HostInfo, *docker.Client) error) error {
 	res, err := queryContainers(ctx, dep, group, container)
 	if err != nil {
@@ -73,7 +77,7 @@ func ExecPurgeContainer(ctx context.Context, c *deployment.Container, h *host.Ho
 }
 
 func queryContainers(ctx context.Context, dep *deployment.Deployment, group, container string) (deployment.ContainerList, error) {
-	if group == "all" {
+	if group == AllGroups {
 		return dep.QueryAllContainersInAllGroups(ctx)
 	}
 	if group != "" && container == "" {

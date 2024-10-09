@@ -47,7 +47,7 @@ func execGroupStopCmd(ctx context.Context, group string, opts *clicommon.GlobalC
 	}
 
 	var action string
-	if group == "all" {
+	if group == clicommon.AllGroups {
 		action = "Stopping containers in all groups"
 	} else {
 		action = fmt.Sprintf("Stopping containers in group %s", group)

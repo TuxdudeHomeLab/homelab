@@ -47,7 +47,7 @@ func execGroupPurgeCmd(ctx context.Context, group string, opts *clicommon.Global
 	}
 
 	var action string
-	if group == "all" {
+	if group == clicommon.AllGroups {
 		action = "Purging containers in all groups"
 	} else {
 		action = fmt.Sprintf("Purging containers in group %s", group)
