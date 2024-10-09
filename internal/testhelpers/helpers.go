@@ -12,48 +12,56 @@ import (
 type TestEnvMap map[string]string
 
 func SetTestEnv(t *testing.T, envs TestEnvMap) {
+	t.Helper()
 	for k, v := range envs {
 		t.Setenv(k, v)
 	}
 }
 
 func LogErrorNotNil(t *testing.T, methodUnderTest string, testCase string, gotErr error) {
+	t.Helper()
 	t.Errorf(
 		"%s\nTest Case: %q\nFailure: gotErr != nil\nReason: %v",
 		methodUnderTest, testCase, gotErr)
 }
 
 func LogErrorNotNilWithOutput(t *testing.T, methodUnderTest string, testCase string, out fmt.Stringer, gotErr error) {
+	t.Helper()
 	t.Errorf(
 		"%s\nTest Case: %q\nFailure: gotErr != nil\n\nOut:\n%s\nReason: %v",
 		methodUnderTest, testCase, out.String(), gotErr)
 }
 
 func LogErrorNil(t *testing.T, methodUnderTest string, testCase string, want string) {
+	t.Helper()
 	t.Errorf(
 		"%s\nTest Case: %q\nFailure: gotErr == nil\nReason: want = %q",
 		methodUnderTest, testCase, want)
 }
 
 func LogErrorNilWithOutput(t *testing.T, methodUnderTest string, testCase string, out fmt.Stringer, want string) {
+	t.Helper()
 	t.Errorf(
 		"%s\nTest Case: %q\nFailure: gotErr == nil\n\nOut:\n%s\nReason: want = %q",
 		methodUnderTest, testCase, out.String(), want)
 }
 
 func LogCustom(t *testing.T, methodUnderTest string, testCase string, custom string) {
+	t.Helper()
 	t.Errorf(
 		"%s\nTest Case: %q\nReason: %s",
 		methodUnderTest, testCase, custom)
 }
 
 func LogCustomWithOutput(t *testing.T, methodUnderTest string, testCase string, out fmt.Stringer, custom string) {
+	t.Helper()
 	t.Errorf(
 		"%s\nTest Case: %q\n\nOut:\n%s\nReason: %s",
 		methodUnderTest, testCase, out.String(), custom)
 }
 
 func RegexMatch(t *testing.T, methodUnderTest string, testCase string, desc string, want string, got string) bool {
+	t.Helper()
 	match, err := regexp.MatchString(fmt.Sprintf("^%s$", want), got)
 	if err != nil {
 		t.Errorf(
@@ -73,6 +81,7 @@ func RegexMatch(t *testing.T, methodUnderTest string, testCase string, desc stri
 }
 
 func RegexMatchWithOutput(t *testing.T, methodUnderTest string, testCase string, out fmt.Stringer, desc string, want string, got string) bool {
+	t.Helper()
 	match, err := regexp.MatchString(fmt.Sprintf("^%s$", want), got)
 	if err != nil {
 		t.Errorf(
@@ -92,6 +101,7 @@ func RegexMatchWithOutput(t *testing.T, methodUnderTest string, testCase string,
 }
 
 func RegexMatchJoinNewLines(t *testing.T, methodUnderTest string, testCase string, desc string, want string, got string) bool {
+	t.Helper()
 	multiNewLineRegex, err := regexp.Compile(`\n+`)
 	if err != nil {
 		panic(err)
@@ -101,6 +111,7 @@ func RegexMatchJoinNewLines(t *testing.T, methodUnderTest string, testCase strin
 }
 
 func CmpDiff(t *testing.T, methodUnderTest string, testCase string, desc string, want interface{}, got interface{}) bool {
+	t.Helper()
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Errorf(
 			"%s\nTest Case: %q\nFailure: %s - got did not match the want\nDiff(-want +got): %s",
@@ -111,6 +122,7 @@ func CmpDiff(t *testing.T, methodUnderTest string, testCase string, desc string,
 }
 
 func ExpectPanic(t *testing.T, methodUnderTest string, testCase string, wantPanic string) {
+	t.Helper()
 	gotR := recover()
 	if gotR == nil {
 		t.Errorf(
@@ -143,6 +155,7 @@ func ExpectPanic(t *testing.T, methodUnderTest string, testCase string, wantPani
 }
 
 func ExpectPanicWithOutput(t *testing.T, methodUnderTest string, testCase string, out fmt.Stringer, wantPanic string) {
+	t.Helper()
 	gotR := recover()
 	if gotR == nil {
 		t.Errorf(

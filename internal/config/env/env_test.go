@@ -11,6 +11,7 @@ import (
 	"github.com/tuxdudehomelab/homelab/internal/testutils"
 )
 
+//nolint:thelper // The struct includes test (and not helper) code for each test case.
 var configEnvTests = []struct {
 	name string
 	test func(*testing.T, context.Context, *configEnv, string)
@@ -39,7 +40,6 @@ var configEnvTests = []struct {
 	},
 	{
 		name: "Config Env - override - No overlap",
-
 		test: func(t *testing.T, ctx context.Context, env *configEnv, tc string) {
 			override := EnvMap{
 				"FOO1": "foo1",
