@@ -14,9 +14,6 @@ import (
 const (
 	homelabCmdStr = "homelab"
 
-	cliConfigFlagStr  = "cli-config"
-	configsDirFlagStr = "configs-dir"
-
 	defaultPkgVersion   = "unset"
 	defaultPkgCommit    = "unset"
 	defaultPkgTimestamp = "unset"
@@ -30,9 +27,9 @@ func versionInfo(ctx context.Context) *version.VersionInfo {
 	return version.NewVersionInfo(defaultPkgVersion, defaultPkgCommit, defaultPkgTimestamp)
 }
 
-func buildHomelabCmd(ctx context.Context, opt *clicommon.GlobalCmdOptions) *cobra.Command {
+func buildHomelabCmd(ctx context.Context, opts *clicommon.GlobalCmdOptions) *cobra.Command {
 	ver := versionInfo(ctx)
-	h := &cobra.Command{
+	cmd := &cobra.Command{
 		Use:           homelabCmdStr,
 		Version:       fmt.Sprintf("%s [Revision: %s @ %s]", ver.PackageVersion, ver.PackageCommit, ver.PackageTimestamp),
 		SilenceUsage:  false,
@@ -46,20 +43,8 @@ The configuration is managed using a yaml file. The configuration specifies the 
 			return fmt.Errorf("homelab sub-command is required")
 		},
 	}
-
-	h.PersistentFlags().StringVar(
-		&opt.CLIConfig, cliConfigFlagStr, "", "The path to the Homelab CLI config")
-	if h.MarkPersistentFlagFilename(cliConfigFlagStr) != nil {
-		log(ctx).Fatalf("failed to mark --%s flag as filename flag", cliConfigFlagStr)
-	}
-	h.PersistentFlags().StringVar(
-		&opt.ConfigsDir, configsDirFlagStr, "", "The path to the directory containing the homelab configs")
-	if h.MarkPersistentFlagDirname(configsDirFlagStr) != nil {
-		log(ctx).Fatalf("failed to mark --%s flag as dirname flag", configsDirFlagStr)
-	}
-	h.MarkFlagsMutuallyExclusive(cliConfigFlagStr, configsDirFlagStr)
-
-	h.AddGroup(
+	clicommon.AddHomelabFlags(ctx, cmd, opts)
+	cmd.AddGroup(
 		&cobra.Group{
 			ID:    clicommon.ConfigCmdGroupID,
 			Title: "Configuration:",
@@ -70,16 +55,15 @@ The configuration is managed using a yaml file. The configuration specifies the 
 		},
 	)
 
-	return h
+	return cmd
 }
 
 func initHomelabCmd(ctx context.Context) *cobra.Command {
 	globalOpts := clicommon.GlobalCmdOptions{}
 	homelabCmd := buildHomelabCmd(ctx, &globalOpts)
-	homelabCmd.AddCommand(cmds.ShowConfigCmd(ctx, &globalOpts))
-	homelabCmd.AddCommand(cmds.StartCmd(ctx, &globalOpts))
-	homelabCmd.AddCommand(cmds.StopCmd(ctx, &globalOpts))
-	homelabCmd.AddCommand(cmds.PurgeCmd(ctx, &globalOpts))
+	homelabCmd.AddCommand(cmds.ConfigCmd(ctx, &globalOpts))
+	homelabCmd.AddCommand(cmds.GroupCmd(ctx, &globalOpts))
+	homelabCmd.AddCommand(cmds.ContainerCmd(ctx, &globalOpts))
 	return homelabCmd
 }
 

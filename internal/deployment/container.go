@@ -43,7 +43,7 @@ type containerDockerConfigs struct {
 }
 
 type networkEndpointList []*containerNetworkEndpoint
-type containerList []*Container
+type ContainerList []*Container
 type containerSet map[config.ContainerReference]bool
 type containerMap map[config.ContainerReference]*Container
 type containerDockerConfigMap map[config.ContainerReference]*containerDockerConfigs
@@ -617,8 +617,8 @@ func containerName(ct *config.ContainerReference) string {
 	return fmt.Sprintf("%s-%s", ct.Group, ct.Container)
 }
 
-func containerMapToList(cm containerMap) containerList {
-	res := make(containerList, 0, len(cm))
+func containerMapToList(cm containerMap) ContainerList {
+	res := make(ContainerList, 0, len(cm))
 	for _, c := range cm {
 		res = append(res, c)
 	}

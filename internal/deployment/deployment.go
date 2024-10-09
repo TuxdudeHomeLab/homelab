@@ -124,26 +124,24 @@ func (d *Deployment) queryContainer(cRef config.ContainerReference) (*Container,
 	return ct, nil
 }
 
-func (d *Deployment) QueryContainers(ctx context.Context, allGroups bool, group, container string) (containerList, error) {
-	if allGroups {
-		return containerMapToList(d.queryAllContainers()), nil
+func (d *Deployment) QueryAllContainersInAllGroups(ctx context.Context) (ContainerList, error) {
+	return containerMapToList(d.queryAllContainers()), nil
+}
+
+func (d *Deployment) QueryAllContainersInGroup(ctx context.Context, group string) (ContainerList, error) {
+	ctMap, err := d.queryAllContainersInGroup(group)
+	if err != nil {
+		return nil, err
 	}
-	if group != "" && container == "" {
-		ctMap, err := d.queryAllContainersInGroup(group)
-		if err != nil {
-			return nil, err
-		}
-		return containerMapToList(ctMap), nil
+	return containerMapToList(ctMap), nil
+}
+
+func (d *Deployment) QueryContainer(ctx context.Context, group, container string) (ContainerList, error) {
+	ct, err := d.queryContainer(config.ContainerReference{Group: group, Container: container})
+	if err != nil {
+		return nil, err
 	}
-	if group != "" {
-		ct, err := d.queryContainer(config.ContainerReference{Group: group, Container: container})
-		if err != nil {
-			return nil, err
-		}
-		return containerList{ct}, nil
-	}
-	log(ctx).Fatalf("Invalid scenario, possibly indicating a bug in the code")
-	return nil, nil
+	return ContainerList{ct}, nil
 }
 
 func (d *Deployment) updateGroupsOrder() {

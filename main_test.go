@@ -61,8 +61,9 @@ Use "homelab \[command\] --help" for more information about a command\.`,
 	{
 		name: "Main - runWithContext() - Start - All Groups",
 		args: []string{
+			"group",
 			"start",
-			"--all-groups",
+			"all",
 			"--configs-dir",
 			fmt.Sprintf("%s/testdata/main-start-all-groups", testhelpers.Pwd()),
 		},
@@ -88,8 +89,9 @@ Use "homelab \[command\] --help" for more information about a command\.`,
 	{
 		name: "Main - Start - Non Existing Configs Path",
 		args: []string{
+			"group",
 			"start",
-			"--all-groups",
+			"all",
 			"--configs-dir",
 			fmt.Sprintf("%s/testdata/foobar", testhelpers.Pwd()),
 		},

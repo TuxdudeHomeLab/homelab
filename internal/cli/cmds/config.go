@@ -13,13 +13,13 @@ const (
 	configCmdStr = "config"
 )
 
-func ShowConfigCmd(ctx context.Context, globalOptions *clicommon.GlobalCmdOptions) *cobra.Command {
-	cmd := buildShowConfigCmd(ctx)
+func ConfigCmd(ctx context.Context, globalOptions *clicommon.GlobalCmdOptions) *cobra.Command {
+	cmd := buildConfigCmd(ctx)
 	cmd.AddCommand(config.ShowConfigCmd(ctx, globalOptions))
 	return cmd
 }
 
-func buildShowConfigCmd(ctx context.Context) *cobra.Command {
+func buildConfigCmd(ctx context.Context) *cobra.Command {
 	return &cobra.Command{
 		Use:     configCmdStr,
 		GroupID: clicommon.ConfigCmdGroupID,
