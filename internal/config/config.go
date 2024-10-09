@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"slices"
 
 	"github.com/tuxdudehomelab/homelab/internal/config/env"
 	"github.com/tuxdudehomelab/homelab/internal/utils"
@@ -17,6 +18,18 @@ type Homelab struct {
 	Hosts      []Host           `yaml:"hosts,omitempty" json:"hosts,omitempty"`
 	Groups     []ContainerGroup `yaml:"groups,omitempty" json:"groups,omitempty"`
 	Containers []Container      `yaml:"containers,omitempty" json:"containers,omitempty"`
+}
+
+// HomelabGroupsOnly represents a minimal group name information only version
+// of the homelab deployment configuration.
+type HomelabGroupsOnly struct {
+	Groups []ContainerGroupNameOnly `yaml:"groups,omitempty" json:"groups,omitempty"`
+}
+
+// HomelabGroupsOnly represents a minimal container name information only
+// version of the homelab deployment configuration.
+type HomelabContainersOnly struct {
+	Containers []ContainerNameOnly `yaml:"containers,omitempty" json:"containers,omitempty"`
 }
 
 // Global represents the configuration that will be applied
@@ -105,6 +118,12 @@ type ContainerGroup struct {
 	Order int    `yaml:"order,omitempty" json:"order,omitempty"`
 }
 
+// ContainerGroupNameOnly represents a minimal single logical container group that
+// includes just the name of the group.
+type ContainerGroupNameOnly struct {
+	Name string `yaml:"name,omitempty" json:"name,omitempty"`
+}
+
 // Container represents a single docker container.
 type Container struct {
 	Info       ContainerReference     `yaml:"info,omitempty" json:"info,omitempty"`
@@ -118,6 +137,12 @@ type Container struct {
 	Security   ContainerSecurity      `yaml:"security,omitempty" json:"security,omitempty"`
 	Health     ContainerHealth        `yaml:"health,omitempty" json:"health,omitempty"`
 	Runtime    ContainerRuntime       `yaml:"runtime,omitempty" json:"runtime,omitempty"`
+}
+
+// ContainerNameOnly represents a single docker container with just the
+// group and the container name.
+type ContainerNameOnly struct {
+	Info ContainerReference `yaml:"info,omitempty" json:"info,omitempty"`
 }
 
 // ContainerConfigOptions represents options that are applied while
@@ -255,6 +280,7 @@ type Label struct {
 	Value string `yaml:"value,omitempty" json:"value,omitempty"`
 }
 
+// ContainerRestartPolicy represents the restart policy for the container.
 type ContainerRestartPolicy struct {
 	Mode          string `yaml:"mode,omitempty" json:"mode,omitempty"`
 	MaxRetryCount int    `yaml:"maxRetryCount,omitempty" json:"maxRetryCount,omitempty"`
@@ -270,6 +296,44 @@ func (h *Homelab) Parse(ctx context.Context, r io.Reader) error {
 
 	log(ctx).Tracef("Homelab Config:\n%v\n", utils.PrettyPrintJSON(h))
 	return nil
+}
+
+func (h *HomelabGroupsOnly) Parse(ctx context.Context, r io.Reader) error {
+	dec := yaml.NewDecoder(r)
+	dec.KnownFields(false)
+	err := dec.Decode(h)
+	if err != nil {
+		return fmt.Errorf("failed to parse homelab groups only config, reason: %w", err)
+	}
+	return nil
+}
+
+func (h *HomelabGroupsOnly) ListGroups() []string {
+	var groups []string
+	for _, g := range h.Groups {
+		groups = append(groups, g.Name)
+	}
+	slices.Sort(groups)
+	return groups
+}
+
+func (h *HomelabContainersOnly) Parse(ctx context.Context, r io.Reader) error {
+	dec := yaml.NewDecoder(r)
+	dec.KnownFields(false)
+	err := dec.Decode(h)
+	if err != nil {
+		return fmt.Errorf("failed to parse homelab containers only config, reason: %w", err)
+	}
+	return nil
+}
+
+func (h *HomelabContainersOnly) ListContainers() []string {
+	var containers []string
+	for _, ct := range h.Containers {
+		containers = append(containers, fmt.Sprintf("%s/%s", ct.Info.Group, ct.Info.Container))
+	}
+	slices.Sort(containers)
+	return containers
 }
 
 func (g *Global) ApplyConfigEnv(env *env.ConfigEnvManager) {

@@ -38,6 +38,9 @@ func StartCmd(ctx context.Context, globalOptions *clicommon.GlobalCmdOptions) *c
 			}
 			return nil
 		},
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			return clicommon.AutoCompleteContainers(ctx, args, "container start autocomplete", globalOptions)
+		},
 	}
 }
 

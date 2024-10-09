@@ -38,6 +38,9 @@ func StopCmd(ctx context.Context, globalOptions *clicommon.GlobalCmdOptions) *co
 			}
 			return nil
 		},
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			return clicommon.AutoCompleteContainers(ctx, args, "container stop autocomplete", globalOptions)
+		},
 	}
 }
 
