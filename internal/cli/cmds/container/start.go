@@ -14,7 +14,7 @@ const (
 	startCmdStr = "start"
 )
 
-func StartCmd(ctx context.Context, globalOptions *clicommon.GlobalCmdOptions) *cobra.Command {
+func StartCmd(ctx context.Context, opts *clicommon.GlobalCmdOptions) *cobra.Command {
 	return &cobra.Command{
 		Use:   startCmdStr,
 		Short: "Starts the container",
@@ -32,21 +32,21 @@ func StartCmd(ctx context.Context, globalOptions *clicommon.GlobalCmdOptions) *c
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
 			cmd.SilenceErrors = true
-			err := execContainerStartCmd(clicontext.HomelabContext(ctx), args[0], globalOptions)
+			err := execContainerStartCmd(clicontext.HomelabContext(ctx), args[0], opts)
 			if err != nil {
 				return errors.NewHomelabRuntimeError(err)
 			}
 			return nil
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			return clicommon.AutoCompleteContainers(ctx, args, "container start autocomplete", globalOptions)
+			return clicommon.AutoCompleteContainers(ctx, args, "container start autocomplete", opts)
 		},
 	}
 }
 
-func execContainerStartCmd(ctx context.Context, containerArg string, globalOptions *clicommon.GlobalCmdOptions) error {
+func execContainerStartCmd(ctx context.Context, containerArg string, opts *clicommon.GlobalCmdOptions) error {
 	group, container := mustContainerName(containerArg)
-	dep, err := clicommon.BuildDeployment(ctx, "container start", globalOptions)
+	dep, err := clicommon.BuildDeployment(ctx, "container start", opts)
 	if err != nil {
 		return err
 	}

@@ -14,7 +14,7 @@ const (
 	startCmdStr = "start"
 )
 
-func StartCmd(ctx context.Context, globalOptions *clicommon.GlobalCmdOptions) *cobra.Command {
+func StartCmd(ctx context.Context, opts *clicommon.GlobalCmdOptions) *cobra.Command {
 	return &cobra.Command{
 		Use:   startCmdStr,
 		Short: "Starts one or more containers in the group",
@@ -28,20 +28,20 @@ func StartCmd(ctx context.Context, globalOptions *clicommon.GlobalCmdOptions) *c
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
 			cmd.SilenceErrors = true
-			err := execGroupStartCmd(clicontext.HomelabContext(ctx), args[0], globalOptions)
+			err := execGroupStartCmd(clicontext.HomelabContext(ctx), args[0], opts)
 			if err != nil {
 				return errors.NewHomelabRuntimeError(err)
 			}
 			return nil
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			return clicommon.AutoCompleteGroups(ctx, args, "group start autocomplete", globalOptions)
+			return clicommon.AutoCompleteGroups(ctx, args, "group start autocomplete", opts)
 		},
 	}
 }
 
-func execGroupStartCmd(ctx context.Context, group string, globalOptions *clicommon.GlobalCmdOptions) error {
-	dep, err := clicommon.BuildDeployment(ctx, "group start", globalOptions)
+func execGroupStartCmd(ctx context.Context, group string, opts *clicommon.GlobalCmdOptions) error {
+	dep, err := clicommon.BuildDeployment(ctx, "group start", opts)
 	if err != nil {
 		return err
 	}

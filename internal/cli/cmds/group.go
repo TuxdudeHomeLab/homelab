@@ -13,11 +13,11 @@ const (
 	groupCmdStr = "group"
 )
 
-func GroupCmd(ctx context.Context, globalOptions *clicommon.GlobalCmdOptions) *cobra.Command {
+func GroupCmd(ctx context.Context, opts *clicommon.GlobalCmdOptions) *cobra.Command {
 	cmd := buildGroupCmd(ctx)
-	cmd.AddCommand(group.StartCmd(ctx, globalOptions))
-	cmd.AddCommand(group.StopCmd(ctx, globalOptions))
-	cmd.AddCommand(group.PurgeCmd(ctx, globalOptions))
+	cmd.AddCommand(group.StartCmd(ctx, opts))
+	cmd.AddCommand(group.StopCmd(ctx, opts))
+	cmd.AddCommand(group.PurgeCmd(ctx, opts))
 	return cmd
 }
 

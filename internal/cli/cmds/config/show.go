@@ -14,7 +14,7 @@ const (
 	showCmdStr = "show"
 )
 
-func ShowConfigCmd(ctx context.Context, globalOptions *clicommon.GlobalCmdOptions) *cobra.Command {
+func ShowConfigCmd(ctx context.Context, opts *clicommon.GlobalCmdOptions) *cobra.Command {
 	return &cobra.Command{
 		Use:   showCmdStr,
 		Short: "Shows the homelab config",
@@ -22,7 +22,7 @@ func ShowConfigCmd(ctx context.Context, globalOptions *clicommon.GlobalCmdOption
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
 			cmd.SilenceErrors = true
-			err := execShowConfigCmd(clicontext.HomelabContext(ctx), cmd, args, globalOptions)
+			err := execShowConfigCmd(clicontext.HomelabContext(ctx), opts)
 			if err != nil {
 				return errors.NewHomelabRuntimeError(err)
 			}
@@ -31,8 +31,8 @@ func ShowConfigCmd(ctx context.Context, globalOptions *clicommon.GlobalCmdOption
 	}
 }
 
-func execShowConfigCmd(ctx context.Context, cmd *cobra.Command, args []string, globalOptions *clicommon.GlobalCmdOptions) error {
-	dep, err := clicommon.BuildDeployment(ctx, "config show", globalOptions)
+func execShowConfigCmd(ctx context.Context, opts *clicommon.GlobalCmdOptions) error {
+	dep, err := clicommon.BuildDeployment(ctx, "config show", opts)
 	if err != nil {
 		return err
 	}

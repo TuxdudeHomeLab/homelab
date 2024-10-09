@@ -14,7 +14,7 @@ const (
 	stopCmdStr = "stop"
 )
 
-func StopCmd(ctx context.Context, globalOptions *clicommon.GlobalCmdOptions) *cobra.Command {
+func StopCmd(ctx context.Context, opts *clicommon.GlobalCmdOptions) *cobra.Command {
 	return &cobra.Command{
 		Use:   stopCmdStr,
 		Short: "Stops one or more containers in the group",
@@ -28,20 +28,20 @@ func StopCmd(ctx context.Context, globalOptions *clicommon.GlobalCmdOptions) *co
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
 			cmd.SilenceErrors = true
-			err := execGroupStopCmd(clicontext.HomelabContext(ctx), args[0], globalOptions)
+			err := execGroupStopCmd(clicontext.HomelabContext(ctx), args[0], opts)
 			if err != nil {
 				return errors.NewHomelabRuntimeError(err)
 			}
 			return nil
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			return clicommon.AutoCompleteGroups(ctx, args, "group stop autocomplete", globalOptions)
+			return clicommon.AutoCompleteGroups(ctx, args, "group stop autocomplete", opts)
 		},
 	}
 }
 
-func execGroupStopCmd(ctx context.Context, group string, globalOptions *clicommon.GlobalCmdOptions) error {
-	dep, err := clicommon.BuildDeployment(ctx, "group stop", globalOptions)
+func execGroupStopCmd(ctx context.Context, group string, opts *clicommon.GlobalCmdOptions) error {
+	dep, err := clicommon.BuildDeployment(ctx, "group stop", opts)
 	if err != nil {
 		return err
 	}

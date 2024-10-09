@@ -13,9 +13,9 @@ const (
 	configCmdStr = "config"
 )
 
-func ConfigCmd(ctx context.Context, globalOptions *clicommon.GlobalCmdOptions) *cobra.Command {
+func ConfigCmd(ctx context.Context, opts *clicommon.GlobalCmdOptions) *cobra.Command {
 	cmd := buildConfigCmd(ctx)
-	cmd.AddCommand(config.ShowConfigCmd(ctx, globalOptions))
+	cmd.AddCommand(config.ShowConfigCmd(ctx, opts))
 	return cmd
 }
 

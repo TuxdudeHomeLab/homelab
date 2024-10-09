@@ -14,7 +14,7 @@ const (
 	purgeCmdStr = "purge"
 )
 
-func PurgeCmd(ctx context.Context, globalOptions *clicommon.GlobalCmdOptions) *cobra.Command {
+func PurgeCmd(ctx context.Context, opts *clicommon.GlobalCmdOptions) *cobra.Command {
 	return &cobra.Command{
 		Use:   purgeCmdStr,
 		Short: "Purges the container",
@@ -32,21 +32,21 @@ func PurgeCmd(ctx context.Context, globalOptions *clicommon.GlobalCmdOptions) *c
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
 			cmd.SilenceErrors = true
-			err := execContainerPurgeCmd(clicontext.HomelabContext(ctx), args[0], globalOptions)
+			err := execContainerPurgeCmd(clicontext.HomelabContext(ctx), args[0], opts)
 			if err != nil {
 				return errors.NewHomelabRuntimeError(err)
 			}
 			return nil
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			return clicommon.AutoCompleteContainers(ctx, args, "container purge autocomplete", globalOptions)
+			return clicommon.AutoCompleteContainers(ctx, args, "container purge autocomplete", opts)
 		},
 	}
 }
 
-func execContainerPurgeCmd(ctx context.Context, containerArg string, globalOptions *clicommon.GlobalCmdOptions) error {
+func execContainerPurgeCmd(ctx context.Context, containerArg string, opts *clicommon.GlobalCmdOptions) error {
 	group, container := mustContainerName(containerArg)
-	dep, err := clicommon.BuildDeployment(ctx, "container purge", globalOptions)
+	dep, err := clicommon.BuildDeployment(ctx, "container purge", opts)
 	if err != nil {
 		return err
 	}

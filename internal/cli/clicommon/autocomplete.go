@@ -7,46 +7,46 @@ import (
 	"github.com/tuxdudehomelab/homelab/internal/config"
 )
 
-func AutoCompleteGroups(ctx context.Context, args []string, cmd string, options *GlobalCmdOptions) ([]string, cobra.ShellCompDirective) {
+func AutoCompleteGroups(ctx context.Context, args []string, cmd string, opts *GlobalCmdOptions) ([]string, cobra.ShellCompDirective) {
 	if len(args) != 0 {
 		return nil, cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveKeepOrder
 	}
-	groups, err := groupsOnly(ctx, cmd, options)
+	groups, err := groupsOnly(ctx, cmd, opts)
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
 	return groups, cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveKeepOrder
 }
 
-func AutoCompleteContainers(ctx context.Context, args []string, cmd string, options *GlobalCmdOptions) ([]string, cobra.ShellCompDirective) {
+func AutoCompleteContainers(ctx context.Context, args []string, cmd string, opts *GlobalCmdOptions) ([]string, cobra.ShellCompDirective) {
 	if len(args) != 0 {
 		return nil, cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveKeepOrder
 	}
-	containers, err := containersOnly(ctx, cmd, options)
+	containers, err := containersOnly(ctx, cmd, opts)
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
 	return containers, cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveKeepOrder
 }
 
-func groupsOnly(ctx context.Context, cmd string, options *GlobalCmdOptions) ([]string, error) {
-	h, err := buildHomelabGroupsOnly(ctx, cmd, options)
+func groupsOnly(ctx context.Context, cmd string, opts *GlobalCmdOptions) ([]string, error) {
+	h, err := buildHomelabGroupsOnly(ctx, cmd, opts)
 	if err != nil {
 		return nil, err
 	}
 	return h.ListGroups(), nil
 }
 
-func containersOnly(ctx context.Context, cmd string, options *GlobalCmdOptions) ([]string, error) {
-	h, err := buildHomelabContainersOnly(ctx, cmd, options)
+func containersOnly(ctx context.Context, cmd string, opts *GlobalCmdOptions) ([]string, error) {
+	h, err := buildHomelabContainersOnly(ctx, cmd, opts)
 	if err != nil {
 		return nil, err
 	}
 	return h.ListContainers(), nil
 }
 
-func buildHomelabGroupsOnly(ctx context.Context, cmd string, options *GlobalCmdOptions) (*config.HomelabGroupsOnly, error) {
-	path, err := configsPath(ctx, cmd, options)
+func buildHomelabGroupsOnly(ctx context.Context, cmd string, opts *GlobalCmdOptions) (*config.HomelabGroupsOnly, error) {
+	path, err := configsPath(ctx, cmd, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -65,8 +65,8 @@ func buildHomelabGroupsOnly(ctx context.Context, cmd string, options *GlobalCmdO
 	return &conf, nil
 }
 
-func buildHomelabContainersOnly(ctx context.Context, cmd string, options *GlobalCmdOptions) (*config.HomelabContainersOnly, error) {
-	path, err := configsPath(ctx, cmd, options)
+func buildHomelabContainersOnly(ctx context.Context, cmd string, opts *GlobalCmdOptions) (*config.HomelabContainersOnly, error) {
+	path, err := configsPath(ctx, cmd, opts)
 	if err != nil {
 		return nil, err
 	}

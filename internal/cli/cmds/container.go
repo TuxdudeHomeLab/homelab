@@ -13,11 +13,11 @@ const (
 	containerCmdStr = "container"
 )
 
-func ContainerCmd(ctx context.Context, globalOptions *clicommon.GlobalCmdOptions) *cobra.Command {
+func ContainerCmd(ctx context.Context, opts *clicommon.GlobalCmdOptions) *cobra.Command {
 	cmd := buildContainerCmd(ctx)
-	cmd.AddCommand(container.StartCmd(ctx, globalOptions))
-	cmd.AddCommand(container.StopCmd(ctx, globalOptions))
-	cmd.AddCommand(container.PurgeCmd(ctx, globalOptions))
+	cmd.AddCommand(container.StartCmd(ctx, opts))
+	cmd.AddCommand(container.StopCmd(ctx, opts))
+	cmd.AddCommand(container.PurgeCmd(ctx, opts))
 	return cmd
 }
 

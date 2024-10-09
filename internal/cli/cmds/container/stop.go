@@ -14,7 +14,7 @@ const (
 	stopCmdStr = "stop"
 )
 
-func StopCmd(ctx context.Context, globalOptions *clicommon.GlobalCmdOptions) *cobra.Command {
+func StopCmd(ctx context.Context, opts *clicommon.GlobalCmdOptions) *cobra.Command {
 	return &cobra.Command{
 		Use:   stopCmdStr,
 		Short: "Stops the container",
@@ -32,21 +32,21 @@ func StopCmd(ctx context.Context, globalOptions *clicommon.GlobalCmdOptions) *co
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
 			cmd.SilenceErrors = true
-			err := execContainerStopCmd(clicontext.HomelabContext(ctx), args[0], globalOptions)
+			err := execContainerStopCmd(clicontext.HomelabContext(ctx), args[0], opts)
 			if err != nil {
 				return errors.NewHomelabRuntimeError(err)
 			}
 			return nil
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			return clicommon.AutoCompleteContainers(ctx, args, "container stop autocomplete", globalOptions)
+			return clicommon.AutoCompleteContainers(ctx, args, "container stop autocomplete", opts)
 		},
 	}
 }
 
-func execContainerStopCmd(ctx context.Context, containerArg string, globalOptions *clicommon.GlobalCmdOptions) error {
+func execContainerStopCmd(ctx context.Context, containerArg string, opts *clicommon.GlobalCmdOptions) error {
 	group, container := mustContainerName(containerArg)
-	dep, err := clicommon.BuildDeployment(ctx, "container stop", globalOptions)
+	dep, err := clicommon.BuildDeployment(ctx, "container stop", opts)
 	if err != nil {
 		return err
 	}

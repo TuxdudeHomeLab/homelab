@@ -7,8 +7,8 @@ import (
 	"github.com/tuxdudehomelab/homelab/internal/deployment"
 )
 
-func BuildDeployment(ctx context.Context, cmd string, options *GlobalCmdOptions) (*deployment.Deployment, error) {
-	path, err := configsPath(ctx, cmd, options)
+func BuildDeployment(ctx context.Context, cmd string, opts *GlobalCmdOptions) (*deployment.Deployment, error) {
+	path, err := configsPath(ctx, cmd, opts)
 	if err != nil {
 		return nil, err
 	}
