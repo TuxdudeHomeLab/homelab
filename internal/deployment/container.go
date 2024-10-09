@@ -326,6 +326,7 @@ func (c *Container) dockerHostConfig(pMap nat.PortMap) *dcontainer.HostConfig {
 		DNS:            c.dnsServers(),
 		DNSOptions:     c.dnsOptions(),
 		DNSSearch:      c.dnsSearch(),
+		ExtraHosts:     c.extraHosts(),
 		GroupAdd:       c.additionalUserGroups(),
 		Privileged:     c.privileged(),
 		ReadonlyRootfs: c.readOnlyRootfs(),
@@ -561,6 +562,10 @@ func (c *Container) dnsSearch() []string {
 		d = c.globalConfig.Container.DNSSearch
 	}
 	return d
+}
+
+func (c *Container) extraHosts() []string {
+	return c.config.Network.ExtraHosts
 }
 
 func (c *Container) additionalUserGroups() []string {

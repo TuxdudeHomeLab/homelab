@@ -251,6 +251,9 @@ containers:
       dnsSearch:
         - dns-ct-search-1
         - $$ENV_DNS_SEARCH$$
+      extraHosts:
+        - my-extra-host-1
+        - $$HOST_NAME$$-extra
       publishedPorts:
         - containerPort: 53
           proto: tcp
@@ -692,6 +695,10 @@ containers:
 							"dns-ct-search-1",
 							"custom-dns-search",
 						},
+						ExtraHosts: []string{
+							"my-extra-host-1",
+							"fakehost-extra",
+						},
 						PublishedPorts: []config.PublishedPort{
 							{
 								ContainerPort: 53,
@@ -861,6 +868,10 @@ containers:
 					DNSSearch: []string{
 						"dns-ct-search-1",
 						"custom-dns-search",
+					},
+					ExtraHosts: []string{
+						"my-extra-host-1",
+						"fakehost-extra",
 					},
 					GroupAdd: []string{
 						"fakegroup1",

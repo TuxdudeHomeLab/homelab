@@ -200,6 +200,7 @@ type ContainerNetwork struct {
 	DNSServers     []string        `yaml:"dnsServers,omitempty" json:"dnsServers,omitempty"`
 	DNSOptions     []string        `yaml:"dnsOptions,omitempty" json:"dnsOptions,omitempty"`
 	DNSSearch      []string        `yaml:"dnsSearch,omitempty" json:"dnsSearch,omitempty"`
+	ExtraHosts     []string        `yaml:"extraHosts,omitempty" json:"extraHosts,omitempty"`
 	PublishedPorts []PublishedPort `yaml:"publishedPorts,omitempty" json:"publishedPorts,omitempty"`
 }
 
@@ -384,6 +385,9 @@ func (c *Container) ApplyConfigEnv(env *env.ConfigEnvManager) {
 	}
 	for i, d := range c.Network.DNSSearch {
 		c.Network.DNSSearch[i] = env.Apply(d)
+	}
+	for i, e := range c.Network.ExtraHosts {
+		c.Network.ExtraHosts[i] = env.Apply(e)
 	}
 	for i, p := range c.Network.PublishedPorts {
 		c.Network.PublishedPorts[i].HostIP = env.Apply(p.HostIP)

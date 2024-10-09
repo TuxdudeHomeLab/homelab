@@ -99,6 +99,10 @@ var applyConfigEnvToContainerTests = []struct {
 					"dns-ct-search-1",
 					"$$ENV_DNS_SEARCH$$",
 				},
+				ExtraHosts: []string{
+					"my-extra-host-1",
+					"$$HOST_NAME$$-extra",
+				},
 				PublishedPorts: []PublishedPort{
 					{
 						ContainerPort: 12345,
@@ -235,6 +239,10 @@ var applyConfigEnvToContainerTests = []struct {
 					"dns-ct-search-1",
 					"dns-ct-search-2",
 				},
+				ExtraHosts: []string{
+					"my-extra-host-1",
+					"fakehost-extra",
+				},
 				PublishedPorts: []PublishedPort{
 					{
 						ContainerPort: 12345,
@@ -295,7 +303,7 @@ var applyConfigEnvToGlobalTests = []struct {
 	want           Global
 }{
 	{
-		name: "Container Config - ApplyConfigEnv - Exhaustive",
+		name: "Global Container Config - ApplyConfigEnv - Exhaustive",
 		global: Global{
 			MountDefs: []Mount{
 				{
