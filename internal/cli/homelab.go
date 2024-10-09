@@ -54,6 +54,7 @@ The configuration is managed using a yaml file. The configuration specifies the 
 			Title: "Containers:",
 		},
 	)
+	cmd.CompletionOptions.DisableDescriptions = true
 
 	return cmd
 }
