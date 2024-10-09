@@ -35,6 +35,10 @@ func ExecContainerGroupCmd(ctx context.Context, cmd, action, group, container st
 		}
 	}
 
+	if len(res) == 0 {
+		log(ctx).Warnf("%s is a no-op since no containers were found matching the specified criteria", cmd)
+	}
+
 	if len(errList) > 0 {
 		var sb strings.Builder
 		for i, e := range errList {
