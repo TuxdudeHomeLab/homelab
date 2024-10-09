@@ -1,0 +1,6 @@
+containers:
+  - info:
+      group: foo
+      container:
+        f1: foo
+        f2: bar

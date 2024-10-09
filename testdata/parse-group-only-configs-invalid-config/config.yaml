@@ -1,0 +1,4 @@
+groups:
+  - name:
+      my-field1: val1
+      my-field2: val2

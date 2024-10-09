@@ -1758,6 +1758,263 @@ func TestExecHomelabContainerGroupCmdErrors(t *testing.T) {
 	}
 }
 
+var executeHomelabGroupCmdCompletionTests = []struct {
+	name        string
+	preCmdArgs  []string
+	postCmdArgs []string
+	ctxInfo     func() *testutils.TestContextInfo
+	want        string
+}{
+	{
+		name: "Homelab Command - %s - Completion - All Group Names",
+		preCmdArgs: []string{
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+			"__complete",
+		},
+		postCmdArgs: []string{
+			"",
+		},
+		ctxInfo: func() *testutils.TestContextInfo {
+			return &testutils.TestContextInfo{
+				DockerHost: fakedocker.NewEmptyFakeDockerHost(),
+			}
+		},
+		want: `g1
+g2
+:36
+Completion ended with directive: ShellCompDirectiveNoFileComp, ShellCompDirectiveKeepOrder`,
+	},
+	{
+		name: "Homelab Command - %s - Completion - No Group Names",
+		preCmdArgs: []string{
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+			"__complete",
+		},
+		postCmdArgs: []string{
+			"g1",
+			"",
+		},
+		ctxInfo: func() *testutils.TestContextInfo {
+			return &testutils.TestContextInfo{
+				DockerHost: fakedocker.NewEmptyFakeDockerHost(),
+			}
+		},
+		want: `:36
+Completion ended with directive: ShellCompDirectiveNoFileComp, ShellCompDirectiveKeepOrder`,
+	},
+	{
+		name: "Homelab Command - %s - Completion - Invalid CLI Config",
+		preCmdArgs: []string{
+			"--cli-config",
+			fmt.Sprintf("%s/testdata/cli-configs/invalid-empty-config/config.yaml", testhelpers.Pwd()),
+			"__complete",
+		},
+		postCmdArgs: []string{
+			"",
+		},
+		ctxInfo: func() *testutils.TestContextInfo {
+			return &testutils.TestContextInfo{
+				DockerHost: fakedocker.NewEmptyFakeDockerHost(),
+			}
+		},
+		want: `:1
+Completion ended with directive: ShellCompDirectiveError`,
+	},
+	{
+		name: "Homelab Command - %s - Completion - Invalid Homelab Config - Merge Fail",
+		preCmdArgs: []string{
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/parse-configs-invalid-deepmerge-fail", testhelpers.Pwd()),
+			"__complete",
+		},
+		postCmdArgs: []string{
+			"",
+		},
+		ctxInfo: func() *testutils.TestContextInfo {
+			return &testutils.TestContextInfo{
+				DockerHost: fakedocker.NewEmptyFakeDockerHost(),
+			}
+		},
+		want: `:1
+Completion ended with directive: ShellCompDirectiveError`,
+	},
+	{
+		name: "Homelab Command - %s - Completion - Invalid Homelab Config - Parse Fail",
+		preCmdArgs: []string{
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/parse-group-only-configs-invalid-config", testhelpers.Pwd()),
+			"__complete",
+		},
+		postCmdArgs: []string{
+			"",
+		},
+		ctxInfo: func() *testutils.TestContextInfo {
+			return &testutils.TestContextInfo{
+				DockerHost: fakedocker.NewEmptyFakeDockerHost(),
+			}
+		},
+		want: `:1
+Completion ended with directive: ShellCompDirectiveError`,
+	},
+}
+
+func TestExecHomelabGroupCmdCompletions(t *testing.T) {
+	for _, test := range executeHomelabGroupCmdCompletionTests {
+		tc := test
+		for _, c := range executeHomelabGroupCmds {
+			cmd := c
+			tcName := fmt.Sprintf(tc.name, cmd.cmdDesc)
+			t.Run(tcName, func(t *testing.T) {
+				t.Parallel()
+
+				args := append(tc.preCmdArgs, cmd.cmdArgs...)
+				args = append(args, tc.postCmdArgs...)
+
+				out, gotErr := execHomelabCmdTest(tc.ctxInfo(), nil, args...)
+				if gotErr != nil {
+					testhelpers.LogErrorNotNilWithOutput(t, "Exec()", tcName, out, gotErr)
+					return
+				}
+
+				if !testhelpers.RegexMatchJoinNewLines(t, "Exec()", tcName, "command output", tc.want, out.String()) {
+					return
+				}
+			})
+		}
+	}
+}
+
+var executeHomelabContainerCmdCompletionTests = []struct {
+	name        string
+	preCmdArgs  []string
+	postCmdArgs []string
+	ctxInfo     func() *testutils.TestContextInfo
+	want        string
+}{
+	{
+		name: "Homelab Command - %s - Completion - All Container Names",
+		preCmdArgs: []string{
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+			"__complete",
+		},
+		postCmdArgs: []string{
+			"",
+		},
+		ctxInfo: func() *testutils.TestContextInfo {
+			return &testutils.TestContextInfo{
+				DockerHost: fakedocker.NewEmptyFakeDockerHost(),
+			}
+		},
+		want: `g1/c1
+g1/c2
+g2/c3
+:36
+Completion ended with directive: ShellCompDirectiveNoFileComp, ShellCompDirectiveKeepOrder`,
+	},
+	{
+		name: "Homelab Command - %s - Completion - No Container Names",
+		preCmdArgs: []string{
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+			"__complete",
+		},
+		postCmdArgs: []string{
+			"g1/c1",
+			"",
+		},
+		ctxInfo: func() *testutils.TestContextInfo {
+			return &testutils.TestContextInfo{
+				DockerHost: fakedocker.NewEmptyFakeDockerHost(),
+			}
+		},
+		want: `:36
+Completion ended with directive: ShellCompDirectiveNoFileComp, ShellCompDirectiveKeepOrder`,
+	},
+	{
+		name: "Homelab Command - %s - Completion - Invalid CLI Config",
+		preCmdArgs: []string{
+			"--cli-config",
+			fmt.Sprintf("%s/testdata/cli-configs/invalid-empty-config/config.yaml", testhelpers.Pwd()),
+			"__complete",
+		},
+		postCmdArgs: []string{
+			"",
+		},
+		ctxInfo: func() *testutils.TestContextInfo {
+			return &testutils.TestContextInfo{
+				DockerHost: fakedocker.NewEmptyFakeDockerHost(),
+			}
+		},
+		want: `:1
+Completion ended with directive: ShellCompDirectiveError`,
+	},
+	{
+		name: "Homelab Command - %s - Completion - Invalid Homelab Config",
+		preCmdArgs: []string{
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/parse-configs-invalid-deepmerge-fail", testhelpers.Pwd()),
+			"__complete",
+		},
+		postCmdArgs: []string{
+			"",
+		},
+		ctxInfo: func() *testutils.TestContextInfo {
+			return &testutils.TestContextInfo{
+				DockerHost: fakedocker.NewEmptyFakeDockerHost(),
+			}
+		},
+		want: `:1
+Completion ended with directive: ShellCompDirectiveError`,
+	},
+	{
+		name: "Homelab Command - %s - Completion - Invalid Homelab Config - Parse Fail",
+		preCmdArgs: []string{
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/parse-container-only-configs-invalid-config", testhelpers.Pwd()),
+			"__complete",
+		},
+		postCmdArgs: []string{
+			"",
+		},
+		ctxInfo: func() *testutils.TestContextInfo {
+			return &testutils.TestContextInfo{
+				DockerHost: fakedocker.NewEmptyFakeDockerHost(),
+			}
+		},
+		want: `:1
+Completion ended with directive: ShellCompDirectiveError`,
+	},
+}
+
+func TestExecHomelabContainerCmdCompletions(t *testing.T) {
+	for _, test := range executeHomelabContainerCmdCompletionTests {
+		tc := test
+		for _, c := range executeHomelabContainerCmds {
+			cmd := c
+			tcName := fmt.Sprintf(tc.name, cmd.cmdDesc)
+			t.Run(tcName, func(t *testing.T) {
+				t.Parallel()
+
+				args := append(tc.preCmdArgs, cmd.cmdArgs...)
+				args = append(args, tc.postCmdArgs...)
+
+				out, gotErr := execHomelabCmdTest(tc.ctxInfo(), nil, args...)
+				if gotErr != nil {
+					testhelpers.LogErrorNotNilWithOutput(t, "Exec()", tcName, out, gotErr)
+					return
+				}
+
+				if !testhelpers.RegexMatchJoinNewLines(t, "Exec()", tcName, "command output", tc.want, out.String()) {
+					return
+				}
+			})
+		}
+	}
+}
+
 func execHomelabCmdTest(ctxInfo *testutils.TestContextInfo, logLevel *zzzlog.Level, args ...string) (fmt.Stringer, error) {
 	buf := new(bytes.Buffer)
 	return execHomelabCmdTestWithBuf(ctxInfo, logLevel, buf, args...)
