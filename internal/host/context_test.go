@@ -12,10 +12,14 @@ import (
 )
 
 func TestRetrieveHostInfoFromEmptyContext(t *testing.T) {
+	t.Parallel()
+
 	tc := "Retrieve Host Info - Empty Context"
 	want := `Host info not found in context`
 
 	t.Run(tc, func(t *testing.T) {
+		t.Parallel()
+
 		ctx := context.Background()
 		ctx = l.WithLogger(ctx, newTestLogger())
 

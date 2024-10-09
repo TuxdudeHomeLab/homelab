@@ -12,10 +12,14 @@ import (
 )
 
 func TestRetrieveUserInfoFromEmptyContext(t *testing.T) {
+	t.Parallel()
+
 	tc := "Retrieve User Info - Empty Context"
 	want := `User info not found in context`
 
 	t.Run(tc, func(t *testing.T) {
+		t.Parallel()
+
 		ctx := context.Background()
 		ctx = l.WithLogger(ctx, newTestLogger())
 

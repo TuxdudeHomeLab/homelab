@@ -660,6 +660,8 @@ Container g1-c2 cannot be purged since it was not found`,
 }
 
 func TestExecHomelabCmd(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range executeHomelabCmdTests {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {
@@ -845,6 +847,8 @@ Container g2-c3 cannot be purged since it was not found`,
 }
 
 func TestExecHomelabCmdRealEverything(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range executeHomelabCmdRealEverythingTests {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {
@@ -973,6 +977,8 @@ var executeHomelabCmdLogLevelTests = []struct {
 }
 
 func TestExecHomelabCmdLogLevel(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range executeHomelabCmdLogLevelTests {
 		tc := test
 		for _, l := range executeHomelabCmdLogLevels {
@@ -1299,6 +1305,8 @@ var executeHomelabCmdErrorTests = []struct {
 }
 
 func TestExecHomelabCmdErrors(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range executeHomelabCmdErrorTests {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {
@@ -1561,6 +1569,8 @@ var executeHomelabConfigCmdErrorTests = []struct {
 }
 
 func TestExecHomelabConfigCmdErrors(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range executeHomelabConfigCmdErrorTests {
 		tc := test
 		for _, c := range executeHomelabConfigCmds {
@@ -1640,6 +1650,8 @@ var executeHomelabGroupCmds = []struct {
 }
 
 func TestExecHomelabGroupCmdErrors(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range executeHomelabGroupCmdErrorTests {
 		tc := test
 		for _, c := range executeHomelabGroupCmds {
@@ -1733,6 +1745,8 @@ var executeHomelabContainerCmds = []struct {
 }
 
 func TestExecHomelabContainerGroupCmdErrors(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range executeHomelabContainerCmdErrorTests {
 		tc := test
 		for _, c := range executeHomelabContainerCmds {
@@ -1862,6 +1876,8 @@ Completion ended with directive: ShellCompDirectiveError`,
 }
 
 func TestExecHomelabGroupCmdCompletions(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range executeHomelabGroupCmdCompletionTests {
 		tc := test
 		for _, c := range executeHomelabGroupCmds {
@@ -1991,6 +2007,8 @@ Completion ended with directive: ShellCompDirectiveError`,
 }
 
 func TestExecHomelabContainerCmdCompletions(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range executeHomelabContainerCmdCompletionTests {
 		tc := test
 		for _, c := range executeHomelabContainerCmds {

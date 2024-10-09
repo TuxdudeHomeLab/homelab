@@ -12,10 +12,14 @@ import (
 )
 
 func TestRetrieveAPIClientFromEmptyContext(t *testing.T) {
+	t.Parallel()
+
 	tc := "Retrieve Docker API Client - Empty Context"
 	want := `Docker API Client not found in context`
 
 	t.Run(tc, func(t *testing.T) {
+		t.Parallel()
+
 		ctx := context.Background()
 		ctx = l.WithLogger(ctx, newTestLogger())
 

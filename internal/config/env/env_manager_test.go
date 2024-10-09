@@ -59,6 +59,8 @@ var systemConfigEnvManagerApplyTests = []struct {
 }
 
 func TestSystemConfigEnvManagerApply(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range systemConfigEnvManagerApplyTests {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {
@@ -194,6 +196,8 @@ var globalConfigEnvManagerApplyTests = []struct {
 }
 
 func TestGlobalConfigEnvManagerApply(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range globalConfigEnvManagerApplyTests {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {
@@ -500,6 +504,8 @@ var containerConfigEnvManagerApplyTests = []struct {
 }
 
 func TestContainerConfigEnvManagerApply(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range containerConfigEnvManagerApplyTests {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {

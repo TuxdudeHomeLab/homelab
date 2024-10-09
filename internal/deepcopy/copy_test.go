@@ -443,6 +443,8 @@ var deepCopyTests = []struct {
 }
 
 func TestDeepCopy(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range deepCopyTests {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {
@@ -509,6 +511,8 @@ var deepCopyErrorTests = []struct {
 }
 
 func TestDeepCopyErrors(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range deepCopyErrorTests {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {
@@ -528,6 +532,8 @@ func TestDeepCopyErrors(t *testing.T) {
 }
 
 func TestDeepMustCopyErrors(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range deepCopyErrorTests {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {

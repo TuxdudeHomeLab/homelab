@@ -104,8 +104,12 @@ Use "homelab \[command\] --help" for more information about a command\.`,
 }
 
 func TestMainRunWithContext(t *testing.T) {
+	t.Parallel()
+
 	for _, tc := range mainRunWithContextTests {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			buf := new(bytes.Buffer)
 			ctx := testutils.NewTestContext(tc.ctxInfo)
 
@@ -183,9 +187,13 @@ func TestMainRunEnv(t *testing.T) {
 }
 
 func TestMainRun(t *testing.T) {
+	t.Parallel()
+
 	tc := "Main - run() - Missing Subcommand"
 	want := 1
 	t.Run(tc, func(t *testing.T) {
+		t.Parallel()
+
 		got := run()
 		if got != want {
 			testhelpers.LogCustom(t, "run()", tc, fmt.Sprintf("gotStatus (%d) != wantStatus (%d)", got, want))

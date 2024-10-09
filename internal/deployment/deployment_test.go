@@ -966,6 +966,8 @@ groups:
 }
 
 func TestBuildDeploymentUsingReader(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range buildDeploymentUsingReaderTests {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {
@@ -1305,6 +1307,8 @@ var buildDeploymentFromConfigsPathTests = []struct {
 }
 
 func TestBuildDeploymentFromConfigsPath(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range buildDeploymentFromConfigsPathTests {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {
@@ -1371,6 +1375,8 @@ var buildDeploymentFromConfigsPathErrorTests = []struct {
 }
 
 func TestBuildDeploymentFromConfigsPathErrors(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range buildDeploymentFromConfigsPathErrorTests {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {
@@ -1543,6 +1549,8 @@ var buildDeploymentFromConfigStringerTests = []struct {
 }
 
 func TestBuildDeploymentFromConfigStringer(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range buildDeploymentFromConfigStringerTests {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {
@@ -5341,6 +5349,8 @@ var buildDeploymentFromConfigErrorTests = []struct {
 }
 
 func TestBuildDeploymentFromConfigErrors(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range buildDeploymentFromConfigErrorTests {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {

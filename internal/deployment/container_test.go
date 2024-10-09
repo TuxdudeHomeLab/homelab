@@ -372,6 +372,8 @@ var containerStartTests = []struct {
 }
 
 func TestContainerStart(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range containerStartTests {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {
@@ -842,6 +844,8 @@ var containerStartErrorTests = []struct {
 }
 
 func TestContainerStartErrors(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range containerStartErrorTests {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {
@@ -1112,6 +1116,8 @@ var containerStopTests = []struct {
 }
 
 func TestContainerStop(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range containerStopTests {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {
@@ -1265,6 +1271,8 @@ var containerStopErrorTests = []struct {
 }
 
 func TestContainerStopErrors(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range containerStopErrorTests {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {
@@ -1578,6 +1586,8 @@ var containerPurgeTests = []struct {
 }
 
 func TestContainerPurge(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range containerPurgeTests {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {
@@ -1827,6 +1837,8 @@ var containerPurgeErrorTests = []struct {
 }
 
 func TestContainerPurgeErrors(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range containerPurgeErrorTests {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {
@@ -2008,6 +2020,8 @@ var containerDockerConfigTests = []struct {
 }
 
 func TestContainerDockerConfigs(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range containerDockerConfigTests {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {

@@ -277,6 +277,8 @@ var applyConfigEnvToContainerTests = []struct {
 }
 
 func TestApplyConfigEnvToContainer(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range applyConfigEnvToContainerTests {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {
@@ -490,6 +492,8 @@ var applyConfigEnvToGlobalTests = []struct {
 }
 
 func TestApplyConfigEnvToGlobal(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range applyConfigEnvToGlobalTests {
 		tc := test
 		t.Run(tc.name, func(t *testing.T) {

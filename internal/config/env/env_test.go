@@ -214,6 +214,8 @@ var configEnvTests = []struct {
 }
 
 func TestConfigEnv(t *testing.T) {
+	t.Parallel()
+
 	initEnvMap := EnvMap{
 		"ENV1": "my-env-1",
 		"ENV2": "my-env-2",
@@ -226,6 +228,8 @@ func TestConfigEnv(t *testing.T) {
 	}
 	for _, tc := range configEnvTests {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			l := testutils.NewCapturingTestLogger(zzzlog.LvlInfo, new(bytes.Buffer))
 			ctx := testutils.NewTestContext(&testutils.TestContextInfo{})
 			ctx = logger.WithLogger(ctx, l)
@@ -273,8 +277,12 @@ var configEnvInitPanicTests = []struct {
 }
 
 func TestConfigEnvInitPanic(t *testing.T) {
+	t.Parallel()
+
 	for _, tc := range configEnvInitPanicTests {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			l := testutils.NewCapturingTestLogger(zzzlog.LvlInfo, new(bytes.Buffer))
 			ctx := logger.WithLogger(context.Background(), l)
 
