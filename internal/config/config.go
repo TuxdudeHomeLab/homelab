@@ -18,6 +18,7 @@ type Homelab struct {
 	Hosts      []Host           `yaml:"hosts,omitempty" json:"hosts,omitempty"`
 	Groups     []ContainerGroup `yaml:"groups,omitempty" json:"groups,omitempty"`
 	Containers []Container      `yaml:"containers,omitempty" json:"containers,omitempty"`
+	Ignore     []IgnoredConfig  `yaml:"ignore,omitempty" json:"ignore,omitempty"`
 }
 
 // HomelabGroupsOnly represents a minimal group name information only version
@@ -287,6 +288,12 @@ type ContainerRestartPolicy struct {
 	MaxRetryCount int    `yaml:"maxRetryCount,omitempty" json:"maxRetryCount,omitempty"`
 }
 
+// IgnoredConfig represents arbitrary information that can be thrown into
+// the configuration that will not be directly interpreted by homelab. The
+// common use case for this is to define reusable blocks of configuration
+// using anchors and aliases in yaml.
+type IgnoredConfig interface{}
+
 func (h *Homelab) Parse(ctx context.Context, r io.Reader) error {
 	dec := yaml.NewDecoder(r)
 	dec.KnownFields(true)
@@ -294,6 +301,8 @@ func (h *Homelab) Parse(ctx context.Context, r io.Reader) error {
 	if err != nil {
 		return fmt.Errorf("failed to parse homelab config, reason: %w", err)
 	}
+	// Clear out any parsed data under Ignore.
+	h.Ignore = nil
 
 	log(ctx).Tracef("Homelab Config:\n%v\n", utils.PrettyPrintJSON(h))
 	return nil

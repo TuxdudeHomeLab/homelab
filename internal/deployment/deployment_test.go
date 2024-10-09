@@ -311,7 +311,17 @@ containers:
       args:
         - foo
         - bar
-        - baz`,
+        - baz
+ignore:
+  - foo
+  - 4567
+  - abc:
+      - xyz
+      - pqrs
+  - random: 123
+  - mymap:
+      key1: val1
+      key2: val2`,
 		want: &config.Homelab{
 			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
