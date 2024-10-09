@@ -31,12 +31,12 @@ func FromConfigsPath(ctx context.Context, configsPath string) (*Deployment, erro
 }
 
 func FromReader(ctx context.Context, reader io.Reader) (*Deployment, error) {
-	config := config.Homelab{}
-	err := config.Parse(ctx, reader)
+	conf := config.Homelab{}
+	err := conf.Parse(ctx, reader)
 	if err != nil {
 		return nil, err
 	}
-	return FromConfig(ctx, &config)
+	return FromConfig(ctx, &conf)
 }
 
 func FromConfig(ctx context.Context, conf *config.Homelab) (*Deployment, error) {
