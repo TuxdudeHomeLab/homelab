@@ -304,6 +304,7 @@ func (c *Container) dockerContainerConfig(pSet nat.PortSet) *dcontainer.Config {
 		Tty:             c.attachToTty(),
 		Env:             c.envVars(),
 		Cmd:             c.args(),
+		Healthcheck:     c.healthCheck(),
 		Entrypoint:      c.entrypoint(),
 		NetworkDisabled: c.isNetworkDisabled(),
 		Labels:          c.labels(),
@@ -403,6 +404,44 @@ func (c *Container) envVars() []string {
 
 func (c *Container) args() []string {
 	return c.config.Runtime.Args
+}
+
+func (c *Container) healthCheck() *dcontainer.HealthConfig {
+	h := c.config.Health
+	res := &dcontainer.HealthConfig{}
+	empty := true
+
+	if len(h.Cmd) > 0 {
+		cmd := []string{"CMD"}
+		cmd = append(cmd, h.Cmd...)
+		res.Test = cmd
+		empty = false
+	}
+	if len(h.Interval) > 0 {
+		res.Interval = utils.MustParseDuration(h.Interval)
+		empty = false
+	}
+	if len(h.Timeout) > 0 {
+		res.Timeout = utils.MustParseDuration(h.Timeout)
+		empty = false
+	}
+	if len(h.StartPeriod) > 0 {
+		res.StartPeriod = utils.MustParseDuration(h.StartPeriod)
+		empty = false
+	}
+	if len(h.StartInterval) > 0 {
+		res.StartInterval = utils.MustParseDuration(h.StartInterval)
+		empty = false
+	}
+	if h.Retries != 0 {
+		res.Retries = h.Retries
+		empty = false
+	}
+
+	if empty {
+		return nil
+	}
+	return res
 }
 
 func (c *Container) entrypoint() []string {

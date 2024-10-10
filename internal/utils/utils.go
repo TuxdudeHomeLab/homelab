@@ -3,11 +3,20 @@ package utils
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/clarketm/json"
 )
 
 type StringSet map[string]struct{}
+
+func MustParseDuration(d string) time.Duration {
+	res, err := time.ParseDuration(d)
+	if err != nil {
+		panic(err)
+	}
+	return res
+}
 
 // Returns the JSON formatted string representation of the specified object.
 func PrettyPrintJSON(x interface{}) string {

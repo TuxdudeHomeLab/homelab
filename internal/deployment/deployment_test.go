@@ -11,6 +11,7 @@ import (
 	"github.com/tuxdudehomelab/homelab/internal/config"
 	"github.com/tuxdudehomelab/homelab/internal/testhelpers"
 	"github.com/tuxdudehomelab/homelab/internal/testutils"
+	"github.com/tuxdudehomelab/homelab/internal/utils"
 )
 
 var buildDeploymentUsingReaderTests = []struct {
@@ -838,6 +839,19 @@ ignore:
 						"foo",
 						"bar",
 						"baz",
+					},
+					Healthcheck: &dcontainer.HealthConfig{
+						Test: []string{
+							"CMD",
+							"my-health-cmd",
+							"health-arg-1",
+							"health-arg-2",
+						},
+						Interval:      utils.MustParseDuration("1m"),
+						Timeout:       utils.MustParseDuration("10s"),
+						StartPeriod:   utils.MustParseDuration("3m"),
+						StartInterval: utils.MustParseDuration("10s"),
+						Retries:       3,
 					},
 					Image: "tuxdude/homelab-base:master",
 					Entrypoint: []string{
