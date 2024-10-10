@@ -14,9 +14,9 @@ func validateContainerName(name string) (string, string, error) {
 }
 
 func mustContainerName(name string) (string, string) {
-	parts := strings.Split(name, "/")
-	if len(parts) != 2 {
-		panic("Container name must be specified in the form 'group/container'")
+	g, c, err := validateContainerName(name)
+	if err != nil {
+		panic(err.Error())
 	}
-	return parts[0], parts[1]
+	return g, c
 }
