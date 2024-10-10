@@ -21,6 +21,14 @@ func RestartPolicyModeFromString(pol string) (dcontainer.RestartPolicyMode, erro
 	}
 }
 
+func MustRestartPolicyModeFromString(pol string) dcontainer.RestartPolicyMode {
+	rpm, err := RestartPolicyModeFromString(pol)
+	if err != nil {
+		panic(fmt.Sprintf("unable to convert restart policy mode %s setting, reason: %v, possibly indicating a bug in the code", pol, err))
+	}
+	return rpm
+}
+
 func RestartPolicyModeValidValues() string {
 	return "[ 'no', 'always', 'on-failure', 'unless-stopped' ]"
 }

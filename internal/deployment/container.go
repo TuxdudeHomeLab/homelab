@@ -561,11 +561,10 @@ func (c *Container) restartPolicy() dcontainer.RestartPolicy {
 		return dcontainer.RestartPolicy{}
 	}
 
-	rpm, err := docker.RestartPolicyModeFromString(mode)
-	if err != nil {
-		panic(fmt.Sprintf("unable to convert restart policy mode %s setting for container %s, reason: %v, possibly indicating a bug in the code", mode, c.Name(), err))
+	return dcontainer.RestartPolicy{
+		Name:              docker.MustRestartPolicyModeFromString(mode),
+		MaximumRetryCount: maxRetry,
 	}
-	return dcontainer.RestartPolicy{Name: rpm, MaximumRetryCount: maxRetry}
 }
 
 func (c *Container) autoRemove() bool {
