@@ -236,17 +236,18 @@ containers:
           dst: /tmp/cache-$$USER_NAME$$
           options: tmpfs-size=$$ENV_TMPFS_SIZE$$
       devices:
-        - src: /dev/foo
-          dst: /dev/bar
-          disallowRead: false
-          disallowWrite: true
-          disallowMknod: true
-        - src: $$ENV_SRC_DEV$$
-          dst: $$ENV_DST_DEV$$
-        - src: /dev/foo2
-          disallowRead: true
-          disallowWrite: true
-          disallowMknod: false
+        static:
+          - src: /dev/foo
+            dst: /dev/bar
+            disallowRead: false
+            disallowWrite: true
+            disallowMknod: true
+          - src: $$ENV_SRC_DEV$$
+            dst: $$ENV_DST_DEV$$
+          - src: /dev/foo2
+            disallowRead: true
+            disallowWrite: true
+            disallowMknod: false
     network:
       hostName: Special-$$HOST_NAME$$-$$USER_PRIMARY_GROUP_NAME$$
       domainName: $$ENV_DOMAIN$$
@@ -711,21 +712,23 @@ ignore:
 								Options: "tmpfs-size=100000000",
 							},
 						},
-						Devices: []config.Device{
-							{
-								Src:           "/dev/foo",
-								Dst:           "/dev/bar",
-								DisallowWrite: true,
-								DisallowMknod: true,
-							},
-							{
-								Src: "/dev/src123",
-								Dst: "/dev/dst123",
-							},
-							{
-								Src:           "/dev/foo2",
-								DisallowRead:  true,
-								DisallowWrite: true,
+						Devices: config.ContainerDevice{
+							Static: []config.Device{
+								{
+									Src:           "/dev/foo",
+									Dst:           "/dev/bar",
+									DisallowWrite: true,
+									DisallowMknod: true,
+								},
+								{
+									Src: "/dev/src123",
+									Dst: "/dev/dst123",
+								},
+								{
+									Src:           "/dev/foo2",
+									DisallowRead:  true,
+									DisallowWrite: true,
+								},
 							},
 						},
 					},
@@ -4221,8 +4224,10 @@ var buildDeploymentFromConfigErrorTests = []struct {
 						Order: 1,
 					},
 					Filesystem: config.ContainerFilesystem{
-						Devices: []config.Device{
-							{},
+						Devices: config.ContainerDevice{
+							Static: []config.Device{
+								{},
+							},
 						},
 					},
 				},
@@ -4255,9 +4260,11 @@ var buildDeploymentFromConfigErrorTests = []struct {
 						Order: 1,
 					},
 					Filesystem: config.ContainerFilesystem{
-						Devices: []config.Device{
-							{
-								Dst: "/dev/my-target-dev",
+						Devices: config.ContainerDevice{
+							Static: []config.Device{
+								{
+									Dst: "/dev/my-target-dev",
+								},
 							},
 						},
 					},

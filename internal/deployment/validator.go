@@ -549,7 +549,7 @@ func validateContainersConfig(ctx context.Context, parentEnv *env.ConfigEnvManag
 			return fmt.Errorf("container user primary group cannot be set without setting the user in %s", loc)
 		}
 
-		if err := validateDevicesConfig(ct.Filesystem.Devices, loc); err != nil {
+		if err := validateDevicesConfig(ct.Filesystem.Devices.Static, loc); err != nil {
 			return err
 		}
 

@@ -188,9 +188,9 @@ type ContainerUser struct {
 // ContainerFilesystem represents the fileystem information for the
 // docker container.
 type ContainerFilesystem struct {
-	ReadOnlyRootfs bool     `yaml:"readOnlyRootfs,omitempty" json:"readOnlyRootfs,omitempty"`
-	Mounts         []Mount  `yaml:"mounts,omitempty" json:"mounts,omitempty"`
-	Devices        []Device `yaml:"devices,omitempty" json:"devices,omitempty"`
+	ReadOnlyRootfs bool            `yaml:"readOnlyRootfs,omitempty" json:"readOnlyRootfs,omitempty"`
+	Mounts         []Mount         `yaml:"mounts,omitempty" json:"mounts,omitempty"`
+	Devices        ContainerDevice `yaml:"devices,omitempty" json:"devices,omitempty"`
 }
 
 // ContainerNetwork represents the networking information for the
@@ -243,6 +243,12 @@ type Mount struct {
 	Dst      string `yaml:"dst,omitempty" json:"dst,omitempty"`
 	ReadOnly bool   `yaml:"readOnly,omitempty" json:"readOnly,omitempty"`
 	Options  string `yaml:"options,omitempty" json:"options,omitempty"`
+}
+
+// ContainerDevice represents the set of devices exposed to a container.
+type ContainerDevice struct {
+	Static         []Device `yaml:"static,omitempty" json:"static,omitempty"`
+	DynamicCommand string   `yaml:"dynamic,omitempty" json:"dynamic,omitempty"`
 }
 
 // Device represents a device node that will be exposed to a container.
@@ -379,10 +385,11 @@ func (c *Container) ApplyConfigEnv(env *env.ConfigEnvManager) {
 		c.Filesystem.Mounts[i].Dst = env.Apply(m.Dst)
 		c.Filesystem.Mounts[i].Options = env.Apply(m.Options)
 	}
-	for i, d := range c.Filesystem.Devices {
-		c.Filesystem.Devices[i].Src = env.Apply(d.Src)
-		c.Filesystem.Devices[i].Dst = env.Apply(d.Dst)
+	for i, d := range c.Filesystem.Devices.Static {
+		c.Filesystem.Devices.Static[i].Src = env.Apply(d.Src)
+		c.Filesystem.Devices.Static[i].Dst = env.Apply(d.Dst)
 	}
+	c.Filesystem.Devices.DynamicCommand = env.Apply(c.Filesystem.Devices.DynamicCommand)
 	c.Network.HostName = env.Apply(c.Network.HostName)
 	c.Network.DomainName = env.Apply(c.Network.DomainName)
 	for i, d := range c.Network.DNSServers {

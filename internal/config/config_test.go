@@ -77,10 +77,12 @@ var applyConfigEnvToContainerTests = []struct {
 						Options: "tmpfs-size=$$ENV_TMPFS_SIZE$$",
 					},
 				},
-				Devices: []Device{
-					{
-						Src: "$$ENV_SRC_DEV$$",
-						Dst: "$$ENV_DST_DEV$$",
+				Devices: ContainerDevice{
+					Static: []Device{
+						{
+							Src: "$$ENV_SRC_DEV$$",
+							Dst: "$$ENV_DST_DEV$$",
+						},
 					},
 				},
 			},
@@ -221,10 +223,12 @@ var applyConfigEnvToContainerTests = []struct {
 						Options: "tmpfs-size=100000000",
 					},
 				},
-				Devices: []Device{
-					{
-						Src: "/dev/src",
-						Dst: "/dev/dst",
+				Devices: ContainerDevice{
+					Static: []Device{
+						{
+							Src: "/dev/src",
+							Dst: "/dev/dst",
+						},
 					},
 				},
 			},
