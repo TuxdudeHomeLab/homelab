@@ -313,6 +313,22 @@ containers:
         - foo
         - bar
         - baz
+  - info:
+      group: group1
+      container: ct2
+    image:
+      image: abc123/xyz123
+    lifecycle:
+      order: 2
+      restartPolicy:
+        mode: no
+  - info:
+      group: group2
+      container: ct3
+    image:
+      image: abc123/xyz124
+    lifecycle:
+      order: 3
 ignore:
   - foo
   - 4567
@@ -811,6 +827,33 @@ ignore:
 						},
 					},
 				},
+				{
+					Info: config.ContainerReference{
+						Group:     "group1",
+						Container: "ct2",
+					},
+					Image: config.ContainerImage{
+						Image: "abc123/xyz123",
+					},
+					Lifecycle: config.ContainerLifecycle{
+						Order: 2,
+						RestartPolicy: config.ContainerRestartPolicy{
+							Mode: "no",
+						},
+					},
+				},
+				{
+					Info: config.ContainerReference{
+						Group:     "group2",
+						Container: "ct3",
+					},
+					Image: config.ContainerImage{
+						Image: "abc123/xyz124",
+					},
+					Lifecycle: config.ContainerLifecycle{
+						Order: 3,
+					},
+				},
 			},
 		},
 		wantDockerConfigs: containerDockerConfigMap{
@@ -937,6 +980,84 @@ ignore:
 						"group1-bridge": {
 							IPAMConfig: &dnetwork.EndpointIPAMConfig{
 								IPv4Address: "172.18.18.11",
+							},
+						},
+					},
+				},
+			},
+			config.ContainerReference{
+				Group:     "group1",
+				Container: "ct2",
+			}: &containerDockerConfigs{
+				ContainerConfig: &dcontainer.Config{
+					Domainname: "example.tld",
+					Env: []string{
+						"MY_CONTAINER_ENV_VAR_1=MY_CONTAINER_ENV_VAR_1_VALUE",
+						"MY_CONTAINER_ENV_VAR_2=MY_CONTAINER_ENV_VAR_2_VALUE",
+						"MY_CONTAINER_ENV_VAR_3=",
+					},
+					Image:       "abc123/xyz123",
+					StopTimeout: testhelpers.NewInt(8),
+				},
+				HostConfig: &dcontainer.HostConfig{
+					Binds: []string{
+						"/abc/def/ghi:/pqr/stu/vwx:ro",
+						"/abc1/def1:/pqr2/stu2/vwx2",
+						"/foo:/bar:ro",
+					},
+					NetworkMode: "group1-bridge",
+					RestartPolicy: dcontainer.RestartPolicy{
+						Name: "no",
+					},
+					DNSSearch: []string{
+						"dns-search-1",
+						"dns-search-2",
+					},
+				},
+				NetworkConfig: &dnetwork.NetworkingConfig{
+					EndpointsConfig: map[string]*dnetwork.EndpointSettings{
+						"group1-bridge": {
+							IPAMConfig: &dnetwork.EndpointIPAMConfig{
+								IPv4Address: "172.18.18.12",
+							},
+						},
+					},
+				},
+			},
+			config.ContainerReference{
+				Group:     "group2",
+				Container: "ct3",
+			}: &containerDockerConfigs{
+				ContainerConfig: &dcontainer.Config{
+					Domainname: "example.tld",
+					Env: []string{
+						"MY_CONTAINER_ENV_VAR_1=MY_CONTAINER_ENV_VAR_1_VALUE",
+						"MY_CONTAINER_ENV_VAR_2=MY_CONTAINER_ENV_VAR_2_VALUE",
+						"MY_CONTAINER_ENV_VAR_3=",
+					},
+					Image:       "abc123/xyz124",
+					StopTimeout: testhelpers.NewInt(8),
+				},
+				HostConfig: &dcontainer.HostConfig{
+					Binds: []string{
+						"/abc/def/ghi:/pqr/stu/vwx:ro",
+						"/abc1/def1:/pqr2/stu2/vwx2",
+						"/foo:/bar:ro",
+					},
+					NetworkMode: "group2-bridge",
+					RestartPolicy: dcontainer.RestartPolicy{
+						Name: "unless-stopped",
+					},
+					DNSSearch: []string{
+						"dns-search-1",
+						"dns-search-2",
+					},
+				},
+				NetworkConfig: &dnetwork.NetworkingConfig{
+					EndpointsConfig: map[string]*dnetwork.EndpointSettings{
+						"group2-bridge": {
+							IPAMConfig: &dnetwork.EndpointIPAMConfig{
+								IPv4Address: "172.18.19.11",
 							},
 						},
 					},
