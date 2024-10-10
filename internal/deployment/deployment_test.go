@@ -244,7 +244,6 @@ containers:
         - src: $$ENV_SRC_DEV$$
           dst: $$ENV_DST_DEV$$
         - src: /dev/foo2
-          dst: /dev/bar2
           disallowRead: true
           disallowWrite: true
           disallowMknod: false
@@ -725,7 +724,6 @@ ignore:
 							},
 							{
 								Src:           "/dev/foo2",
-								Dst:           "/dev/bar2",
 								DisallowRead:  true,
 								DisallowWrite: true,
 							},
@@ -973,6 +971,25 @@ ignore:
 					Sysctls: map[string]string{
 						"net.ipv4.conf.all.src_valid_mark": "1",
 						"net.ipv4.ip_forward":              "1",
+					},
+					Resources: dcontainer.Resources{
+						Devices: []dcontainer.DeviceMapping{
+							{
+								PathOnHost:        "/dev/foo",
+								PathInContainer:   "/dev/bar",
+								CgroupPermissions: "r",
+							},
+							{
+								PathOnHost:        "/dev/src123",
+								PathInContainer:   "/dev/dst123",
+								CgroupPermissions: "rwm",
+							},
+							{
+								PathOnHost:        "/dev/foo2",
+								PathInContainer:   "/dev/foo2",
+								CgroupPermissions: "m",
+							},
+						},
 					},
 				},
 				NetworkConfig: &dnetwork.NetworkingConfig{

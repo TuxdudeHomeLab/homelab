@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	dcontainer "github.com/docker/docker/api/types/container"
@@ -330,6 +331,7 @@ func (c *Container) dockerHostConfig(pMap nat.PortMap) *dcontainer.HostConfig {
 		Tmpfs:          c.tmpfsMounts(),
 		ShmSize:        c.shmSize(),
 		Sysctls:        c.sysctls(),
+		Resources:      c.resources(),
 	}
 }
 
@@ -628,6 +630,34 @@ func (c *Container) sysctls() map[string]string {
 		return nil
 	}
 	return res
+}
+
+func (c *Container) resources() dcontainer.Resources {
+	var devs []dcontainer.DeviceMapping
+	for _, d := range c.config.Filesystem.Devices {
+		m := dcontainer.DeviceMapping{}
+		m.PathOnHost = d.Src
+		if len(d.Dst) > 0 {
+			m.PathInContainer = d.Dst
+		} else {
+			m.PathInContainer = d.Src
+		}
+		perms := strings.Builder{}
+		if !d.DisallowRead {
+			perms.WriteRune('r')
+		}
+		if !d.DisallowWrite {
+			perms.WriteRune('w')
+		}
+		if !d.DisallowMknod {
+			perms.WriteRune('m')
+		}
+		m.CgroupPermissions = perms.String()
+		devs = append(devs, m)
+	}
+	return dcontainer.Resources{
+		Devices: devs,
+	}
 }
 
 func (c *Container) primaryNetworkEndpoint() map[string]*dnetwork.EndpointSettings {
