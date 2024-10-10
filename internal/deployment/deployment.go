@@ -79,11 +79,7 @@ func FromConfig(ctx context.Context, conf *config.Homelab) (*Deployment, error) 
 	for _, g := range d.Groups {
 		g.updateContainersOrder()
 		for _, ct := range g.containers {
-			cdc, err := ct.generateDockerConfigs()
-			if err != nil {
-				log(ctx).Fatalf("Error generating docker configs for container %s, reason: %v", ct, err)
-			}
-			d.dockerConfigs[ct.config.Info] = cdc
+			d.dockerConfigs[ct.config.Info] = ct.generateDockerConfigs()
 		}
 	}
 

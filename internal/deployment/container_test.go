@@ -2051,12 +2051,7 @@ func TestContainerDockerConfigs(t *testing.T) {
 				return
 			}
 
-			got, gotErr := ct.generateDockerConfigs()
-			if gotErr != nil {
-				testhelpers.LogErrorNotNilWithOutput(t, "container.generateDockerConfigs()", tc.name, buf, gotErr)
-				return
-			}
-
+			got := ct.generateDockerConfigs()
 			if !testhelpers.CmpDiff(t, "container.generateDockerConfigs()", tc.name, "docker configs", tc.wantDockerConfigs, got) {
 				return
 			}

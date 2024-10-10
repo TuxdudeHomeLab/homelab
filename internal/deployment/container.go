@@ -157,11 +157,8 @@ func (c *Container) startInternal(ctx context.Context, dc *docker.Client) error 
 	}
 
 	// 5. Create the container.
-	cdc, err := c.generateDockerConfigs()
-	if err != nil {
-		return err
-	}
 	log(ctx).Infof("Creating container %s", c.Name())
+	cdc := c.generateDockerConfigs()
 	err = dc.CreateContainer(ctx, c.Name(), cdc.ContainerConfig, cdc.HostConfig, cdc.NetworkConfig)
 	if err != nil {
 		return err
@@ -286,13 +283,13 @@ func (c *Container) purgeInternal(ctx context.Context, dc *docker.Client) (bool,
 	return true, nil
 }
 
-func (c *Container) generateDockerConfigs() (*containerDockerConfigs, error) {
+func (c *Container) generateDockerConfigs() *containerDockerConfigs {
 	pMap, pSet := c.publishedPorts()
 	return &containerDockerConfigs{
 		ContainerConfig: c.dockerContainerConfig(pSet),
 		HostConfig:      c.dockerHostConfig(pMap),
 		NetworkConfig:   c.dockerNetworkConfig(),
-	}, nil
+	}
 }
 
 func (c *Container) dockerContainerConfig(pSet nat.PortSet) *dcontainer.Config {
