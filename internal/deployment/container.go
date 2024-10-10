@@ -501,15 +501,12 @@ func (c *Container) bindMounts() []string {
 	// Get all the container specific mount configs and apply
 	// them as overrides for the global.
 	for _, mount := range c.config.Filesystem.Mounts {
-		if val, found := containerMounts[mount.Name]; found {
+		if val, found := globalMountDefs[mount.Name]; found {
 			containerMounts[mount.Name] = val
-		} else if val, found := globalMountDefs[mount.Name]; found {
-			containerMounts[mount.Name] = val
-			containerMountNames = append(containerMountNames, mount.Name)
 		} else {
 			containerMounts[mount.Name] = mountConfigToString(&mount)
-			containerMountNames = append(containerMountNames, mount.Name)
 		}
+		containerMountNames = append(containerMountNames, mount.Name)
 	}
 
 	// Convert the result to include only the bind mount strings.

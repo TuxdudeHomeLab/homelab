@@ -4479,6 +4479,129 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		want: `mount specified by just the name foo2 not found in defs in container {Group: g1 Container:c1} config mounts`,
 	},
 	{
+		name: "Container Config Duplicate Mount Name Only With Global Container Config Mount",
+		config: config.Homelab{
+			Global: config.Global{
+				BaseDir: testhelpers.HomelabBaseDir(),
+				MountDefs: []config.Mount{
+					{
+						Name: "foo",
+						Type: "bind",
+						Src:  "/foo",
+						Dst:  "/bar",
+					},
+				},
+				Container: config.GlobalContainer{
+					Mounts: []config.Mount{
+						{
+							Name: "foo1",
+							Type: "bind",
+							Src:  "/foo1",
+							Dst:  "/bar1",
+						},
+						{
+							Name: "foo2",
+							Type: "bind",
+							Src:  "/foo2",
+							Dst:  "/bar2",
+						},
+					},
+				},
+			},
+			Groups: []config.ContainerGroup{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []config.Container{
+				{
+					Info: config.ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: config.ContainerImage{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: config.ContainerLifecycle{
+						Order: 1,
+					},
+					Filesystem: config.ContainerFilesystem{
+						Mounts: []config.Mount{
+							{
+								Name: "foo2",
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `mount name foo2 defined more than once in container {Group: g1 Container:c1} config mounts`,
+	},
+	{
+		name: "Container Config Duplicate Mount Name And Def With Global Container Config Mount",
+		config: config.Homelab{
+			Global: config.Global{
+				BaseDir: testhelpers.HomelabBaseDir(),
+				MountDefs: []config.Mount{
+					{
+						Name: "foo",
+						Type: "bind",
+						Src:  "/foo",
+						Dst:  "/bar",
+					},
+				},
+				Container: config.GlobalContainer{
+					Mounts: []config.Mount{
+						{
+							Name: "foo1",
+							Type: "bind",
+							Src:  "/foo1",
+							Dst:  "/bar1",
+						},
+						{
+							Name: "foo2",
+							Type: "bind",
+							Src:  "/foo2",
+							Dst:  "/bar2",
+						},
+					},
+				},
+			},
+			Groups: []config.ContainerGroup{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []config.Container{
+				{
+					Info: config.ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: config.ContainerImage{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: config.ContainerLifecycle{
+						Order: 1,
+					},
+					Filesystem: config.ContainerFilesystem{
+						Mounts: []config.Mount{
+							{
+								Name: "foo2",
+								Type: "bind",
+								Src:  "/foo-something-else",
+								Dst:  "/bar-something-else",
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `mount name foo2 defined more than once in container {Group: g1 Container:c1} config mounts`,
+	},
+	{
 		name: "Container Config Published Port - Container Port Empty",
 		config: config.Homelab{
 			Global: config.Global{
