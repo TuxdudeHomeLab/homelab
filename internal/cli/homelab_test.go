@@ -1598,28 +1598,6 @@ func TestExecHomelabConfigCmdErrors(t *testing.T) {
 	}
 }
 
-var executeHomelabGroupCmdErrorTests = []struct {
-	name    string
-	args    []string
-	ctxInfo func() *testutils.TestContextInfo
-	want    string
-}{
-	{
-		name: "Homelab Command - %s - One Non Existing Group",
-		args: []string{
-			"g3",
-			"--configs-dir",
-			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
-		},
-		ctxInfo: func() *testutils.TestContextInfo {
-			return &testutils.TestContextInfo{
-				DockerHost: fakedocker.NewEmptyFakeDockerHost(),
-			}
-		},
-		want: `%s failed while querying containers, reason: group g3 not found`,
-	},
-}
-
 var executeHomelabGroupCmds = []struct {
 	cmdArgs        []string
 	cmdNameInError string
@@ -1651,6 +1629,78 @@ var executeHomelabGroupCmds = []struct {
 	},
 }
 
+var executeHomelabGroupCmdTests = []struct {
+	name    string
+	args    []string
+	ctxInfo func() *testutils.TestContextInfo
+	want    string
+}{
+	{
+		name: "Homelab Command - %s - One Empty Group",
+		args: []string{
+			"g3",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+		},
+		ctxInfo: func() *testutils.TestContextInfo {
+			return &testutils.TestContextInfo{
+				DockerHost: fakedocker.NewEmptyFakeDockerHost(),
+			}
+		},
+		want: `%s is a no-op since no containers were found matching the specified criteria`,
+	},
+}
+
+func TestExecHomelabGroupCmd(t *testing.T) {
+	t.Parallel()
+
+	for _, test := range executeHomelabGroupCmdTests {
+		tc := test
+		for _, c := range executeHomelabGroupCmds {
+			cmd := c
+			tcName := fmt.Sprintf(tc.name, cmd.cmdDesc)
+			t.Run(tcName, func(t *testing.T) {
+				t.Parallel()
+
+				args := append(cmd.cmdArgs, tc.args...)
+				want := fmt.Sprintf(tc.want, cmd.cmdNameInError)
+
+				out, gotErr := execHomelabCmdTest(tc.ctxInfo(), nil, args...)
+				if gotErr != nil {
+					testhelpers.LogErrorNotNilWithOutput(t, "Exec()", tcName, out, gotErr)
+					return
+				}
+
+				if !testhelpers.RegexMatchJoinNewLines(t, "Exec()", tcName, "command output", want, out.String()) {
+					return
+				}
+			})
+		}
+	}
+}
+
+var executeHomelabGroupCmdErrorTests = []struct {
+	name    string
+	args    []string
+	ctxInfo func() *testutils.TestContextInfo
+	want    string
+}{
+	{
+		name: "Homelab Command - %s - One Non Existing Group",
+		args: []string{
+			"g4",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+		},
+		ctxInfo: func() *testutils.TestContextInfo {
+			return &testutils.TestContextInfo{
+				DockerHost: fakedocker.NewEmptyFakeDockerHost(),
+			}
+		},
+		want: `%s failed while querying containers, reason: group g4 not found`,
+	},
+}
+
 func TestExecHomelabGroupCmdErrors(t *testing.T) {
 	t.Parallel()
 
@@ -1677,42 +1727,6 @@ func TestExecHomelabGroupCmdErrors(t *testing.T) {
 			})
 		}
 	}
-}
-
-var executeHomelabContainerCmdErrorTests = []struct {
-	name    string
-	args    []string
-	ctxInfo func() *testutils.TestContextInfo
-	want    string
-}{
-	{
-		name: "Homelab Command - %s - One Non Existing Container In Invalid Group",
-		args: []string{
-			"g3/c3",
-			"--configs-dir",
-			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
-		},
-		ctxInfo: func() *testutils.TestContextInfo {
-			return &testutils.TestContextInfo{
-				DockerHost: fakedocker.NewEmptyFakeDockerHost(),
-			}
-		},
-		want: `%s failed while querying containers, reason: group g3 not found`,
-	},
-	{
-		name: "Homelab Command - %s - One Non Existing Container In Valid Group",
-		args: []string{
-			"g1/c3",
-			"--configs-dir",
-			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
-		},
-		ctxInfo: func() *testutils.TestContextInfo {
-			return &testutils.TestContextInfo{
-				DockerHost: fakedocker.NewEmptyFakeDockerHost(),
-			}
-		},
-		want: `%s failed while querying containers, reason: container {g1 c3} not found`,
-	},
 }
 
 var executeHomelabContainerCmds = []struct {
@@ -1743,6 +1757,42 @@ var executeHomelabContainerCmds = []struct {
 		},
 		cmdNameInError: "container purge",
 		cmdDesc:        "Container Purge",
+	},
+}
+
+var executeHomelabContainerCmdErrorTests = []struct {
+	name    string
+	args    []string
+	ctxInfo func() *testutils.TestContextInfo
+	want    string
+}{
+	{
+		name: "Homelab Command - %s - One Non Existing Container In Invalid Group",
+		args: []string{
+			"g4/c3",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+		},
+		ctxInfo: func() *testutils.TestContextInfo {
+			return &testutils.TestContextInfo{
+				DockerHost: fakedocker.NewEmptyFakeDockerHost(),
+			}
+		},
+		want: `%s failed while querying containers, reason: group g4 not found`,
+	},
+	{
+		name: "Homelab Command - %s - One Non Existing Container In Valid Group",
+		args: []string{
+			"g1/c3",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+		},
+		ctxInfo: func() *testutils.TestContextInfo {
+			return &testutils.TestContextInfo{
+				DockerHost: fakedocker.NewEmptyFakeDockerHost(),
+			}
+		},
+		want: `%s failed while querying containers, reason: container {g1 c3} not found`,
 	},
 }
 
@@ -1799,6 +1849,7 @@ var executeHomelabGroupCmdCompletionTests = []struct {
 		want: `all
 g1
 g2
+g3
 :36
 Completion ended with directive: ShellCompDirectiveNoFileComp, ShellCompDirectiveKeepOrder`,
 	},
