@@ -129,6 +129,10 @@ var applyConfigEnvToContainerTests = []struct {
 						Value: "SomeHostName.$$HUMAN_FRIENDLY_HOST_NAME$$.SomeDomainName",
 					},
 				},
+				Args: []string{
+					"foo-$$HOST_NAME$$",
+					"bar-$$ENV_VAR_1$$",
+				},
 			},
 		},
 		globalEnvMap: env.EnvMap{
@@ -274,6 +278,10 @@ var applyConfigEnvToContainerTests = []struct {
 						Var:   "MY_ENV_3",
 						Value: "SomeHostName.FakeHost.SomeDomainName",
 					},
+				},
+				Args: []string{
+					"foo-fakehost",
+					"bar-MY_ENV_1",
 				},
 			},
 		},

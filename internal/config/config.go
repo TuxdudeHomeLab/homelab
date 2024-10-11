@@ -415,4 +415,7 @@ func (c *Container) ApplyConfigEnv(env *env.ConfigEnvManager) {
 		c.Runtime.Env[i].Value = env.Apply(e.Value)
 		c.Runtime.Env[i].ValueCommand = env.Apply(e.ValueCommand)
 	}
+	for i, a := range c.Runtime.Args {
+		c.Runtime.Args[i] = env.Apply(a)
+	}
 }

@@ -311,7 +311,7 @@ containers:
         - ep-arg2
       args:
         - foo
-        - bar
+        - bar-$$HUMAN_FRIENDLY_HOST_NAME$$
         - baz
   - info:
       group: group1
@@ -823,7 +823,7 @@ ignore:
 						},
 						Args: []string{
 							"foo",
-							"bar",
+							"bar-FakeHost",
 							"baz",
 						},
 					},
@@ -881,7 +881,7 @@ ignore:
 					},
 					Cmd: []string{
 						"foo",
-						"bar",
+						"bar-FakeHost",
 						"baz",
 					},
 					Healthcheck: &dcontainer.HealthConfig{
