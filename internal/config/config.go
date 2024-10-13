@@ -6,6 +6,7 @@ import (
 	"io"
 	"slices"
 
+	"github.com/tuxdudehomelab/homelab/internal/cmdexec"
 	"github.com/tuxdudehomelab/homelab/internal/config/env"
 	"github.com/tuxdudehomelab/homelab/internal/utils"
 	"gopkg.in/yaml.v3"
@@ -249,6 +250,7 @@ type Mount struct {
 type ContainerDevice struct {
 	Static         []Device `yaml:"static,omitempty" json:"static,omitempty"`
 	DynamicCommand string   `yaml:"dynamic,omitempty" json:"dynamic,omitempty"`
+	Dynamic        []Device `yaml:"-" json:"-"`
 }
 
 // Device represents a device node that will be exposed to a container.
@@ -418,4 +420,10 @@ func (c *Container) ApplyConfigEnv(env *env.ConfigEnvManager) {
 	for i, a := range c.Runtime.Args {
 		c.Runtime.Args[i] = env.Apply(a)
 	}
+}
+
+func (c *Container) ApplyCmdExecutor(exec cmdexec.Executor) error {
+	// TODO: Dynamically evaluate and populate the fields by invoking
+	// the specified command using the executor.
+	return nil
 }

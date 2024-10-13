@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/docker/go-units"
+	"github.com/tuxdudehomelab/homelab/internal/cmdexec"
 	"github.com/tuxdudehomelab/homelab/internal/config"
 	"github.com/tuxdudehomelab/homelab/internal/config/env"
 	"github.com/tuxdudehomelab/homelab/internal/docker"
@@ -502,6 +503,7 @@ func validateGroupsConfig(groups []config.ContainerGroup) (ContainerGroupMap, er
 }
 
 func validateContainersConfig(ctx context.Context, parentEnv *env.ConfigEnvManager, containersConfig []config.Container, groups ContainerGroupMap, globalConfig *config.Global, containerEndpoints map[config.ContainerReference]networkEndpointList, allowedContainers containerSet) error {
+	exec := cmdexec.MustExecutor(ctx)
 	for i, ct := range containersConfig {
 		g, found := groups[ct.Info.Group]
 		if !found {
@@ -518,6 +520,9 @@ func validateContainersConfig(ctx context.Context, parentEnv *env.ConfigEnvManag
 		}
 		ctEnv := parentEnv.NewContainerConfigEnvManager(ctx, containerGroupBaseDir(globalConfig.BaseDir, ct.Info), containerBaseDir(globalConfig.BaseDir, ct.Info), ctConfigEnvMap, ctConfigEnvOrder)
 		ct.ApplyConfigEnv(ctEnv)
+		if err := ct.ApplyCmdExecutor(exec); err != nil {
+			return err
+		}
 
 		if len(ct.Image.Image) == 0 {
 			return fmt.Errorf("image cannot be empty in %s", loc)

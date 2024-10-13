@@ -6,6 +6,8 @@ import (
 
 	"github.com/tuxdude/zzzlogi"
 	"github.com/tuxdudehomelab/homelab/internal/cli/version"
+	"github.com/tuxdudehomelab/homelab/internal/cmdexec"
+	"github.com/tuxdudehomelab/homelab/internal/cmdexec/fakecmdexec"
 	"github.com/tuxdudehomelab/homelab/internal/docker"
 	"github.com/tuxdudehomelab/homelab/internal/docker/fakedocker"
 	"github.com/tuxdudehomelab/homelab/internal/host"
@@ -20,10 +22,12 @@ type TestContextInfo struct {
 	InspectLevel            inspect.HomelabInspectLevel
 	Logger                  zzzlogi.Logger
 	Version                 *version.VersionInfo
+	Executor                cmdexec.Executor
 	DockerHost              docker.APIClient
 	ContainerPurgeKillDelay time.Duration
 	UseRealUserInfo         bool
 	UseRealHostInfo         bool
+	UseRealExecutor         bool
 }
 
 func NewVanillaTestContext() context.Context {
@@ -51,6 +55,11 @@ func NewTestContext(info *TestContextInfo) context.Context {
 	}
 	if !info.UseRealHostInfo {
 		ctx = host.WithHostInfo(ctx, fakehost.NewFakeHostInfo())
+	}
+	if info.Executor != nil {
+		ctx = cmdexec.WithExecutor(ctx, info.Executor)
+	} else if !info.UseRealExecutor {
+		ctx = cmdexec.WithExecutor(ctx, fakecmdexec.NewEmptyFakeExecutor())
 	}
 	if info.DockerHost != nil {
 		ctx = docker.WithAPIClient(ctx, info.DockerHost)
