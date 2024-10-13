@@ -13,7 +13,7 @@ type StringSet map[string]struct{}
 func MustParseDuration(d string) time.Duration {
 	res, err := time.ParseDuration(d)
 	if err != nil {
-		panic(err)
+		panic(err.Error())
 	}
 	return res
 }
