@@ -11,6 +11,7 @@ import (
 	dcontainer "github.com/docker/docker/api/types/container"
 	dnetwork "github.com/docker/docker/api/types/network"
 	"github.com/docker/go-connections/nat"
+	"github.com/tuxdudehomelab/homelab/internal/cmdexec"
 	"github.com/tuxdudehomelab/homelab/internal/config"
 	"github.com/tuxdudehomelab/homelab/internal/docker"
 	"github.com/tuxdudehomelab/homelab/internal/utils"
@@ -124,8 +125,16 @@ func (c *Container) Purge(ctx context.Context, dc *docker.Client) (bool, error) 
 }
 
 func (c *Container) startInternal(ctx context.Context, dc *docker.Client) error {
-	// 1. Execute any pre-start commands.
-	// TODO: Implement this.
+	// 1. Execute start pre-hook command if specified.
+	if len(c.config.Lifecycle.StartPreHook) > 0 {
+		cmd := c.config.Lifecycle.StartPreHook
+		exec := cmdexec.MustExecutor(ctx)
+		out, err := exec.Run(cmd[0], cmd[1:]...)
+		log(ctx).Infof("Output from start pre-hook for container %s\n%s", c.Name(), out)
+		if err != nil {
+			return fmt.Errorf("encountered error while running the start pre-hook for container %s, reason: %w", c.Name(), err)
+		}
+	}
 
 	// 2. Pull the container image.
 	err := dc.PullImage(ctx, c.imageReference())

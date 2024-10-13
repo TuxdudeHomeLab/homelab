@@ -8,6 +8,7 @@ import (
 
 	"github.com/tuxdude/zzzlog"
 	"github.com/tuxdudehomelab/homelab/internal/cli/version"
+	"github.com/tuxdudehomelab/homelab/internal/cmdexec/fakecmdexec"
 	"github.com/tuxdudehomelab/homelab/internal/docker"
 	"github.com/tuxdudehomelab/homelab/internal/docker/fakedocker"
 	"github.com/tuxdudehomelab/homelab/internal/testhelpers"
@@ -471,6 +472,47 @@ Pulling image: abc/xyz4
 Created network net2
 Creating container g2-c4
 Starting container g2-c4`,
+	},
+	{
+		name: "Homelab Command - Start - All Groups - One Container With Start Pre-Hook",
+		args: []string{
+			"group",
+			"start",
+			"all",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/start-cmd-with-start-pre-hook", testhelpers.Pwd()),
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			Executor: fakecmdexec.NewFakeExecutor(&fakecmdexec.FakeExecutorInitInfo{
+				ValidCmds: []fakecmdexec.FakeValidCmdInfo{
+					{
+						Cmd: []string{
+							"custom-start-prehook",
+							"arg1",
+							"arg2",
+						},
+						Output: "Output from a custom start prehook",
+					},
+				},
+			}),
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				ValidImagesForPull: utils.StringSet{
+					"abc/xyz":  {},
+					"abc/xyz3": {},
+				},
+			}),
+		},
+		want: `Pulling image: abc/xyz
+Created network net1
+Creating container g1-c1
+Starting container g1-c1
+Container g1-c2 not allowed to run on host FakeHost
+Output from start pre-hook for container g2-c3
+Output from a custom start prehook
+Pulling image: abc/xyz3
+Created network net2
+Creating container g2-c3
+Starting container g2-c3`,
 	},
 	{
 		name: "Homelab Command - Start - One Group",

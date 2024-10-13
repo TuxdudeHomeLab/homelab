@@ -9,6 +9,7 @@ import (
 
 	dcontainer "github.com/docker/docker/api/types/container"
 	"github.com/tuxdude/zzzlog"
+	"github.com/tuxdudehomelab/homelab/internal/cmdexec/fakecmdexec"
 	"github.com/tuxdudehomelab/homelab/internal/config"
 	"github.com/tuxdudehomelab/homelab/internal/docker"
 	"github.com/tuxdudehomelab/homelab/internal/docker/fakedocker"
@@ -39,6 +40,46 @@ var containerStartTests = []struct {
 			Container: "c1",
 		},
 		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				ValidImagesForPull: utils.StringSet{
+					"abc/xyz": {},
+				},
+			}),
+		},
+	},
+	{
+		name: "Container Start - Doesn't Exist Already - With Start Pre-Hook",
+		config: buildCustomSingleContainerConfig(
+			config.ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz",
+			func(ct *config.Container) {
+				ct.Lifecycle.StartPreHook = []string{
+					"custom-start-prehook",
+					"arg1",
+					"arg2",
+				}
+			},
+		),
+		cRef: config.ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			Executor: fakecmdexec.NewFakeExecutor(&fakecmdexec.FakeExecutorInitInfo{
+				ValidCmds: []fakecmdexec.FakeValidCmdInfo{
+					{
+						Cmd: []string{
+							"custom-start-prehook",
+							"arg1",
+							"arg2",
+						},
+						Output: "Output from a custom start prehook",
+					},
+				},
+			}),
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
 				ValidImagesForPull: utils.StringSet{
 					"abc/xyz": {},
@@ -437,6 +478,47 @@ var containerStartErrorTests = []struct {
 	wantPanic bool
 	want      string
 }{
+	{
+		name: "Container Start - Doesn't Exist Already - With Start Pre-Hook",
+		config: buildCustomSingleContainerConfig(
+			config.ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz",
+			func(ct *config.Container) {
+				ct.Lifecycle.StartPreHook = []string{
+					"custom-start-prehook",
+					"arg1",
+					"arg2",
+				}
+			},
+		),
+		cRef: config.ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			Executor: fakecmdexec.NewFakeExecutor(&fakecmdexec.FakeExecutorInitInfo{
+				ErrorCmds: []fakecmdexec.FakeErrorCmdInfo{
+					{
+						Cmd: []string{
+							"custom-start-prehook",
+							"arg1",
+							"arg2",
+						},
+						Err: fmt.Errorf("custom-start-prehook command not found"),
+					},
+				},
+			}),
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				ValidImagesForPull: utils.StringSet{
+					"abc/xyz": {},
+				},
+			}),
+		},
+		want: `Failed to start container g1-c1, reason:encountered error while running the start pre-hook for container g1-c1, reason: custom-start-prehook command not found`,
+	},
 	{
 		name: "Container Start - Image Not Available",
 		config: buildSingleContainerConfig(
@@ -2057,6 +2139,12 @@ func TestContainerDockerConfigs(t *testing.T) {
 			}
 		})
 	}
+}
+
+func buildCustomSingleContainerConfig(ct config.ContainerReference, image string, fn func(*config.Container)) config.Homelab {
+	h := buildSingleContainerConfig(ct, image)
+	fn(&h.Containers[0])
+	return h
 }
 
 func buildSingleContainerConfig(ct config.ContainerReference, image string) config.Homelab {

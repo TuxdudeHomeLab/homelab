@@ -1,0 +1,12 @@
+containers:
+  - info:
+      group: g2
+      container: c3
+    image:
+      image: abc/xyz3
+    lifecycle:
+      order: 1
+      startPreHook:
+        - custom-start-prehook
+        - arg1
+        - arg2
