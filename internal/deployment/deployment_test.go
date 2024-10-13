@@ -202,7 +202,8 @@ containers:
           value: my.ct1.label.value.2
     lifecycle:
       order: 1
-      startPreHook: $$CONTAINER_SCRIPTS_DIR$$/my-start-prehook.sh
+      startPreHook:
+        - $$CONTAINER_SCRIPTS_DIR$$/my-start-prehook.sh
       restartPolicy:
         mode: always
       autoRemove: true
@@ -678,8 +679,10 @@ ignore:
 						},
 					},
 					Lifecycle: config.ContainerLifecycle{
-						Order:        1,
-						StartPreHook: "testdata/dummy-base-dir/group1/ct1/scripts/my-start-prehook.sh",
+						Order: 1,
+						StartPreHook: []string{
+							"testdata/dummy-base-dir/group1/ct1/scripts/my-start-prehook.sh",
+						},
 						RestartPolicy: config.ContainerRestartPolicy{
 							Mode: "always",
 						},

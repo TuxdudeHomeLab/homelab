@@ -172,7 +172,7 @@ type ContainerMetadata struct {
 // docker container.
 type ContainerLifecycle struct {
 	Order         int                    `yaml:"order,omitempty" json:"order,omitempty"`
-	StartPreHook  string                 `yaml:"startPreHook,omitempty" json:"startPreHook,omitempty"`
+	StartPreHook  []string               `yaml:"startPreHook,omitempty" json:"startPreHook,omitempty"`
 	RestartPolicy ContainerRestartPolicy `yaml:"restartPolicy,omitempty" json:"restartPolicy,omitempty"`
 	AutoRemove    bool                   `yaml:"autoRemove,omitempty" json:"autoRemove,omitempty"`
 	StopSignal    string                 `yaml:"stopSignal,omitempty" json:"stopSignal,omitempty"`
@@ -375,7 +375,9 @@ func (g *Global) ApplyConfigEnv(env *env.ConfigEnvManager) {
 }
 
 func (c *Container) ApplyConfigEnv(env *env.ConfigEnvManager) {
-	c.Lifecycle.StartPreHook = env.Apply(c.Lifecycle.StartPreHook)
+	for i, cmdArg := range c.Lifecycle.StartPreHook {
+		c.Lifecycle.StartPreHook[i] = env.Apply(cmdArg)
+	}
 	c.User.User = env.Apply(c.User.User)
 	c.User.PrimaryGroup = env.Apply(c.User.PrimaryGroup)
 	for i, g := range c.User.AdditionalGroups {

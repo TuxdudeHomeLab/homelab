@@ -35,8 +35,10 @@ var applyConfigEnvToContainerTests = []struct {
 				Image: "foo/bar:abc",
 			},
 			Lifecycle: ContainerLifecycle{
-				Order:        1,
-				StartPreHook: "$$CONTAINER_SCRIPTS_DIR$$/my-start-prehook.sh",
+				Order: 1,
+				StartPreHook: []string{
+					"$$CONTAINER_SCRIPTS_DIR$$/my-start-prehook.sh",
+				},
 			},
 			User: ContainerUser{
 				User:         "$$USER_ID$$",
@@ -190,8 +192,10 @@ var applyConfigEnvToContainerTests = []struct {
 				Image: "foo/bar:abc",
 			},
 			Lifecycle: ContainerLifecycle{
-				Order:        1,
-				StartPreHook: "/tmp/base-dir/g1/c1/scripts/my-start-prehook.sh",
+				Order: 1,
+				StartPreHook: []string{
+					"/tmp/base-dir/g1/c1/scripts/my-start-prehook.sh",
+				},
 			},
 			User: ContainerUser{
 				User:         "55555",
