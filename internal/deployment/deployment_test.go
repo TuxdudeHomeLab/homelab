@@ -80,8 +80,7 @@ global:
       - var: MY_CONTAINER_ENV_VAR_2
         value: MY_CONTAINER_ENV_VAR_2_VALUE
       - var: MY_CONTAINER_ENV_VAR_3
-        valueCommand:
-          - /foo2/bar2/some-other-env-var-cmd
+        value: /foo2/bar2/some-other-env-var-cmd
     mounts:
       - name: mount-def-1
       - name: mount-def-2
@@ -304,8 +303,7 @@ containers:
         - var: MY_ENV
           value: $$ENV_MY_ENV_VAL$$
         - var: MY_ENV_2
-          valueCommand:
-            - $$ENV_MY_ENV_2_VAL_CMD$$
+          value: $$ENV_MY_ENV_2_VAL_CMD$$
         - var: MY_ENV_3
           value: SomeHostName.$$HUMAN_FRIENDLY_HOST_NAME$$.SomeDomainName
       entrypoint:
@@ -439,10 +437,8 @@ ignore:
 							Value: "MY_CONTAINER_ENV_VAR_2_VALUE",
 						},
 						{
-							Var: "MY_CONTAINER_ENV_VAR_3",
-							ValueCommand: []string{
-								"/foo2/bar2/some-other-env-var-cmd",
-							},
+							Var:   "MY_CONTAINER_ENV_VAR_3",
+							Value: "/foo2/bar2/some-other-env-var-cmd",
 						},
 					},
 					Mounts: []config.Mount{
@@ -815,10 +811,8 @@ ignore:
 								Value: "my-env-val",
 							},
 							{
-								Var: "MY_ENV_2",
-								ValueCommand: []string{
-									"cat /foo/bar/baz.txt",
-								},
+								Var:   "MY_ENV_2",
+								Value: "cat /foo/bar/baz.txt",
 							},
 							{
 								Var:   "MY_ENV_3",
@@ -883,9 +877,9 @@ ignore:
 					Env: []string{
 						"MY_CONTAINER_ENV_VAR_1=MY_CONTAINER_ENV_VAR_1_VALUE",
 						"MY_CONTAINER_ENV_VAR_2=MY_CONTAINER_ENV_VAR_2_VALUE",
-						"MY_CONTAINER_ENV_VAR_3=",
+						"MY_CONTAINER_ENV_VAR_3=/foo2/bar2/some-other-env-var-cmd",
 						"MY_ENV=my-env-val",
-						"MY_ENV_2=",
+						"MY_ENV_2=cat /foo/bar/baz.txt",
 						"MY_ENV_3=SomeHostName.FakeHost.SomeDomainName",
 					},
 					Cmd: []string{
@@ -1023,7 +1017,7 @@ ignore:
 					Env: []string{
 						"MY_CONTAINER_ENV_VAR_1=MY_CONTAINER_ENV_VAR_1_VALUE",
 						"MY_CONTAINER_ENV_VAR_2=MY_CONTAINER_ENV_VAR_2_VALUE",
-						"MY_CONTAINER_ENV_VAR_3=",
+						"MY_CONTAINER_ENV_VAR_3=/foo2/bar2/some-other-env-var-cmd",
 					},
 					Image:       "abc123/xyz123",
 					StopTimeout: testhelpers.NewInt(8),
@@ -1062,7 +1056,7 @@ ignore:
 					Env: []string{
 						"MY_CONTAINER_ENV_VAR_1=MY_CONTAINER_ENV_VAR_1_VALUE",
 						"MY_CONTAINER_ENV_VAR_2=MY_CONTAINER_ENV_VAR_2_VALUE",
-						"MY_CONTAINER_ENV_VAR_3=",
+						"MY_CONTAINER_ENV_VAR_3=/foo2/bar2/some-other-env-var-cmd",
 					},
 					Image:       "abc123/xyz124",
 					StopTimeout: testhelpers.NewInt(8),
@@ -2043,7 +2037,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		want: `env var FOO specified more than once in global container config`,
 	},
 	{
-		name: "Global Container Config Env Var Without Value And ValueCommand",
+		name: "Global Container Config Env Var Without Value",
 		config: config.Homelab{
 			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
@@ -2056,27 +2050,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 				},
 			},
 		},
-		want: `neither value nor valueCommand specified for env var FOO in global container config`,
-	},
-	{
-		name: "Global Container Config Env Var With Both Value And ValueCommand",
-		config: config.Homelab{
-			Global: config.Global{
-				BaseDir: testhelpers.HomelabBaseDir(),
-				Container: config.GlobalContainer{
-					Env: []config.ContainerEnv{
-						{
-							Var:   "FOO",
-							Value: "my-foo-bar",
-							ValueCommand: []string{
-								"/foo/bar/baz",
-							},
-						},
-					},
-				},
-			},
-		},
-		want: `exactly one of value or valueCommand must be specified for env var FOO in global container config`,
+		want: `value not specified for env var FOO in global container config`,
 	},
 	{
 		name: "Global Container Config Empty Mount Name",
@@ -5570,7 +5544,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		want: `env var FOO specified more than once in container {Group: g1 Container:c1} config`,
 	},
 	{
-		name: "Container Env Var Without Value And ValueCommand",
+		name: "Container Env Var Without Value",
 		config: config.Homelab{
 			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
@@ -5603,47 +5577,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 				},
 			},
 		},
-		want: `neither value nor valueCommand specified for env var FOO in container {Group: g1 Container:c1} config`,
-	},
-	{
-		name: "Container Env Var With Both Value And ValueCommand",
-		config: config.Homelab{
-			Global: config.Global{
-				BaseDir: testhelpers.HomelabBaseDir(),
-			},
-			Groups: []config.ContainerGroup{
-				{
-					Name:  "g1",
-					Order: 1,
-				},
-			},
-			Containers: []config.Container{
-				{
-					Info: config.ContainerReference{
-						Group:     "g1",
-						Container: "c1",
-					},
-					Image: config.ContainerImage{
-						Image: "foo/bar:123",
-					},
-					Lifecycle: config.ContainerLifecycle{
-						Order: 1,
-					},
-					Runtime: config.ContainerRuntime{
-						Env: []config.ContainerEnv{
-							{
-								Var:   "FOO",
-								Value: "my-foo-bar",
-								ValueCommand: []string{
-									"/foo/bar/baz",
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		want: `exactly one of value or valueCommand must be specified for env var FOO in container {Group: g1 Container:c1} config`,
+		want: `value not specified for env var FOO in container {Group: g1 Container:c1} config`,
 	},
 }
 

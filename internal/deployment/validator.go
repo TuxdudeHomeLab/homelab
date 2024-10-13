@@ -97,11 +97,8 @@ func validateContainerEnv(conf []config.ContainerEnv, location string) error {
 		}
 		envs[e.Var] = struct{}{}
 
-		if len(e.Value) == 0 && len(e.ValueCommand) == 0 {
-			return fmt.Errorf("neither value nor valueCommand specified for env var %s in %s", e.Var, location)
-		}
-		if len(e.Value) > 0 && len(e.ValueCommand) > 0 {
-			return fmt.Errorf("exactly one of value or valueCommand must be specified for env var %s in %s", e.Var, location)
+		if len(e.Value) == 0 {
+			return fmt.Errorf("value not specified for env var %s in %s", e.Var, location)
 		}
 	}
 	return nil

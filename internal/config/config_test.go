@@ -121,10 +121,8 @@ var applyConfigEnvToContainerTests = []struct {
 						Value: "$$ENV_VAR_1_VAL$$",
 					},
 					{
-						Var: "MY_ENV_2",
-						ValueCommand: []string{
-							"$$ENV_VAR_2_VAL_CMD$$",
-						},
+						Var:   "MY_ENV_2",
+						Value: "$$ENV_VAR_2_VAL_CMD$$",
 					},
 					{
 						Var:   "MY_ENV_3",
@@ -273,10 +271,8 @@ var applyConfigEnvToContainerTests = []struct {
 						Value: "my-env-1-val",
 					},
 					{
-						Var: "MY_ENV_2",
-						ValueCommand: []string{
-							"cat /foo/bar.txt",
-						},
+						Var:   "MY_ENV_2",
+						Value: "cat /foo/bar.txt",
 					},
 					{
 						Var:   "MY_ENV_3",
@@ -365,10 +361,8 @@ var applyConfigEnvToGlobalTests = []struct {
 						Value: "$$ENV_VAR_1_VAL$$",
 					},
 					{
-						Var: "MY_ENV_2",
-						ValueCommand: []string{
-							"$$ENV_VAR_2_VAL_CMD$$",
-						},
+						Var:   "MY_ENV_2",
+						Value: "$$ENV_VAR_2_VAL_CMD$$",
 					},
 					{
 						Var:   "MY_ENV_3",
@@ -470,10 +464,8 @@ var applyConfigEnvToGlobalTests = []struct {
 						Value: "my-env-1-val",
 					},
 					{
-						Var: "MY_ENV_2",
-						ValueCommand: []string{
-							"cat /foo/bar.txt",
-						},
+						Var:   "MY_ENV_2",
+						Value: "cat /foo/bar.txt",
 					},
 					{
 						Var:   "MY_ENV_3",

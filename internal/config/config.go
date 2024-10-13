@@ -271,9 +271,8 @@ type Sysctl struct {
 // ContainerEnv represents an environment variable and value pair that will be set
 // on the specified container.
 type ContainerEnv struct {
-	Var          string   `yaml:"var,omitempty" json:"var,omitempty"`
-	Value        string   `yaml:"value,omitempty" json:"value,omitempty"`
-	ValueCommand []string `yaml:"valueCommand,omitempty" json:"valueCommand,omitempty"`
+	Var   string `yaml:"var,omitempty" json:"var,omitempty"`
+	Value string `yaml:"value,omitempty" json:"value,omitempty"`
 }
 
 // PublishedPort represents a port published from a container.
@@ -366,9 +365,6 @@ func (g *Global) ApplyConfigEnv(env *env.ConfigEnvManager) {
 	for i, e := range g.Container.Env {
 		g.Container.Env[i].Var = env.Apply(e.Var)
 		g.Container.Env[i].Value = env.Apply(e.Value)
-		for j, cmdArg := range g.Container.Env[i].ValueCommand {
-			g.Container.Env[i].ValueCommand[j] = env.Apply(cmdArg)
-		}
 	}
 	for i, m := range g.Container.Mounts {
 		g.Container.Mounts[i].Src = env.Apply(m.Src)
@@ -419,9 +415,6 @@ func (c *Container) ApplyConfigEnv(env *env.ConfigEnvManager) {
 	for i, e := range c.Runtime.Env {
 		c.Runtime.Env[i].Var = env.Apply(e.Var)
 		c.Runtime.Env[i].Value = env.Apply(e.Value)
-		for j, cmdArg := range e.ValueCommand {
-			c.Runtime.Env[i].ValueCommand[j] = env.Apply(cmdArg)
-		}
 	}
 	for i, a := range c.Runtime.Args {
 		c.Runtime.Args[i] = env.Apply(a)
