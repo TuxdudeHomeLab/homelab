@@ -31,7 +31,8 @@ global:
     - var: MY_CONFIG_VAR_2
       value: MY_CONFIG_VAR_2_VALUE
     - var: MY_CONFIG_VAR_3
-      valueCommand: /foo/bar/some-env-var-cmd
+      valueCommand:
+        - /foo/bar/some-env-var-cmd
     - var: ENV_GROUP_1
       value: fakegroup1
     - var: ENV_GROUP_2
@@ -79,7 +80,8 @@ global:
       - var: MY_CONTAINER_ENV_VAR_2
         value: MY_CONTAINER_ENV_VAR_2_VALUE
       - var: MY_CONTAINER_ENV_VAR_3
-        valueCommand: /foo2/bar2/some-other-env-var-cmd
+        valueCommand:
+          - /foo2/bar2/some-other-env-var-cmd
     mounts:
       - name: mount-def-1
       - name: mount-def-2
@@ -302,7 +304,8 @@ containers:
         - var: MY_ENV
           value: $$ENV_MY_ENV_VAL$$
         - var: MY_ENV_2
-          valueCommand: $$ENV_MY_ENV_2_VAL_CMD$$
+          valueCommand:
+            - $$ENV_MY_ENV_2_VAL_CMD$$
         - var: MY_ENV_3
           value: SomeHostName.$$HUMAN_FRIENDLY_HOST_NAME$$.SomeDomainName
       entrypoint:
@@ -352,8 +355,10 @@ ignore:
 						Value: "MY_CONFIG_VAR_2_VALUE",
 					},
 					{
-						Var:          "MY_CONFIG_VAR_3",
-						ValueCommand: "/foo/bar/some-env-var-cmd",
+						Var: "MY_CONFIG_VAR_3",
+						ValueCommand: []string{
+							"/foo/bar/some-env-var-cmd",
+						},
 					},
 					{
 						Var:   "ENV_GROUP_1",
@@ -434,8 +439,10 @@ ignore:
 							Value: "MY_CONTAINER_ENV_VAR_2_VALUE",
 						},
 						{
-							Var:          "MY_CONTAINER_ENV_VAR_3",
-							ValueCommand: "/foo2/bar2/some-other-env-var-cmd",
+							Var: "MY_CONTAINER_ENV_VAR_3",
+							ValueCommand: []string{
+								"/foo2/bar2/some-other-env-var-cmd",
+							},
 						},
 					},
 					Mounts: []config.Mount{
@@ -808,8 +815,10 @@ ignore:
 								Value: "my-env-val",
 							},
 							{
-								Var:          "MY_ENV_2",
-								ValueCommand: "cat /foo/bar/baz.txt",
+								Var: "MY_ENV_2",
+								ValueCommand: []string{
+									"cat /foo/bar/baz.txt",
+								},
 							},
 							{
 								Var:   "MY_ENV_3",
@@ -1812,9 +1821,11 @@ var buildDeploymentFromConfigErrorTests = []struct {
 				BaseDir: testhelpers.HomelabBaseDir(),
 				Env: []config.ConfigEnv{
 					{
-						Var:          "FOO",
-						Value:        "my-foo-bar",
-						ValueCommand: "/foo/bar/baz",
+						Var:   "FOO",
+						Value: "my-foo-bar",
+						ValueCommand: []string{
+							"/foo/bar/baz",
+						},
 					},
 				},
 			},
@@ -2055,9 +2066,11 @@ var buildDeploymentFromConfigErrorTests = []struct {
 				Container: config.GlobalContainer{
 					Env: []config.ContainerEnv{
 						{
-							Var:          "FOO",
-							Value:        "my-foo-bar",
-							ValueCommand: "/foo/bar/baz",
+							Var:   "FOO",
+							Value: "my-foo-bar",
+							ValueCommand: []string{
+								"/foo/bar/baz",
+							},
 						},
 					},
 				},
@@ -3768,9 +3781,11 @@ var buildDeploymentFromConfigErrorTests = []struct {
 					Config: config.ContainerConfigOptions{
 						Env: []config.ConfigEnv{
 							{
-								Var:          "FOO",
-								Value:        "my-foo-bar",
-								ValueCommand: "/foo/bar/baz",
+								Var:   "FOO",
+								Value: "my-foo-bar",
+								ValueCommand: []string{
+									"/foo/bar/baz",
+								},
 							},
 						},
 					},
@@ -5617,9 +5632,11 @@ var buildDeploymentFromConfigErrorTests = []struct {
 					Runtime: config.ContainerRuntime{
 						Env: []config.ContainerEnv{
 							{
-								Var:          "FOO",
-								Value:        "my-foo-bar",
-								ValueCommand: "/foo/bar/baz",
+								Var:   "FOO",
+								Value: "my-foo-bar",
+								ValueCommand: []string{
+									"/foo/bar/baz",
+								},
 							},
 						},
 					},

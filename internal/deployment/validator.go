@@ -78,7 +78,8 @@ func validateConfigEnv(conf []config.ConfigEnv, location string) (env.EnvMap, en
 		if len(e.Value) > 0 {
 			envs[e.Var] = e.Value
 		} else {
-			envs[e.Var] = e.ValueCommand
+			// TODO: Evaluate the value by running the command using the executor.
+			envs[e.Var] = "TODO" // e.ValueCommand
 		}
 		envOrder = append(envOrder, e.Var)
 	}
