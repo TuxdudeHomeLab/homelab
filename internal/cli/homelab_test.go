@@ -858,6 +858,7 @@ func TestExecHomelabCmdRealEverything(t *testing.T) {
 				&testutils.TestContextInfo{
 					UseRealHostInfo: true,
 					UseRealUserInfo: true,
+					UseRealExecutor: true,
 				},
 				nil,
 				tc.args...,

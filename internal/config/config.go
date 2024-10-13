@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"slices"
+	"strings"
 
 	"github.com/tuxdudehomelab/homelab/internal/cmdexec"
 	"github.com/tuxdudehomelab/homelab/internal/config/env"
@@ -422,7 +423,61 @@ func (c *Container) ApplyConfigEnv(env *env.ConfigEnvManager) {
 }
 
 func (c *Container) ApplyCmdExecutor(exec cmdexec.Executor) error {
-	// TODO: Dynamically evaluate and populate the fields by invoking
+	// Dynamically evaluate and populate the fields by invoking
 	// the specified command using the executor.
+	devicesCmd := c.Filesystem.Devices.DynamicCommand
+	if len(devicesCmd) > 0 {
+		out, err := exec.Run(devicesCmd[0], devicesCmd[1:]...)
+		if err != nil {
+			return err
+		}
+		devs, err := parseDynamicDeviceSpec(out)
+		if err != nil {
+			return err
+		}
+		c.Filesystem.Devices.Dynamic = devs
+	}
 	return nil
+}
+
+func parseDynamicDeviceSpec(spec string) ([]Device, error) {
+	var result []Device
+	devs := strings.Split(spec, ",")
+	for _, d := range devs {
+		parts := strings.Split(d, ":")
+		if len(parts) != 3 {
+			return nil, fmt.Errorf("expected three parts separated by ':' for each dynamic device spec, found %d", len(parts))
+		}
+		if len(parts[2]) > 3 {
+			return nil, fmt.Errorf("mode part of dynamic device spec %s is invalid as it can be at most specify three permissions", parts[2])
+		}
+		dev := Device{}
+		dev.Src = parts[0]
+		dev.Dst = parts[1]
+		dev.DisallowRead = true
+		dev.DisallowWrite = true
+		dev.DisallowMknod = true
+		for _, mode := range parts[2] {
+			if mode == 'r' {
+				if !dev.DisallowRead {
+					return nil, fmt.Errorf("mode part of dynamic device spec %s specifies read more than once", parts[2])
+				}
+				dev.DisallowRead = false
+			}
+			if mode == 'w' {
+				if !dev.DisallowWrite {
+					return nil, fmt.Errorf("mode part of dynamic device spec %s specifies write more than once", parts[2])
+				}
+				dev.DisallowWrite = false
+			}
+			if mode == 'm' {
+				if !dev.DisallowMknod {
+					return nil, fmt.Errorf("mode part of dynamic device spec %s specifies mknod more than once", parts[2])
+				}
+				dev.DisallowMknod = false
+			}
+		}
+		result = append(result, dev)
+	}
+	return result, nil
 }

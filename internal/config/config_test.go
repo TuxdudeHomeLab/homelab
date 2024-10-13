@@ -2,9 +2,12 @@ package config
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 
 	"github.com/tuxdude/zzzlog"
+	"github.com/tuxdudehomelab/homelab/internal/cmdexec"
+	"github.com/tuxdudehomelab/homelab/internal/cmdexec/fakecmdexec"
 	"github.com/tuxdudehomelab/homelab/internal/config/env"
 	"github.com/tuxdudehomelab/homelab/internal/deepcopy"
 	logger "github.com/tuxdudehomelab/homelab/internal/log"
@@ -83,6 +86,11 @@ var applyConfigEnvToContainerTests = []struct {
 							Src: "$$ENV_SRC_DEV$$",
 							Dst: "$$ENV_DST_DEV$$",
 						},
+					},
+					DynamicCommand: []string{
+						"$$CONTAINER_BASE_DIR$$/my-devices-lister.sh",
+						"$$HOST_NAME$$",
+						"$$HUMAN_FRIENDLY_HOST_NAME$$",
 					},
 				},
 			},
@@ -234,6 +242,11 @@ var applyConfigEnvToContainerTests = []struct {
 							Dst: "/dev/dst",
 						},
 					},
+					DynamicCommand: []string{
+						"/tmp/base-dir/g1/c1/my-devices-lister.sh",
+						"fakehost",
+						"FakeHost",
+					},
 				},
 			},
 			Network: ContainerNetwork{
@@ -307,6 +320,466 @@ func TestApplyConfigEnvToContainer(t *testing.T) {
 			got := deepcopy.MustCopy(tc.container)
 			got.ApplyConfigEnv(e)
 			if !testhelpers.CmpDiff(t, "Container.ApplyConfigEnv()", tc.name, "apply result", tc.want, got) {
+				return
+			}
+		})
+	}
+}
+
+var applyCmdExecutorToContainerTests = []struct {
+	name      string
+	container Container
+	exec      cmdexec.Executor
+	want      Container
+}{
+	{
+		name: "Container Config - ApplyCmdExecutor - Exhaustive",
+		container: Container{
+			Info: ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			Image: ContainerImage{
+				Image: "foo/bar:abc",
+			},
+			Lifecycle: ContainerLifecycle{
+				Order: 1,
+			},
+			Filesystem: ContainerFilesystem{
+				Devices: ContainerDevice{
+					Static: []Device{
+						{
+							Src: "/dev/stat1",
+							Dst: "/dev/stat2",
+						},
+					},
+					DynamicCommand: []string{
+						"list-devices.sh",
+						"dummy-arg1",
+						"dummy-arg2",
+					},
+				},
+			},
+		},
+		exec: fakecmdexec.NewFakeExecutor(&fakecmdexec.FakeExecutorInitInfo{
+			ValidCmds: []fakecmdexec.FakeValidCmdInfo{
+				{
+					Cmd: []string{
+						"list-devices.sh",
+						"dummy-arg1",
+						"dummy-arg2",
+					},
+					Output: "/dev/s1:/dev/d1:r,/dev/s2:/dev/d2:w,/dev/s3:/dev/d3:m,/dev/s4:/dev/d4:rw,/dev/s5:/dev/d5:rm,/dev/s6:/dev/d6:wm,/dev/s7:/dev/d7:rwm,/dev/s8:/dev/d8:",
+				},
+			},
+		}),
+		want: Container{
+			Info: ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			Image: ContainerImage{
+				Image: "foo/bar:abc",
+			},
+			Lifecycle: ContainerLifecycle{
+				Order: 1,
+			},
+			Filesystem: ContainerFilesystem{
+				Devices: ContainerDevice{
+					Static: []Device{
+						{
+							Src: "/dev/stat1",
+							Dst: "/dev/stat2",
+						},
+					},
+					DynamicCommand: []string{
+						"list-devices.sh",
+						"dummy-arg1",
+						"dummy-arg2",
+					},
+					Dynamic: []Device{
+						{
+							Src:           "/dev/s1",
+							Dst:           "/dev/d1",
+							DisallowWrite: true,
+							DisallowMknod: true,
+						},
+						{
+							Src:           "/dev/s2",
+							Dst:           "/dev/d2",
+							DisallowRead:  true,
+							DisallowMknod: true,
+						},
+						{
+							Src:           "/dev/s3",
+							Dst:           "/dev/d3",
+							DisallowRead:  true,
+							DisallowWrite: true,
+						},
+						{
+							Src:           "/dev/s4",
+							Dst:           "/dev/d4",
+							DisallowMknod: true,
+						},
+						{
+							Src:           "/dev/s5",
+							Dst:           "/dev/d5",
+							DisallowWrite: true,
+						},
+						{
+							Src:          "/dev/s6",
+							Dst:          "/dev/d6",
+							DisallowRead: true,
+						},
+						{
+							Src: "/dev/s7",
+							Dst: "/dev/d7",
+						},
+						{
+							Src:           "/dev/s8",
+							Dst:           "/dev/d8",
+							DisallowRead:  true,
+							DisallowWrite: true,
+							DisallowMknod: true,
+						},
+					},
+				},
+			},
+		},
+	},
+	{
+		name: "Container Config - ApplyCmdExecutor - Real Executor",
+		container: Container{
+			Info: ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			Image: ContainerImage{
+				Image: "foo/bar:abc",
+			},
+			Lifecycle: ContainerLifecycle{
+				Order: 1,
+			},
+			Filesystem: ContainerFilesystem{
+				Devices: ContainerDevice{
+					Static: []Device{
+						{
+							Src: "/dev/stat1",
+							Dst: "/dev/stat2",
+						},
+					},
+					DynamicCommand: []string{
+						"echo",
+						"/dev/dyns1:/dev/dynd1:rw",
+					},
+				},
+			},
+		},
+		exec: cmdexec.NewExecutor(),
+		want: Container{
+			Info: ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			Image: ContainerImage{
+				Image: "foo/bar:abc",
+			},
+			Lifecycle: ContainerLifecycle{
+				Order: 1,
+			},
+			Filesystem: ContainerFilesystem{
+				Devices: ContainerDevice{
+					Static: []Device{
+						{
+							Src: "/dev/stat1",
+							Dst: "/dev/stat2",
+						},
+					},
+					DynamicCommand: []string{
+						"echo",
+						"/dev/dyns1:/dev/dynd1:rw",
+					},
+					Dynamic: []Device{
+						{
+							Src:           "/dev/dyns1",
+							Dst:           "/dev/dynd1",
+							DisallowMknod: true,
+						},
+					},
+				},
+			},
+		},
+	},
+}
+
+func TestApplyCmdExecutorToContainer(t *testing.T) {
+	t.Parallel()
+
+	for _, test := range applyCmdExecutorToContainerTests {
+		tc := test
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := deepcopy.MustCopy(tc.container)
+			gotErr := got.ApplyCmdExecutor(tc.exec)
+			if gotErr != nil {
+				testhelpers.LogErrorNotNil(t, "Container.ApplyCmdExecutor()", tc.name, gotErr)
+				return
+			}
+
+			if !testhelpers.CmpDiff(t, "Container.ApplyCmdExecutor()", tc.name, "apply result", tc.want, got) {
+				return
+			}
+		})
+	}
+}
+
+var applyCmdExecutorToContainerErrorTests = []struct {
+	name      string
+	container Container
+	exec      cmdexec.Executor
+	want      string
+}{
+	{
+		name: "Container Config - ApplyCmdExecutor - Command Failed - Real Executor",
+		container: Container{
+			Filesystem: ContainerFilesystem{
+				Devices: ContainerDevice{
+					DynamicCommand: []string{
+						"ls",
+						"-e",
+					},
+				},
+			},
+		},
+		exec: cmdexec.NewExecutor(),
+		want: `(?s)command failed ls \["-e"\], reason: exit status 2, stderr: ls: invalid option -- 'e'\s.+`,
+	},
+	{
+		name: "Container Config - ApplyCmdExecutor - Executable Not Found - Real Executor",
+		container: Container{
+			Filesystem: ContainerFilesystem{
+				Devices: ContainerDevice{
+					DynamicCommand: []string{
+						"invalid-command",
+						"invalid-arg-1",
+						"invalid-arg-2",
+					},
+				},
+			},
+		},
+		exec: cmdexec.NewExecutor(),
+		want: `command failed invalid-command \["invalid-arg-1" "invalid-arg-2"\], reason: exec: "invalid-command": executable file not found in \$PATH`,
+	},
+	{
+		name: "Container Config - ApplyCmdExecutor - Command Execution Failed - 1",
+		container: Container{
+			Filesystem: ContainerFilesystem{
+				Devices: ContainerDevice{
+					DynamicCommand: []string{
+						"invalid-command",
+						"invalid-arg-1",
+						"invalid-arg-2",
+					},
+				},
+			},
+		},
+		exec: fakecmdexec.NewFakeExecutor(&fakecmdexec.FakeExecutorInitInfo{
+			ValidCmds: []fakecmdexec.FakeValidCmdInfo{
+				{
+					Cmd: []string{
+						"list-devices.sh",
+						"dummy-arg1",
+						"dummy-arg2",
+					},
+					Output: "/dev/s1:/dev/d1:rw",
+				},
+			},
+		}),
+		want: `invalid fake executor command invalid-command \["invalid-arg-1" "invalid-arg-2"\]`,
+	},
+	{
+		name: "Container Config - ApplyCmdExecutor - Command Execution Failed - 2",
+		container: Container{
+			Filesystem: ContainerFilesystem{
+				Devices: ContainerDevice{
+					DynamicCommand: []string{
+						"invalid-command",
+						"invalid-arg-1",
+						"invalid-arg-2",
+					},
+				},
+			},
+		},
+		exec: fakecmdexec.NewFakeExecutor(&fakecmdexec.FakeExecutorInitInfo{
+			ErrorCmds: []fakecmdexec.FakeErrorCmdInfo{
+				{
+					Cmd: []string{
+						"invalid-command",
+						"invalid-arg-1",
+						"invalid-arg-2",
+					},
+					Err: fmt.Errorf("invalid command, reason: command not found"),
+				},
+			},
+		}),
+		want: `invalid command, reason: command not found`,
+	},
+	{
+		name: "Container Config - ApplyCmdExecutor - Less Than Three Parts In Device Spec",
+		container: Container{
+			Filesystem: ContainerFilesystem{
+				Devices: ContainerDevice{
+					DynamicCommand: []string{
+						"list-devices.sh",
+					},
+				},
+			},
+		},
+		exec: fakecmdexec.NewFakeExecutor(&fakecmdexec.FakeExecutorInitInfo{
+			ValidCmds: []fakecmdexec.FakeValidCmdInfo{
+				{
+					Cmd: []string{
+						"list-devices.sh",
+					},
+					Output: "/dev/s1:/dev/d1",
+				},
+			},
+		}),
+		want: `expected three parts separated by ':' for each dynamic device spec, found 2`,
+	},
+	{
+		name: "Container Config - ApplyCmdExecutor - More Than Three Parts In Device Spec",
+		container: Container{
+			Filesystem: ContainerFilesystem{
+				Devices: ContainerDevice{
+					DynamicCommand: []string{
+						"list-devices.sh",
+					},
+				},
+			},
+		},
+		exec: fakecmdexec.NewFakeExecutor(&fakecmdexec.FakeExecutorInitInfo{
+			ValidCmds: []fakecmdexec.FakeValidCmdInfo{
+				{
+					Cmd: []string{
+						"list-devices.sh",
+					},
+					Output: "/dev/s1:/dev/d1:r:w",
+				},
+			},
+		}),
+		want: `expected three parts separated by ':' for each dynamic device spec, found 4`,
+	},
+	{
+		name: "Container Config - ApplyCmdExecutor - More Than Three Permissions",
+		container: Container{
+			Filesystem: ContainerFilesystem{
+				Devices: ContainerDevice{
+					DynamicCommand: []string{
+						"list-devices.sh",
+					},
+				},
+			},
+		},
+		exec: fakecmdexec.NewFakeExecutor(&fakecmdexec.FakeExecutorInitInfo{
+			ValidCmds: []fakecmdexec.FakeValidCmdInfo{
+				{
+					Cmd: []string{
+						"list-devices.sh",
+					},
+					Output: "/dev/s1:/dev/d1:rwmg",
+				},
+			},
+		}),
+		want: `mode part of dynamic device spec rwmg is invalid as it can be at most specify three permissions`,
+	},
+	{
+		name: "Container Config - ApplyCmdExecutor - Read Permission More Than Once",
+		container: Container{
+			Filesystem: ContainerFilesystem{
+				Devices: ContainerDevice{
+					DynamicCommand: []string{
+						"list-devices.sh",
+					},
+				},
+			},
+		},
+		exec: fakecmdexec.NewFakeExecutor(&fakecmdexec.FakeExecutorInitInfo{
+			ValidCmds: []fakecmdexec.FakeValidCmdInfo{
+				{
+					Cmd: []string{
+						"list-devices.sh",
+					},
+					Output: "/dev/s1:/dev/d1:rrw",
+				},
+			},
+		}),
+		want: `mode part of dynamic device spec rrw specifies read more than once`,
+	},
+	{
+		name: "Container Config - ApplyCmdExecutor - Write Permission More Than Once",
+		container: Container{
+			Filesystem: ContainerFilesystem{
+				Devices: ContainerDevice{
+					DynamicCommand: []string{
+						"list-devices.sh",
+					},
+				},
+			},
+		},
+		exec: fakecmdexec.NewFakeExecutor(&fakecmdexec.FakeExecutorInitInfo{
+			ValidCmds: []fakecmdexec.FakeValidCmdInfo{
+				{
+					Cmd: []string{
+						"list-devices.sh",
+					},
+					Output: "/dev/s1:/dev/d1:wmw",
+				},
+			},
+		}),
+		want: `mode part of dynamic device spec wmw specifies write more than once`,
+	},
+	{
+		name: "Container Config - ApplyCmdExecutor - Mknod Permission More Than Once",
+		container: Container{
+			Filesystem: ContainerFilesystem{
+				Devices: ContainerDevice{
+					DynamicCommand: []string{
+						"list-devices.sh",
+					},
+				},
+			},
+		},
+		exec: fakecmdexec.NewFakeExecutor(&fakecmdexec.FakeExecutorInitInfo{
+			ValidCmds: []fakecmdexec.FakeValidCmdInfo{
+				{
+					Cmd: []string{
+						"list-devices.sh",
+					},
+					Output: "/dev/s1:/dev/d1:rmm",
+				},
+			},
+		}),
+		want: `mode part of dynamic device spec rmm specifies mknod more than once`,
+	},
+}
+
+func TestApplyCmdExecutorToContainerErrors(t *testing.T) {
+	t.Parallel()
+
+	for _, test := range applyCmdExecutorToContainerErrorTests {
+		tc := test
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			gotErr := tc.container.ApplyCmdExecutor(tc.exec)
+			if gotErr == nil {
+				testhelpers.LogErrorNil(t, "Container.ApplyCmdExecutor()", tc.name, tc.want)
+				return
+			}
+
+			if !testhelpers.RegexMatch(t, "Container.ApplyCmdExecutor()", tc.name, "gotErr error string", tc.want, gotErr.Error()) {
 				return
 			}
 		})

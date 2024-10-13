@@ -8,7 +8,9 @@ import (
 	dcontainer "github.com/docker/docker/api/types/container"
 	dnetwork "github.com/docker/docker/api/types/network"
 	"github.com/docker/go-connections/nat"
+	"github.com/tuxdudehomelab/homelab/internal/cmdexec/fakecmdexec"
 	"github.com/tuxdudehomelab/homelab/internal/config"
+	"github.com/tuxdudehomelab/homelab/internal/docker/fakedocker"
 	"github.com/tuxdudehomelab/homelab/internal/testhelpers"
 	"github.com/tuxdudehomelab/homelab/internal/testutils"
 	"github.com/tuxdudehomelab/homelab/internal/utils"
@@ -17,6 +19,7 @@ import (
 var buildDeploymentUsingReaderTests = []struct {
 	name              string
 	config            string
+	ctxInfo           *testutils.TestContextInfo
 	want              *config.Homelab
 	wantDockerConfigs containerDockerConfigMap
 }{
@@ -238,17 +241,19 @@ containers:
           options: tmpfs-size=$$ENV_TMPFS_SIZE$$
       devices:
         static:
-          - src: /dev/foo
-            dst: /dev/bar
+          - src: /dev/foostat1
+            dst: /dev/barstat1
             disallowRead: false
             disallowWrite: true
             disallowMknod: true
           - src: $$ENV_SRC_DEV$$
             dst: $$ENV_DST_DEV$$
-          - src: /dev/foo2
+          - src: /dev/foostat2
             disallowRead: true
             disallowWrite: true
             disallowMknod: false
+        dynamic:
+          - $$CONTAINER_SCRIPTS_DIR$$/devices.sh
     network:
       hostName: Special-$$HOST_NAME$$-$$USER_PRIMARY_GROUP_NAME$$
       domainName: $$ENV_DOMAIN$$
@@ -340,6 +345,19 @@ ignore:
   - mymap:
       key1: val1
       key2: val2`,
+		ctxInfo: &testutils.TestContextInfo{
+			Executor: fakecmdexec.NewFakeExecutor(&fakecmdexec.FakeExecutorInitInfo{
+				ValidCmds: []fakecmdexec.FakeValidCmdInfo{
+					{
+						Cmd: []string{
+							"testdata/dummy-base-dir/group1/ct1/scripts/devices.sh",
+						},
+						Output: "/dev/foodyn1:/dev/bardyn1:rw,/dev/foodyn2:/dev/bardyn2:rwm,/dev/foodyn3:/dev/bardyn3:m",
+					},
+				},
+			}),
+			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
+		},
 		want: &config.Homelab{
 			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
@@ -718,8 +736,8 @@ ignore:
 						Devices: config.ContainerDevice{
 							Static: []config.Device{
 								{
-									Src:           "/dev/foo",
-									Dst:           "/dev/bar",
+									Src:           "/dev/foostat1",
+									Dst:           "/dev/barstat1",
 									DisallowWrite: true,
 									DisallowMknod: true,
 								},
@@ -728,7 +746,27 @@ ignore:
 									Dst: "/dev/dst123",
 								},
 								{
-									Src:           "/dev/foo2",
+									Src:           "/dev/foostat2",
+									DisallowRead:  true,
+									DisallowWrite: true,
+								},
+							},
+							DynamicCommand: []string{
+								"testdata/dummy-base-dir/group1/ct1/scripts/devices.sh",
+							},
+							Dynamic: []config.Device{
+								{
+									Src:           "/dev/foodyn1",
+									Dst:           "/dev/bardyn1",
+									DisallowMknod: true,
+								},
+								{
+									Src: "/dev/foodyn2",
+									Dst: "/dev/bardyn2",
+								},
+								{
+									Src:           "/dev/foodyn3",
+									Dst:           "/dev/bardyn3",
 									DisallowRead:  true,
 									DisallowWrite: true,
 								},
@@ -981,8 +1019,8 @@ ignore:
 					Resources: dcontainer.Resources{
 						Devices: []dcontainer.DeviceMapping{
 							{
-								PathOnHost:        "/dev/foo",
-								PathInContainer:   "/dev/bar",
+								PathOnHost:        "/dev/foostat1",
+								PathInContainer:   "/dev/barstat1",
 								CgroupPermissions: "r",
 							},
 							{
@@ -991,8 +1029,23 @@ ignore:
 								CgroupPermissions: "rwm",
 							},
 							{
-								PathOnHost:        "/dev/foo2",
-								PathInContainer:   "/dev/foo2",
+								PathOnHost:        "/dev/foostat2",
+								PathInContainer:   "/dev/foostat2",
+								CgroupPermissions: "m",
+							},
+							{
+								PathOnHost:        "/dev/foodyn1",
+								PathInContainer:   "/dev/bardyn1",
+								CgroupPermissions: "rw",
+							},
+							{
+								PathOnHost:        "/dev/foodyn2",
+								PathInContainer:   "/dev/bardyn2",
+								CgroupPermissions: "rwm",
+							},
+							{
+								PathOnHost:        "/dev/foodyn3",
+								PathInContainer:   "/dev/bardyn3",
 								CgroupPermissions: "m",
 							},
 						},
@@ -1132,7 +1185,11 @@ func TestBuildDeploymentUsingReader(t *testing.T) {
 			t.Parallel()
 
 			input := strings.NewReader(tc.config)
-			got, gotErr := FromReader(testutils.NewVanillaTestContext(), input)
+			ctx := testutils.NewVanillaTestContext()
+			if tc.ctxInfo != nil {
+				ctx = testutils.NewTestContext(tc.ctxInfo)
+			}
+			got, gotErr := FromReader(ctx, input)
 			if gotErr != nil {
 				testhelpers.LogErrorNotNil(t, "FromReader()", tc.name, gotErr)
 				return
@@ -4261,6 +4318,45 @@ var buildDeploymentFromConfigErrorTests = []struct {
 			},
 		},
 		want: `device src cannot be empty in container {Group: g1 Container:c1} config`,
+	},
+	{
+		name: "Container Config Dynamic Device Invalid Command",
+		config: config.Homelab{
+			Global: config.Global{
+				BaseDir: testhelpers.HomelabBaseDir(),
+			},
+			Groups: []config.ContainerGroup{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []config.Container{
+				{
+					Info: config.ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: config.ContainerImage{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: config.ContainerLifecycle{
+						Order: 1,
+					},
+					Filesystem: config.ContainerFilesystem{
+						Devices: config.ContainerDevice{
+							DynamicCommand: []string{
+								"garbage-command",
+								"garbage-arg1",
+								"garbage-arg2",
+								"garbage-arg3",
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `invalid fake executor command garbage-command \["garbage-arg1" "garbage-arg2" "garbage-arg3"\]`,
 	},
 	{
 		name: "Container Config Empty Mount Name",

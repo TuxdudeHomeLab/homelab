@@ -3,6 +3,7 @@ package deployment
 import (
 	"context"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -633,8 +634,9 @@ func (c *Container) sysctls() map[string]string {
 }
 
 func (c *Container) resources() dcontainer.Resources {
+	devices := &c.config.Filesystem.Devices
 	var devs []dcontainer.DeviceMapping
-	for _, d := range c.config.Filesystem.Devices.Static {
+	for _, d := range slices.Concat(devices.Static, devices.Dynamic) {
 		m := dcontainer.DeviceMapping{}
 		m.PathOnHost = d.Src
 		if len(d.Dst) > 0 {
@@ -655,7 +657,6 @@ func (c *Container) resources() dcontainer.Resources {
 		m.CgroupPermissions = perms.String()
 		devs = append(devs, m)
 	}
-	// TODO: Also include devices obtained dynamically by invoking the command.
 	return dcontainer.Resources{
 		Devices: devs,
 	}
