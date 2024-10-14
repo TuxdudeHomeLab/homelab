@@ -88,6 +88,53 @@ var containerStartTests = []struct {
 		},
 	},
 	{
+		name: "Container Start - Doesn't Exist Already - Skip Image Pull",
+		config: buildCustomSingleContainerConfig(
+			config.ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz",
+			func(ct *config.Container) {
+				ct.Image.SkipImagePull = true
+			},
+		),
+		cRef: config.ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
+		},
+	},
+	{
+		name: "Container Start - Doesn't Exist Already - Ignore Image Pull Failures",
+		config: buildCustomSingleContainerConfig(
+			config.ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz",
+			func(ct *config.Container) {
+				ct.Image.IgnoreImagePullFailures = true
+			},
+		),
+		cRef: config.ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				ValidImagesForPull: utils.StringSet{
+					"abc/xyz": {},
+				},
+				FailImagePull: utils.StringSet{
+					"abc/xyz": {},
+				},
+			}),
+		},
+	},
+	{
 		name: "Container Start - Doesn't Exist Already - Existing Image",
 		config: buildSingleContainerConfig(
 			config.ContainerReference{
@@ -1061,6 +1108,78 @@ var containerStopTests = []struct {
 		wantState:               docker.ContainerStateExited,
 	},
 	{
+		name: "Container Stop - Exists Already In Running State - Pull Image Before Stop",
+		config: buildCustomSingleContainerConfig(
+			config.ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz",
+			func(ct *config.Container) {
+				ct.Image.PullImageBeforeStop = true
+			},
+		),
+		cRef: config.ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				Containers: []*fakedocker.FakeContainerInitInfo{
+					{
+						Name:  "g1-c1",
+						Image: "abc/xyz",
+						State: docker.ContainerStateRunning,
+					},
+				},
+				ValidImagesForPull: utils.StringSet{
+					"abc/xyz": {},
+				},
+			}),
+		},
+		wantContainerStopIssued: true,
+		wantStoppedReturnVal:    true,
+		wantState:               docker.ContainerStateExited,
+	},
+	{
+		name: "Container Stop - Exists Already In Running State - Pull Image Before Stop - Ignore Image Pull Failures",
+		config: buildCustomSingleContainerConfig(
+			config.ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz",
+			func(ct *config.Container) {
+				ct.Image.PullImageBeforeStop = true
+				ct.Image.IgnoreImagePullFailures = true
+			},
+		),
+		cRef: config.ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				Containers: []*fakedocker.FakeContainerInitInfo{
+					{
+						Name:  "g1-c1",
+						Image: "abc/xyz",
+						State: docker.ContainerStateRunning,
+					},
+				},
+				ValidImagesForPull: utils.StringSet{
+					"abc/xyz": {},
+				},
+				FailImagePull: utils.StringSet{
+					"abc/xyz": {},
+				},
+			}),
+		},
+		wantContainerStopIssued: true,
+		wantStoppedReturnVal:    true,
+		wantState:               docker.ContainerStateExited,
+	},
+	{
 		name: "Container Stop - Exists Already In Paused State",
 		config: buildSingleContainerConfig(
 			config.ContainerReference{
@@ -1349,6 +1468,41 @@ var containerStopErrorTests = []struct {
 			}),
 		},
 		want: `Failed to stop container g1-c1, reason:failed to retrieve the container state, reason: failed to inspect container g1-c1 on the fake docker host`,
+	},
+	{
+		name: "Container Stop - Exists Already In Running State - Pull Image Before Stop - Image Pull Failure",
+		config: buildCustomSingleContainerConfig(
+			config.ContainerReference{
+				Group:     "g1",
+				Container: "c1",
+			},
+			"abc/xyz",
+			func(ct *config.Container) {
+				ct.Image.PullImageBeforeStop = true
+			},
+		),
+		cRef: config.ContainerReference{
+			Group:     "g1",
+			Container: "c1",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				Containers: []*fakedocker.FakeContainerInitInfo{
+					{
+						Name:  "g1-c1",
+						Image: "abc/xyz",
+						State: docker.ContainerStateRunning,
+					},
+				},
+				ValidImagesForPull: utils.StringSet{
+					"abc/xyz": {},
+				},
+				FailImagePull: utils.StringSet{
+					"abc/xyz": {},
+				},
+			}),
+		},
+		want: `Failed to stop container g1-c1, reason:failed while pulling the image abc/xyz, reason: failed to pull image abc/xyz on the fake docker host`,
 	},
 }
 

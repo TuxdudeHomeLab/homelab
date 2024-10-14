@@ -1,0 +1,10 @@
+containers:
+  - info:
+      group: g1
+      container: c1
+    image:
+      image: abc/xyz
+      ignoreImagePullFailures: true
+      pullImageBeforeStop: true
+    lifecycle:
+      order: 1

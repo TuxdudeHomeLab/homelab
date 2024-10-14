@@ -515,6 +515,37 @@ Creating container g2-c3
 Starting container g2-c3`,
 	},
 	{
+		name: "Homelab Command - Start - All Groups - One Container With Ignore Image Pull Failures",
+		args: []string{
+			"group",
+			"start",
+			"all",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/start-stop-cmds-with-ignore-image-pull-failures", testhelpers.Pwd()),
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				ValidImagesForPull: utils.StringSet{
+					"abc/xyz":  {},
+					"abc/xyz3": {},
+				},
+				FailImagePull: utils.StringSet{
+					"abc/xyz": {},
+				},
+			}),
+		},
+		want: `Pulling image: abc/xyz
+Ignoring - Image pull for container g1-c1 failed, reason: failed while pulling the image abc/xyz, reason: failed to pull image abc/xyz on the fake docker host
+Created network net1
+Creating container g1-c1
+Starting container g1-c1
+Container g1-c2 not allowed to run on host FakeHost
+Pulling image: abc/xyz3
+Created network net2
+Creating container g2-c3
+Starting container g2-c3`,
+	},
+	{
 		name: "Homelab Command - Start - One Group",
 		args: []string{
 			"group",
@@ -585,6 +616,44 @@ Starting container g1-c1`,
 		want: `Container g1-c1 cannot be stopped since it is in state Created
 Container g1-c2 cannot be stopped since it was not found
 Container g2-c3 cannot be stopped since it is in state Removing`,
+	},
+	{
+		name: "Homelab Command - Stop - All Groups - One Container With Ignore Image Pull Failures",
+		args: []string{
+			"group",
+			"stop",
+			"all",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/start-stop-cmds-with-ignore-image-pull-failures", testhelpers.Pwd()),
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				Containers: []*fakedocker.FakeContainerInitInfo{
+					{
+						Name:  "g1-c1",
+						Image: "abc/xyz",
+						State: docker.ContainerStateRunning,
+					},
+					{
+						Name:  "g2-c3",
+						Image: "abc/xyz3",
+						State: docker.ContainerStateRunning,
+					},
+				},
+				ValidImagesForPull: utils.StringSet{
+					"abc/xyz":  {},
+					"abc/xyz3": {},
+				},
+				FailImagePull: utils.StringSet{
+					"abc/xyz": {},
+				},
+			}),
+		},
+		want: `Pulling image: abc/xyz
+Ignoring - Image pull for container g1-c1 failed, reason: failed while pulling the image abc/xyz, reason: failed to pull image abc/xyz on the fake docker host
+Stopping container g1-c1
+Container g1-c2 cannot be stopped since it was not found
+Stopping container g2-c3`,
 	},
 	{
 		name: "Homelab Command - Stop - One Group",

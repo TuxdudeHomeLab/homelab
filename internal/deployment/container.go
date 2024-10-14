@@ -137,9 +137,14 @@ func (c *Container) startInternal(ctx context.Context, dc *docker.Client) error 
 	}
 
 	// 2. Pull the container image.
-	err := dc.PullImage(ctx, c.imageReference())
-	if err != nil {
-		return err
+	if !c.config.Image.SkipImagePull {
+		err := dc.PullImage(ctx, c.imageReference())
+		if err != nil {
+			if !c.config.Image.IgnoreImagePullFailures {
+				return err
+			}
+			log(ctx).Warnf("Ignoring - Image pull for container %s failed, reason: %v", c.Name(), err)
+		}
 	}
 
 	// 3. Purge (i.e. stop and remove) any previously existing containers
@@ -208,6 +213,17 @@ func (c *Container) stopInternal(ctx context.Context, dc *docker.Client) (bool, 
 		// Nothing to stop.
 		return false, st, nil
 	case docker.ContainerStateRunning, docker.ContainerStatePaused, docker.ContainerStateRestarting:
+		// 2. Pull the container image before stopping if requested.
+		if c.config.Image.PullImageBeforeStop {
+			err := dc.PullImage(ctx, c.imageReference())
+			if err != nil {
+				if !c.config.Image.IgnoreImagePullFailures {
+					return false, st, err
+				}
+				log(ctx).Warnf("Ignoring - Image pull for container %s failed, reason: %v", c.Name(), err)
+			}
+		}
+
 		// Stop the container.
 		log(ctx).Infof("Stopping container %s", c.Name())
 		if err := dc.StopContainer(ctx, c.Name()); err != nil {
