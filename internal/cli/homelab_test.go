@@ -507,7 +507,7 @@ Created network net1
 Creating container g1-c1
 Starting container g1-c1
 Container g1-c2 not allowed to run on host FakeHost
-Output from start pre-hook for container g2-c3
+Output from start pre-hook for container g2-c3 >>>
 Output from a custom start prehook
 Pulling image: abc/xyz3
 Created network net2
