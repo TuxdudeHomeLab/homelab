@@ -1121,6 +1121,7 @@ ignore:
 					},
 					Privileged:     true,
 					ReadonlyRootfs: true,
+					ShmSize:        1073741824,
 					Sysctls: map[string]string{
 						"net.ipv4.conf.all.src_valid_mark": "1",
 						"net.ipv4.ip_forward":              "1",

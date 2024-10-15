@@ -644,7 +644,10 @@ func (c *Container) tmpfsMounts() map[string]string {
 }
 
 func (c *Container) shmSize() int64 {
-	return 0
+	if len(c.config.Runtime.ShmSize) == 0 {
+		return 0
+	}
+	return utils.MustParseRAMInBytes(c.config.Runtime.ShmSize)
 }
 
 func (c *Container) sysctls() map[string]string {

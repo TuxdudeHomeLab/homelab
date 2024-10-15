@@ -6,12 +6,21 @@ import (
 	"time"
 
 	"github.com/clarketm/json"
+	"github.com/docker/go-units"
 )
 
 type StringSet map[string]struct{}
 
 func MustParseDuration(d string) time.Duration {
 	res, err := time.ParseDuration(d)
+	if err != nil {
+		panic(err.Error())
+	}
+	return res
+}
+
+func MustParseRAMInBytes(size string) int64 {
+	res, err := units.RAMInBytes(size)
 	if err != nil {
 		panic(err.Error())
 	}
