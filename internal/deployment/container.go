@@ -404,8 +404,6 @@ func (c *Container) attachToTty() bool {
 func (c *Container) envVars() []string {
 	env := make(map[string]string, 0)
 	envKeys := make([]string, 0)
-	// TODO: Substitute global config env variables in the value fields.
-	// TODO: Support invoking ValueCmd for evaluating the value.
 	for _, e := range c.globalConfig.Container.Env {
 		env[e.Var] = e.Value
 		envKeys = append(envKeys, e.Var)
