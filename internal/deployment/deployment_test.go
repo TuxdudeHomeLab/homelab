@@ -164,6 +164,8 @@ hosts:
         container: ct1
       - group: group2
         container: ct3
+      - group: group4
+        container: ct7
   - name: host2
     allowedContainers:
       - group: group1
@@ -176,6 +178,8 @@ groups:
     order: 2
   - name: group3
     order: 3
+  - name: group4
+    order: 4
 containers:
   - info:
       group: group1
@@ -364,6 +368,13 @@ containers:
       image: abc123/xyz127
     lifecycle:
       order: 3
+  - info:
+      group: group4
+      container: ct7
+    image:
+      image: abc123/xyz128
+    lifecycle:
+      order: 1
 ignore:
   - foo
   - 4567
@@ -632,6 +643,10 @@ ignore:
 							Group:     "group2",
 							Container: "ct3",
 						},
+						{
+							Group:     "group4",
+							Container: "ct7",
+						},
 					},
 				},
 				{
@@ -659,6 +674,10 @@ ignore:
 				{
 					Name:  "group3",
 					Order: 3,
+				},
+				{
+					Name:  "group4",
+					Order: 4,
 				},
 			},
 			Containers: []config.Container{
@@ -972,6 +991,18 @@ ignore:
 					},
 					Lifecycle: config.ContainerLifecycle{
 						Order: 3,
+					},
+				},
+				{
+					Info: config.ContainerReference{
+						Group:     "group4",
+						Container: "ct7",
+					},
+					Image: config.ContainerImage{
+						Image: "abc123/xyz128",
+					},
+					Lifecycle: config.ContainerLifecycle{
+						Order: 1,
 					},
 				},
 			},
@@ -1307,6 +1338,36 @@ ignore:
 						"/foo:/bar:ro",
 					},
 					NetworkMode: "container:group3-ct4",
+					RestartPolicy: dcontainer.RestartPolicy{
+						Name: "unless-stopped",
+					},
+					DNSSearch: []string{
+						"dns-search-1",
+						"dns-search-2",
+					},
+				},
+			},
+			config.ContainerReference{
+				Group:     "group4",
+				Container: "ct7",
+			}: &containerDockerConfigs{
+				ContainerConfig: &dcontainer.Config{
+					Domainname: "example.tld",
+					Env: []string{
+						"MY_CONTAINER_ENV_VAR_1=MY_CONTAINER_ENV_VAR_1_VALUE",
+						"MY_CONTAINER_ENV_VAR_2=MY_CONTAINER_ENV_VAR_2_VALUE",
+						"MY_CONTAINER_ENV_VAR_3=/foo2/bar2/some-other-env-var-cmd",
+					},
+					Image:       "abc123/xyz128",
+					StopTimeout: testhelpers.NewInt(8),
+				},
+				HostConfig: &dcontainer.HostConfig{
+					Binds: []string{
+						"/abc/def/ghi:/pqr/stu/vwx:ro",
+						"/abc1/def1:/pqr2/stu2/vwx2",
+						"/foo:/bar:ro",
+					},
+					NetworkMode: "none",
 					RestartPolicy: dcontainer.RestartPolicy{
 						Name: "unless-stopped",
 					},
