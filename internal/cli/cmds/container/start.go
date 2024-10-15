@@ -51,6 +51,12 @@ func execContainerStartCmd(ctx context.Context, containerArg string, opts *clico
 		return err
 	}
 
+	// TODO: Identify dependent containers which are potentially using this
+	// container's networking stack, and if they are running already, start
+	// them otherwise those containers will lose network connectivity
+	// permanently even when the container gets restarted automatically
+	// until they get recreated freshly.
+
 	return clicommon.ExecContainerGroupCmd(
 		ctx,
 		"container start",
