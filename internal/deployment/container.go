@@ -18,11 +18,8 @@ import (
 )
 
 const (
-	// six attempts implies we will attempt killing the container
-	// five times in the worst case before giving up. The one
-	// remaining attempt is to remove the container which has been
-	// terminated.
-	stopAndRemoveAttempts = 6
+	// Delay between successive purge (stop and remove) kill attempts.
+	purgeKillDelay = 20 * time.Millisecond
 )
 
 type Container struct {
@@ -255,6 +252,10 @@ func (c *Container) purgeInternal(ctx context.Context, dc *docker.Client) (bool,
 	}
 
 	purged := false
+	// We will attempt killing the container attemptsRemaining times
+	// in the worst case before giving up. The one extra attempt is to
+	// remove the container which has been terminated.
+	stopAndRemoveAttempts := dc.ContainerPurgeKillAttempts() + 1
 	attemptsRemaining := stopAndRemoveAttempts
 
 	for !purged && attemptsRemaining > 0 {
@@ -276,7 +277,7 @@ func (c *Container) purgeInternal(ctx context.Context, dc *docker.Client) (bool,
 			log(ctx).Infof("Killing container %s", c.Name())
 			_ = dc.KillContainer(ctx, c.Name())
 			// Add a delay before checking the container state again.
-			time.Sleep(dc.ContainerPurgeKillDelay())
+			time.Sleep(purgeKillDelay)
 		case docker.ContainerStateCreated, docker.ContainerStateExited, docker.ContainerStateDead:
 			// Directly remove the container.
 			log(ctx).Infof("Removing container %s", c.Name())
@@ -289,7 +290,7 @@ func (c *Container) purgeInternal(ctx context.Context, dc *docker.Client) (bool,
 			// unknown handling in next steps.
 			log(ctx).Warnf("container %s is in REMOVING state already, can lead to issues for any further operations including creating container with the same name", c.Name())
 			// Add a delay before checking the container state again.
-			time.Sleep(dc.ContainerPurgeKillDelay())
+			time.Sleep(purgeKillDelay)
 		default:
 			log(ctx).Fatalf("container %s is in an unsupported state %v, possibly indicating a bug in the code", c.Name(), st)
 		}

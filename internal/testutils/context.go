@@ -2,7 +2,6 @@ package testutils
 
 import (
 	"context"
-	"time"
 
 	"github.com/tuxdude/zzzlogi"
 	"github.com/tuxdudehomelab/homelab/internal/cli/version"
@@ -19,15 +18,15 @@ import (
 )
 
 type TestContextInfo struct {
-	InspectLevel            inspect.HomelabInspectLevel
-	Logger                  zzzlogi.Logger
-	Version                 *version.VersionInfo
-	Executor                cmdexec.Executor
-	DockerHost              docker.APIClient
-	ContainerPurgeKillDelay time.Duration
-	UseRealUserInfo         bool
-	UseRealHostInfo         bool
-	UseRealExecutor         bool
+	InspectLevel               inspect.HomelabInspectLevel
+	Logger                     zzzlogi.Logger
+	Version                    *version.VersionInfo
+	Executor                   cmdexec.Executor
+	DockerHost                 docker.APIClient
+	ContainerPurgeKillAttempts uint32
+	UseRealUserInfo            bool
+	UseRealHostInfo            bool
+	UseRealExecutor            bool
 }
 
 func NewVanillaTestContext() context.Context {
@@ -64,8 +63,8 @@ func NewTestContext(info *TestContextInfo) context.Context {
 	if info.DockerHost != nil {
 		ctx = docker.WithAPIClient(ctx, info.DockerHost)
 	}
-	if info.ContainerPurgeKillDelay != 0 {
-		ctx = docker.WithContainerPurgeKillDelay(ctx, info.ContainerPurgeKillDelay)
+	if info.ContainerPurgeKillAttempts != 0 {
+		ctx = docker.WithContainerPurgeKillAttempts(ctx, info.ContainerPurgeKillAttempts)
 	}
 	return ctx
 }

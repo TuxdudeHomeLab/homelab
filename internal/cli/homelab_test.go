@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/tuxdude/zzzlog"
 	"github.com/tuxdudehomelab/homelab/internal/cli/version"
@@ -2210,9 +2209,9 @@ func execHomelabCmdTestWithBuf(ctxInfo *testutils.TestContextInfo, logLevel *zzz
 		lvl = *logLevel
 	}
 	ctxInfo.Logger = testutils.NewCapturingVanillaTestLogger(lvl, buf)
-	if ctxInfo.ContainerPurgeKillDelay == 0 {
-		// Reduce this delay to keep the tests executing quickly.
-		ctxInfo.ContainerPurgeKillDelay = 100 * time.Millisecond
+	if ctxInfo.ContainerPurgeKillAttempts == 0 {
+		// Reduce the number of attempts to keep the tests executing quickly.
+		ctxInfo.ContainerPurgeKillAttempts = 5
 	}
 
 	ctx := testutils.NewTestContext(ctxInfo)

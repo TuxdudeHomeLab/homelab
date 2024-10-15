@@ -7,7 +7,6 @@ import (
 	"os"
 	"reflect"
 	"strings"
-	"time"
 
 	dcontainer "github.com/docker/docker/api/types/container"
 	dfilters "github.com/docker/docker/api/types/filters"
@@ -25,25 +24,25 @@ import (
 )
 
 const (
-	defaultContainerPurgeKillDelay = 1 * time.Second
+	defaultContainerPurgeKillAttempts = 250
 )
 
 type Client struct {
-	client                  APIClient
-	platform                string
-	ociPlatform             ocispec.Platform
-	containerPurgeKillDelay time.Duration
-	debug                   bool
+	client                     APIClient
+	platform                   string
+	ociPlatform                ocispec.Platform
+	containerPurgeKillAttempts uint32
+	debug                      bool
 }
 
 func NewClient(ctx context.Context) *Client {
 	h := host.MustHostInfo(ctx)
 	return &Client{
-		client:                  MustAPIClient(ctx),
-		platform:                h.DockerPlatform,
-		ociPlatform:             ocispec.Platform{Architecture: h.Arch},
-		containerPurgeKillDelay: evalContainerPurgeKillDelay(ctx),
-		debug:                   dockerDebugFromInspect(ctx),
+		client:                     MustAPIClient(ctx),
+		platform:                   h.DockerPlatform,
+		ociPlatform:                ocispec.Platform{Architecture: h.Arch},
+		containerPurgeKillAttempts: evalContainerPurgeKillAttempts(ctx),
+		debug:                      dockerDebugFromInspect(ctx),
 	}
 }
 
@@ -267,8 +266,8 @@ func (d *Client) DisconnectContainerFromNetwork(ctx context.Context, containerNa
 	return nil
 }
 
-func (d *Client) ContainerPurgeKillDelay() time.Duration {
-	return d.containerPurgeKillDelay
+func (d *Client) ContainerPurgeKillAttempts() uint32 {
+	return d.containerPurgeKillAttempts
 }
 
 func (d *Client) Close() {
@@ -280,9 +279,9 @@ func dockerDebugFromInspect(ctx context.Context) bool {
 	return lvl == inspect.HomelabInspectLevelDebug || lvl == inspect.HomelabInspectLevelTrace
 }
 
-func evalContainerPurgeKillDelay(ctx context.Context) time.Duration {
-	if delay, ok := getContainerPurgeKillDelay(ctx); ok {
+func evalContainerPurgeKillAttempts(ctx context.Context) uint32 {
+	if delay, ok := getContainerPurgeKillAttempts(ctx); ok {
 		return delay
 	}
-	return defaultContainerPurgeKillDelay
+	return defaultContainerPurgeKillAttempts
 }

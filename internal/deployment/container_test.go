@@ -313,7 +313,7 @@ var containerStartTests = []struct {
 		},
 		preExec: func(ctx context.Context) {
 			go func() {
-				time.Sleep(200 * time.Millisecond)
+				time.Sleep(40 * time.Millisecond)
 				d := fakedocker.FakeDockerHostFromContext(ctx)
 				err := d.ForceRemoveContainer("g1-c1")
 				if err != nil {
@@ -473,9 +473,9 @@ func TestContainerStart(t *testing.T) {
 			if tc.ctxInfo.InspectLevel == inspect.HomelabInspectLevelNone {
 				tc.ctxInfo.InspectLevel = inspect.HomelabInspectLevelDebug
 			}
-			if tc.ctxInfo.ContainerPurgeKillDelay == 0 {
-				// Reduce this delay to keep the tests executing quickly.
-				tc.ctxInfo.ContainerPurgeKillDelay = 100 * time.Millisecond
+			if tc.ctxInfo.ContainerPurgeKillAttempts == 0 {
+				// Reduce the number of attempts to keep the tests executing quickly.
+				tc.ctxInfo.ContainerPurgeKillAttempts = 5
 			}
 			ctx := testutils.NewTestContext(tc.ctxInfo)
 
@@ -982,9 +982,9 @@ func TestContainerStartErrors(t *testing.T) {
 
 			buf := new(bytes.Buffer)
 			tc.ctxInfo.Logger = testutils.NewCapturingTestLogger(zzzlog.LvlDebug, buf)
-			if tc.ctxInfo.ContainerPurgeKillDelay == 0 {
-				// Reduce this delay to keep the tests executing quickly.
-				tc.ctxInfo.ContainerPurgeKillDelay = 100 * time.Millisecond
+			if tc.ctxInfo.ContainerPurgeKillAttempts == 0 {
+				// Reduce the number of attempts to keep the tests executing quickly.
+				tc.ctxInfo.ContainerPurgeKillAttempts = 5
 			}
 			ctx := testutils.NewTestContext(tc.ctxInfo)
 
@@ -1330,9 +1330,9 @@ func TestContainerStop(t *testing.T) {
 			if tc.ctxInfo.InspectLevel == inspect.HomelabInspectLevelNone {
 				tc.ctxInfo.InspectLevel = inspect.HomelabInspectLevelDebug
 			}
-			if tc.ctxInfo.ContainerPurgeKillDelay == 0 {
-				// Reduce this delay to keep the tests executing quickly.
-				tc.ctxInfo.ContainerPurgeKillDelay = 100 * time.Millisecond
+			if tc.ctxInfo.ContainerPurgeKillAttempts == 0 {
+				// Reduce the number of attempts to keep the tests executing quickly.
+				tc.ctxInfo.ContainerPurgeKillAttempts = 5
 			}
 			ctx := testutils.NewTestContext(tc.ctxInfo)
 
@@ -1516,9 +1516,9 @@ func TestContainerStopErrors(t *testing.T) {
 
 			buf := new(bytes.Buffer)
 			tc.ctxInfo.Logger = testutils.NewCapturingTestLogger(zzzlog.LvlDebug, buf)
-			if tc.ctxInfo.ContainerPurgeKillDelay == 0 {
-				// Reduce this delay to keep the tests executing quickly.
-				tc.ctxInfo.ContainerPurgeKillDelay = 100 * time.Millisecond
+			if tc.ctxInfo.ContainerPurgeKillAttempts == 0 {
+				// Reduce the number of attempts to keep the tests executing quickly.
+				tc.ctxInfo.ContainerPurgeKillAttempts = 5
 			}
 			ctx := testutils.NewTestContext(tc.ctxInfo)
 
@@ -1706,7 +1706,7 @@ var containerPurgeTests = []struct {
 		},
 		preExec: func(ctx context.Context) {
 			go func() {
-				time.Sleep(200 * time.Millisecond)
+				time.Sleep(40 * time.Millisecond)
 				d := fakedocker.FakeDockerHostFromContext(ctx)
 				err := d.ForceRemoveContainer("g1-c1")
 				if err != nil {
@@ -1835,9 +1835,9 @@ func TestContainerPurge(t *testing.T) {
 			if tc.ctxInfo.InspectLevel == inspect.HomelabInspectLevelNone {
 				tc.ctxInfo.InspectLevel = inspect.HomelabInspectLevelDebug
 			}
-			if tc.ctxInfo.ContainerPurgeKillDelay == 0 {
-				// Reduce this delay to keep the tests executing quickly.
-				tc.ctxInfo.ContainerPurgeKillDelay = 100 * time.Millisecond
+			if tc.ctxInfo.ContainerPurgeKillAttempts == 0 {
+				// Reduce the number of attempts to keep the tests executing quickly.
+				tc.ctxInfo.ContainerPurgeKillAttempts = 5
 			}
 			ctx := testutils.NewTestContext(tc.ctxInfo)
 
@@ -2082,9 +2082,9 @@ func TestContainerPurgeErrors(t *testing.T) {
 
 			buf := new(bytes.Buffer)
 			tc.ctxInfo.Logger = testutils.NewCapturingTestLogger(zzzlog.LvlDebug, buf)
-			if tc.ctxInfo.ContainerPurgeKillDelay == 0 {
-				// Reduce this delay to keep the tests executing quickly.
-				tc.ctxInfo.ContainerPurgeKillDelay = 100 * time.Millisecond
+			if tc.ctxInfo.ContainerPurgeKillAttempts == 0 {
+				// Reduce the number of attempts to keep the tests executing quickly.
+				tc.ctxInfo.ContainerPurgeKillAttempts = 5
 			}
 			ctx := testutils.NewTestContext(tc.ctxInfo)
 
@@ -2269,9 +2269,9 @@ func TestContainerDockerConfigs(t *testing.T) {
 			if tc.ctxInfo.InspectLevel == inspect.HomelabInspectLevelNone {
 				tc.ctxInfo.InspectLevel = inspect.HomelabInspectLevelDebug
 			}
-			if tc.ctxInfo.ContainerPurgeKillDelay == 0 {
-				// Reduce this delay to keep the tests executing quickly.
-				tc.ctxInfo.ContainerPurgeKillDelay = 100 * time.Millisecond
+			if tc.ctxInfo.ContainerPurgeKillAttempts == 0 {
+				// Reduce the number of attempts to keep the tests executing quickly.
+				tc.ctxInfo.ContainerPurgeKillAttempts = 5
 			}
 			ctx := testutils.NewTestContext(tc.ctxInfo)
 
