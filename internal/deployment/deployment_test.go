@@ -121,20 +121,29 @@ ipam:
             container:
               group: group2
               container: ct3
-      - name: common-bridge
-        hostInterfaceName: docker-cmn
+      - name: group3-bridge
+        hostInterfaceName: docker-grp3
         cidr: 172.18.20.0/24
-        priority: 2
+        priority: 1
         containers:
           - ip: 172.18.20.11
             container:
+              group: group3
+              container: ct4
+      - name: common-bridge
+        hostInterfaceName: docker-cmn
+        cidr: 172.18.30.0/24
+        priority: 2
+        containers:
+          - ip: 172.18.30.11
+            container:
               group: group1
               container: ct1
-          - ip: 172.18.20.12
+          - ip: 172.18.30.12
             container:
               group: group1
               container: ct2
-          - ip: 172.18.20.13
+          - ip: 172.18.30.13
             container:
               group: group2
               container: ct3
@@ -148,8 +157,6 @@ ipam:
             container: ct5
           - group: group3
             container: ct6
-          - group: group3
-            container: ct7
 hosts:
   - name: fakehost
     allowedContainers:
@@ -334,6 +341,27 @@ containers:
       container: ct3
     image:
       image: abc123/xyz124
+    lifecycle:
+      order: 3
+  - info:
+      group: group3
+      container: ct4
+    image:
+      image: abc123/xyz125
+    lifecycle:
+      order: 1
+  - info:
+      group: group3
+      container: ct5
+    image:
+      image: abc123/xyz126
+    lifecycle:
+      order: 2
+  - info:
+      group: group3
+      container: ct6
+    image:
+      image: abc123/xyz127
     lifecycle:
       order: 3
 ignore:
@@ -527,27 +555,42 @@ ignore:
 							},
 						},
 						{
-							Name:              "common-bridge",
-							HostInterfaceName: "docker-cmn",
+							Name:              "group3-bridge",
+							HostInterfaceName: "docker-grp3",
 							CIDR:              "172.18.20.0/24",
-							Priority:          2,
+							Priority:          1,
 							Containers: []config.ContainerIP{
 								{
 									IP: "172.18.20.11",
+									Container: config.ContainerReference{
+										Group:     "group3",
+										Container: "ct4",
+									},
+								},
+							},
+						},
+						{
+							Name:              "common-bridge",
+							HostInterfaceName: "docker-cmn",
+							CIDR:              "172.18.30.0/24",
+							Priority:          2,
+							Containers: []config.ContainerIP{
+								{
+									IP: "172.18.30.11",
 									Container: config.ContainerReference{
 										Group:     "group1",
 										Container: "ct1",
 									},
 								},
 								{
-									IP: "172.18.20.12",
+									IP: "172.18.30.12",
 									Container: config.ContainerReference{
 										Group:     "group1",
 										Container: "ct2",
 									},
 								},
 								{
-									IP: "172.18.20.13",
+									IP: "172.18.30.13",
 									Container: config.ContainerReference{
 										Group:     "group2",
 										Container: "ct3",
@@ -571,10 +614,6 @@ ignore:
 								{
 									Group:     "group3",
 									Container: "ct6",
-								},
-								{
-									Group:     "group3",
-									Container: "ct7",
 								},
 							},
 						},
@@ -899,6 +938,42 @@ ignore:
 						Order: 3,
 					},
 				},
+				{
+					Info: config.ContainerReference{
+						Group:     "group3",
+						Container: "ct4",
+					},
+					Image: config.ContainerImage{
+						Image: "abc123/xyz125",
+					},
+					Lifecycle: config.ContainerLifecycle{
+						Order: 1,
+					},
+				},
+				{
+					Info: config.ContainerReference{
+						Group:     "group3",
+						Container: "ct5",
+					},
+					Image: config.ContainerImage{
+						Image: "abc123/xyz126",
+					},
+					Lifecycle: config.ContainerLifecycle{
+						Order: 2,
+					},
+				},
+				{
+					Info: config.ContainerReference{
+						Group:     "group3",
+						Container: "ct6",
+					},
+					Image: config.ContainerImage{
+						Image: "abc123/xyz127",
+					},
+					Lifecycle: config.ContainerLifecycle{
+						Order: 3,
+					},
+				},
 			},
 		},
 		wantDockerConfigs: containerDockerConfigMap{
@@ -1139,6 +1214,105 @@ ignore:
 								IPv4Address: "172.18.19.11",
 							},
 						},
+					},
+				},
+			},
+			config.ContainerReference{
+				Group:     "group3",
+				Container: "ct4",
+			}: &containerDockerConfigs{
+				ContainerConfig: &dcontainer.Config{
+					Domainname: "example.tld",
+					Env: []string{
+						"MY_CONTAINER_ENV_VAR_1=MY_CONTAINER_ENV_VAR_1_VALUE",
+						"MY_CONTAINER_ENV_VAR_2=MY_CONTAINER_ENV_VAR_2_VALUE",
+						"MY_CONTAINER_ENV_VAR_3=/foo2/bar2/some-other-env-var-cmd",
+					},
+					Image:       "abc123/xyz125",
+					StopTimeout: testhelpers.NewInt(8),
+				},
+				HostConfig: &dcontainer.HostConfig{
+					Binds: []string{
+						"/abc/def/ghi:/pqr/stu/vwx:ro",
+						"/abc1/def1:/pqr2/stu2/vwx2",
+						"/foo:/bar:ro",
+					},
+					NetworkMode: "group3-bridge",
+					RestartPolicy: dcontainer.RestartPolicy{
+						Name: "unless-stopped",
+					},
+					DNSSearch: []string{
+						"dns-search-1",
+						"dns-search-2",
+					},
+				},
+				NetworkConfig: &dnetwork.NetworkingConfig{
+					EndpointsConfig: map[string]*dnetwork.EndpointSettings{
+						"group3-bridge": {
+							IPAMConfig: &dnetwork.EndpointIPAMConfig{
+								IPv4Address: "172.18.20.11",
+							},
+						},
+					},
+				},
+			},
+			config.ContainerReference{
+				Group:     "group3",
+				Container: "ct5",
+			}: &containerDockerConfigs{
+				ContainerConfig: &dcontainer.Config{
+					Domainname: "example.tld",
+					Env: []string{
+						"MY_CONTAINER_ENV_VAR_1=MY_CONTAINER_ENV_VAR_1_VALUE",
+						"MY_CONTAINER_ENV_VAR_2=MY_CONTAINER_ENV_VAR_2_VALUE",
+						"MY_CONTAINER_ENV_VAR_3=/foo2/bar2/some-other-env-var-cmd",
+					},
+					Image:       "abc123/xyz126",
+					StopTimeout: testhelpers.NewInt(8),
+				},
+				HostConfig: &dcontainer.HostConfig{
+					Binds: []string{
+						"/abc/def/ghi:/pqr/stu/vwx:ro",
+						"/abc1/def1:/pqr2/stu2/vwx2",
+						"/foo:/bar:ro",
+					},
+					NetworkMode: "container:group3-ct4",
+					RestartPolicy: dcontainer.RestartPolicy{
+						Name: "unless-stopped",
+					},
+					DNSSearch: []string{
+						"dns-search-1",
+						"dns-search-2",
+					},
+				},
+			},
+			config.ContainerReference{
+				Group:     "group3",
+				Container: "ct6",
+			}: &containerDockerConfigs{
+				ContainerConfig: &dcontainer.Config{
+					Domainname: "example.tld",
+					Env: []string{
+						"MY_CONTAINER_ENV_VAR_1=MY_CONTAINER_ENV_VAR_1_VALUE",
+						"MY_CONTAINER_ENV_VAR_2=MY_CONTAINER_ENV_VAR_2_VALUE",
+						"MY_CONTAINER_ENV_VAR_3=/foo2/bar2/some-other-env-var-cmd",
+					},
+					Image:       "abc123/xyz127",
+					StopTimeout: testhelpers.NewInt(8),
+				},
+				HostConfig: &dcontainer.HostConfig{
+					Binds: []string{
+						"/abc/def/ghi:/pqr/stu/vwx:ro",
+						"/abc1/def1:/pqr2/stu2/vwx2",
+						"/foo:/bar:ro",
+					},
+					NetworkMode: "container:group3-ct4",
+					RestartPolicy: dcontainer.RestartPolicy{
+						Name: "unless-stopped",
+					},
+					DNSSearch: []string{
+						"dns-search-1",
+						"dns-search-2",
 					},
 				},
 			},
