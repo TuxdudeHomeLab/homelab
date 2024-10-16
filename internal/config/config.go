@@ -239,12 +239,12 @@ type ContainerRuntime struct {
 
 // Mount represents a filesystem mount.
 type Mount struct {
-	Name     string `yaml:"name,omitempty" json:"name,omitempty"`
-	Type     string `yaml:"type,omitempty" json:"type,omitempty"`
-	Src      string `yaml:"src,omitempty" json:"src,omitempty"`
-	Dst      string `yaml:"dst,omitempty" json:"dst,omitempty"`
-	ReadOnly bool   `yaml:"readOnly,omitempty" json:"readOnly,omitempty"`
-	Options  string `yaml:"options,omitempty" json:"options,omitempty"`
+	Name      string `yaml:"name,omitempty" json:"name,omitempty"`
+	Type      string `yaml:"type,omitempty" json:"type,omitempty"`
+	Src       string `yaml:"src,omitempty" json:"src,omitempty"`
+	Dst       string `yaml:"dst,omitempty" json:"dst,omitempty"`
+	ReadOnly  bool   `yaml:"readOnly,omitempty" json:"readOnly,omitempty"`
+	TmpfsSize int64  `yaml:"tmpfsSize,omitempty" json:"tmpfsSize,omitempty"`
 }
 
 // ContainerDevice represents the set of devices exposed to a container.
@@ -357,7 +357,6 @@ func (g *Global) ApplyConfigEnv(env *env.ConfigEnvManager) {
 	for i, m := range g.MountDefs {
 		g.MountDefs[i].Src = env.Apply(m.Src)
 		g.MountDefs[i].Dst = env.Apply(m.Dst)
-		g.MountDefs[i].Options = env.Apply(m.Options)
 	}
 	g.Container.DomainName = env.Apply(g.Container.DomainName)
 	for i, d := range g.Container.DNSSearch {
@@ -370,7 +369,6 @@ func (g *Global) ApplyConfigEnv(env *env.ConfigEnvManager) {
 	for i, m := range g.Container.Mounts {
 		g.Container.Mounts[i].Src = env.Apply(m.Src)
 		g.Container.Mounts[i].Dst = env.Apply(m.Dst)
-		g.Container.Mounts[i].Options = env.Apply(m.Options)
 	}
 }
 
@@ -386,7 +384,6 @@ func (c *Container) ApplyConfigEnv(env *env.ConfigEnvManager) {
 	for i, m := range c.Filesystem.Mounts {
 		c.Filesystem.Mounts[i].Src = env.Apply(m.Src)
 		c.Filesystem.Mounts[i].Dst = env.Apply(m.Dst)
-		c.Filesystem.Mounts[i].Options = env.Apply(m.Options)
 	}
 	for i, d := range c.Filesystem.Devices.Static {
 		c.Filesystem.Devices.Static[i].Src = env.Apply(d.Src)

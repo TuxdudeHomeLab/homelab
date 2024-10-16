@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	dcontainer "github.com/docker/docker/api/types/container"
+	dmount "github.com/docker/docker/api/types/mount"
 	dnetwork "github.com/docker/docker/api/types/network"
 	"github.com/docker/go-connections/nat"
 	"github.com/tuxdudehomelab/homelab/internal/cmdexec/fakecmdexec"
@@ -88,6 +89,7 @@ global:
       - name: mount-def-1
       - name: mount-def-2
       - name: mount-def-3
+        type: bind
         src: /foo
         dst: /bar
         readOnly: true
@@ -186,8 +188,6 @@ containers:
       container: ct1
     config:
       env:
-        - var: ENV_TMPFS_SIZE
-          value: 100000000
         - var: ENV_SRC_DEV
           value: /dev/src123
         - var: ENV_DST_DEV
@@ -233,6 +233,9 @@ containers:
           type: bind
           src: $$HOMELAB_BASE_DIR$$/abc
           dst: /abc
+        - name: tmpfs-mount-1
+          type: tmpfs
+          dst: /tmp/cache-$$HUMAN_FRIENDLY_HOST_NAME$$
         - name: some-other-mount-2
           type: bind
           src: $$CONTAINER_BASE_DIR$$/some/random/dir
@@ -242,15 +245,15 @@ containers:
           src: $$CONTAINER_CONFIGS_DIR$$/generated/config.yml
           dst: /data/blocky/config/config.yml
           readOnly: true
+        - name: tmpfs-mount-2
+          type: tmpfs
+          dst: /tmp/cache-$$USER_NAME$$
+          tmpfsSize: 111111
+        - name: homelab-self-signed-tls-cert
         - name: some-other-mount-3
           type: bind
           src: $$CONTAINER_DATA_DIR$$/my-data
           dst: $$ENV_DEST_DIR$$/my-data
-        - name: homelab-self-signed-tls-cert
-        - name: tmpfs-mount
-          type: tmpfs
-          dst: /tmp/cache-$$USER_NAME$$
-          options: tmpfs-size=$$ENV_TMPFS_SIZE$$
       devices:
         static:
           - src: /dev/foostat1
@@ -508,6 +511,7 @@ ignore:
 						},
 						{
 							Name:     "mount-def-3",
+							Type:     "bind",
 							Src:      "/foo",
 							Dst:      "/bar",
 							ReadOnly: true,
@@ -689,10 +693,6 @@ ignore:
 					Config: config.ContainerConfigOptions{
 						Env: []config.ConfigEnv{
 							{
-								Var:   "ENV_TMPFS_SIZE",
-								Value: "100000000",
-							},
-							{
 								Var:   "ENV_SRC_DEV",
 								Value: "/dev/src123",
 							},
@@ -766,6 +766,11 @@ ignore:
 								Dst:  "/abc",
 							},
 							{
+								Name: "tmpfs-mount-1",
+								Type: "tmpfs",
+								Dst:  "/tmp/cache-FakeHost",
+							},
+							{
 								Name: "some-other-mount-2",
 								Type: "bind",
 								Src:  "testdata/dummy-base-dir/group1/ct1/some/random/dir",
@@ -779,19 +784,19 @@ ignore:
 								ReadOnly: true,
 							},
 							{
-								Name: "some-other-mount-3",
-								Type: "bind",
-								Src:  "testdata/dummy-base-dir/group1/ct1/data/my-data",
-								Dst:  "/foo123/bar123/my-data",
+								Name:      "tmpfs-mount-2",
+								Type:      "tmpfs",
+								Dst:       "/tmp/cache-fakeuser",
+								TmpfsSize: 111111,
 							},
 							{
 								Name: "homelab-self-signed-tls-cert",
 							},
 							{
-								Name:    "tmpfs-mount",
-								Type:    "tmpfs",
-								Dst:     "/tmp/cache-fakeuser",
-								Options: "tmpfs-size=100000000",
+								Name: "some-other-mount-3",
+								Type: "bind",
+								Src:  "testdata/dummy-base-dir/group1/ct1/data/my-data",
+								Dst:  "/foo123/bar123/my-data",
 							},
 						},
 						Devices: config.ContainerDevice{
@@ -1068,9 +1073,8 @@ ignore:
 						"testdata/dummy-base-dir/abc:/abc",
 						"testdata/dummy-base-dir/group1/ct1/some/random/dir:/xyz",
 						"testdata/dummy-base-dir/group1/ct1/configs/generated/config.yml:/data/blocky/config/config.yml:ro",
-						"testdata/dummy-base-dir/group1/ct1/data/my-data:/foo123/bar123/my-data",
 						"/path/to/my/self/signed/cert/on/host:/path/to/my/self/signed/cert/on/container",
-						":/tmp/cache-fakeuser",
+						"testdata/dummy-base-dir/group1/ct1/data/my-data:/foo123/bar123/my-data",
 					},
 					NetworkMode: "group1-bridge",
 					PortBindings: nat.PortMap{
@@ -1157,6 +1161,19 @@ ignore:
 								PathOnHost:        "/dev/foodyn3",
 								PathInContainer:   "/dev/bardyn3",
 								CgroupPermissions: "m",
+							},
+						},
+					},
+					Mounts: []dmount.Mount{
+						{
+							Type:   "tmpfs",
+							Target: "/tmp/cache-FakeHost",
+						},
+						{
+							Type:   "tmpfs",
+							Target: "/tmp/cache-fakeuser",
+							TmpfsOptions: &dmount.TmpfsOptions{
+								SizeBytes: 111111,
 							},
 						},
 					},
@@ -2199,7 +2216,24 @@ var buildDeploymentFromConfigErrorTests = []struct {
 				},
 			},
 		},
-		want: `mount name foo cannot have an empty value for src in global config mount defs`,
+		want: `bind mount name foo cannot have an empty value for src in global config mount defs`,
+	},
+	{
+		name: "Global Config Tmpfs Mount Def With Non-Empty Src",
+		config: config.Homelab{
+			Global: config.Global{
+				BaseDir: testhelpers.HomelabBaseDir(),
+				MountDefs: []config.Mount{
+					{
+						Name: "foo",
+						Type: "tmpfs",
+						Src:  "/foo",
+						Dst:  "/bar",
+					},
+				},
+			},
+		},
+		want: `tmpfs mount name foo cannot have a non-empty value for src in global config mount defs`,
 	},
 	{
 		name: "Global Config Mount Def With Empty Dst",
@@ -2218,22 +2252,39 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		want: `mount name foo cannot have an empty value for dst in global config mount defs`,
 	},
 	{
-		name: "Global Config Bind Mount Def With Options",
+		name: "Global Config Bind Mount Def With Tmpfs Size",
 		config: config.Homelab{
 			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 				MountDefs: []config.Mount{
 					{
-						Name:    "foo",
-						Type:    "bind",
-						Src:     "/foo",
-						Dst:     "/bar",
-						Options: "dummy-option1=val1,dummy-option2=val2",
+						Name:      "foo",
+						Type:      "bind",
+						Src:       "/foo",
+						Dst:       "/bar",
+						TmpfsSize: 1000,
 					},
 				},
 			},
 		},
-		want: `bind mount name foo cannot specify options in global config mount defs`,
+		want: `bind mount name foo cannot specify tmpfs size in global config mount defs`,
+	},
+	{
+		name: "Global Config Tmpfs Mount Def With Negative Tmpfs Size",
+		config: config.Homelab{
+			Global: config.Global{
+				BaseDir: testhelpers.HomelabBaseDir(),
+				MountDefs: []config.Mount{
+					{
+						Name:      "foo",
+						Type:      "tmpfs",
+						Dst:       "/bar",
+						TmpfsSize: -1000,
+					},
+				},
+			},
+		},
+		want: `tmpfs mount name foo cannot specify a negative tmpfs size -1000 in global config mount defs`,
 	},
 	{
 		name: "Global Container Config Negative Stop Timeout",
@@ -2433,7 +2484,26 @@ var buildDeploymentFromConfigErrorTests = []struct {
 				},
 			},
 		},
-		want: `mount name foo cannot have an empty value for src in global container config mounts`,
+		want: `bind mount name foo cannot have an empty value for src in global container config mounts`,
+	},
+	{
+		name: "Global Container Config Tmpfs Mount With Non-Empty Src",
+		config: config.Homelab{
+			Global: config.Global{
+				BaseDir: testhelpers.HomelabBaseDir(),
+				Container: config.GlobalContainer{
+					Mounts: []config.Mount{
+						{
+							Name: "foo",
+							Type: "tmpfs",
+							Src:  "/foo",
+							Dst:  "/bar",
+						},
+					},
+				},
+			},
+		},
+		want: `tmpfs mount name foo cannot have a non-empty value for src in global container config mounts`,
 	},
 	{
 		name: "Global Container Config Mount With Empty Dst",
@@ -2454,24 +2524,43 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		want: `mount name foo cannot have an empty value for dst in global container config mounts`,
 	},
 	{
-		name: "Global Container Config Bind Mount With Options",
+		name: "Global Container Config Bind Mount With Tmpfs Size",
 		config: config.Homelab{
 			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
 				Container: config.GlobalContainer{
 					Mounts: []config.Mount{
 						{
-							Name:    "foo",
-							Type:    "bind",
-							Src:     "/foo",
-							Dst:     "/bar",
-							Options: "dummy-option1=val1,dummy-option2=val2",
+							Name:      "foo",
+							Type:      "bind",
+							Src:       "/foo",
+							Dst:       "/bar",
+							TmpfsSize: 10000,
 						},
 					},
 				},
 			},
 		},
-		want: `bind mount name foo cannot specify options in global container config mounts`,
+		want: `bind mount name foo cannot specify tmpfs size in global container config mounts`,
+	},
+	{
+		name: "Global Container Config Tmpfs Mount With Negative Tmpfs Size",
+		config: config.Homelab{
+			Global: config.Global{
+				BaseDir: testhelpers.HomelabBaseDir(),
+				Container: config.GlobalContainer{
+					Mounts: []config.Mount{
+						{
+							Name:      "foo",
+							Type:      "tmpfs",
+							Dst:       "/bar",
+							TmpfsSize: -10000,
+						},
+					},
+				},
+			},
+		},
+		want: `tmpfs mount name foo cannot specify a negative tmpfs size -10000 in global container config mounts`,
 	},
 	{
 		name: "Global Container Config Mount Def Reference Not Found",
@@ -4823,7 +4912,46 @@ var buildDeploymentFromConfigErrorTests = []struct {
 				},
 			},
 		},
-		want: `mount name foo cannot have an empty value for src in container {Group: g1 Container:c1} config mounts`,
+		want: `bind mount name foo cannot have an empty value for src in container {Group: g1 Container:c1} config mounts`,
+	},
+	{
+		name: "Container Config Tmpfs Mount With Non-Empty Src",
+		config: config.Homelab{
+			Global: config.Global{
+				BaseDir: testhelpers.HomelabBaseDir(),
+			},
+			Groups: []config.ContainerGroup{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []config.Container{
+				{
+					Info: config.ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: config.ContainerImage{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: config.ContainerLifecycle{
+						Order: 1,
+					},
+					Filesystem: config.ContainerFilesystem{
+						Mounts: []config.Mount{
+							{
+								Name: "foo",
+								Type: "tmpfs",
+								Src:  "/foo",
+								Dst:  "/bar",
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `tmpfs mount name foo cannot have a non-empty value for src in container {Group: g1 Container:c1} config mounts`,
 	},
 	{
 		name: "Container Config Mount With Empty Dst",
@@ -4864,7 +4992,7 @@ var buildDeploymentFromConfigErrorTests = []struct {
 		want: `mount name foo cannot have an empty value for dst in container {Group: g1 Container:c1} config mounts`,
 	},
 	{
-		name: "Container Config Bind Mount With Options",
+		name: "Container Config Bind Mount With Tmpfs Size",
 		config: config.Homelab{
 			Global: config.Global{
 				BaseDir: testhelpers.HomelabBaseDir(),
@@ -4890,18 +5018,57 @@ var buildDeploymentFromConfigErrorTests = []struct {
 					Filesystem: config.ContainerFilesystem{
 						Mounts: []config.Mount{
 							{
-								Name:    "foo",
-								Type:    "bind",
-								Src:     "/foo",
-								Dst:     "/bar",
-								Options: "dummy-option1=val1,dummy-option2=val2",
+								Name:      "foo",
+								Type:      "bind",
+								Src:       "/foo",
+								Dst:       "/bar",
+								TmpfsSize: 10000,
 							},
 						},
 					},
 				},
 			},
 		},
-		want: `bind mount name foo cannot specify options in container {Group: g1 Container:c1} config mounts`,
+		want: `bind mount name foo cannot specify tmpfs size in container {Group: g1 Container:c1} config mounts`,
+	},
+	{
+		name: "Container Config Tmpfs Mount With Negative Tmpfs Size",
+		config: config.Homelab{
+			Global: config.Global{
+				BaseDir: testhelpers.HomelabBaseDir(),
+			},
+			Groups: []config.ContainerGroup{
+				{
+					Name:  "g1",
+					Order: 1,
+				},
+			},
+			Containers: []config.Container{
+				{
+					Info: config.ContainerReference{
+						Group:     "g1",
+						Container: "c1",
+					},
+					Image: config.ContainerImage{
+						Image: "foo/bar:123",
+					},
+					Lifecycle: config.ContainerLifecycle{
+						Order: 1,
+					},
+					Filesystem: config.ContainerFilesystem{
+						Mounts: []config.Mount{
+							{
+								Name:      "foo",
+								Type:      "tmpfs",
+								Dst:       "/bar",
+								TmpfsSize: -10000,
+							},
+						},
+					},
+				},
+			},
+		},
+		want: `tmpfs mount name foo cannot specify a negative tmpfs size -10000 in container {Group: g1 Container:c1} config mounts`,
 	},
 	{
 		name: "Container Config Mount Def Reference Not Found",

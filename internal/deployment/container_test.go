@@ -2167,6 +2167,7 @@ var containerDockerConfigTests = []struct {
 						},
 						{
 							Name:     "mount-def-3",
+							Type:     "bind",
 							Src:      "/foo",
 							Dst:      "/bar",
 							ReadOnly: true,

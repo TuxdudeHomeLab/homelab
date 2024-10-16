@@ -155,21 +155,26 @@ func validateMountsConfig(conf, commonConfig, globalDefs []config.Mount, locatio
 				return fmt.Errorf("mount specified by just the name %s not found in defs in %s", m.Name, location)
 			}
 			// No further validation needed for a mount referencing a def.
-			return nil
+			continue
 		}
 
-		// TODO: Also support tmpfs mounts.
-		if m.Type != "bind" {
+		if m.Type != "bind" && m.Type != "tmpfs" {
 			return fmt.Errorf("unsupported mount type %s for mount %s in %s", m.Type, m.Name, location)
 		}
-		if len(m.Src) == 0 {
-			return fmt.Errorf("mount name %s cannot have an empty value for src in %s", m.Name, location)
+		if m.Type == "bind" && len(m.Src) == 0 {
+			return fmt.Errorf("bind mount name %s cannot have an empty value for src in %s", m.Name, location)
+		}
+		if m.Type == "tmpfs" && len(m.Src) != 0 {
+			return fmt.Errorf("tmpfs mount name %s cannot have a non-empty value for src in %s", m.Name, location)
 		}
 		if len(m.Dst) == 0 {
 			return fmt.Errorf("mount name %s cannot have an empty value for dst in %s", m.Name, location)
 		}
-		if len(m.Options) > 0 {
-			return fmt.Errorf("bind mount name %s cannot specify options in %s", m.Name, location)
+		if m.Type == "bind" && m.TmpfsSize != 0 {
+			return fmt.Errorf("bind mount name %s cannot specify tmpfs size in %s", m.Name, location)
+		}
+		if m.Type == "tmpfs" && m.TmpfsSize < 0 {
+			return fmt.Errorf("tmpfs mount name %s cannot specify a negative tmpfs size %d in %s", m.Name, m.TmpfsSize, location)
 		}
 	}
 	return nil

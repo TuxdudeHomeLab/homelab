@@ -9,6 +9,7 @@ import (
 	"time"
 
 	dcontainer "github.com/docker/docker/api/types/container"
+	dmount "github.com/docker/docker/api/types/mount"
 	dnetwork "github.com/docker/docker/api/types/network"
 	"github.com/docker/go-connections/nat"
 	"github.com/tuxdudehomelab/homelab/internal/cmdexec"
@@ -360,6 +361,7 @@ func (c *Container) dockerHostConfig(pMap nat.PortMap) *dcontainer.HostConfig {
 		ShmSize:        c.shmSize(),
 		Sysctls:        c.sysctls(),
 		Resources:      c.resources(),
+		Mounts:         c.nonBindMounts(),
 	}
 }
 
@@ -508,42 +510,12 @@ func (c *Container) imageReference() string {
 }
 
 func (c *Container) bindMounts() []string {
-	// TODO: Do this once for the entire deployment and reuse it.
-	globalMountDefs := make(map[string]string, 0)
-	for _, md := range c.globalConfig.MountDefs {
-		globalMountDefs[md.Name] = mountConfigToString(&md)
-	}
-
-	containerMounts := make(map[string]string, 0)
-	containerMountNames := make([]string, 0)
-	// TODO: Do this once for the entire deployment and reuse it.
-	// Get all the global container config mounts.
-	for _, mount := range c.globalConfig.Container.Mounts {
-		if val, found := globalMountDefs[mount.Name]; found {
-			containerMounts[mount.Name] = val
-		} else {
-			containerMounts[mount.Name] = mountConfigToString(&mount)
-		}
-		containerMountNames = append(containerMountNames, mount.Name)
-	}
-	// Get all the container specific mount configs and apply
-	// them as overrides for the global.
-	for _, mount := range c.config.Filesystem.Mounts {
-		if val, found := globalMountDefs[mount.Name]; found {
-			containerMounts[mount.Name] = val
-		} else {
-			containerMounts[mount.Name] = mountConfigToString(&mount)
-		}
-		containerMountNames = append(containerMountNames, mount.Name)
-	}
+	mounts := c.mountsOfType("bind")
 
 	// Convert the result to include only the bind mount strings.
-	res := make([]string, 0)
-	for _, mount := range containerMountNames {
-		res = append(res, containerMounts[mount])
-	}
-	if len(res) == 0 {
-		return nil
+	var res []string
+	for _, m := range mounts {
+		res = append(res, m.spec)
 	}
 	return res
 }
@@ -690,6 +662,21 @@ func (c *Container) resources() dcontainer.Resources {
 	}
 }
 
+func (c *Container) nonBindMounts() []dmount.Mount {
+	var res []dmount.Mount
+	// tmpfs is the only non-bind mount we support right now.
+	mounts := c.mountsOfType("tmpfs")
+	for _, m := range mounts {
+		t := dmount.Mount{
+			Type:         "tmpfs",
+			Target:       m.spec,
+			TmpfsOptions: tmpfsOptions(m),
+		}
+		res = append(res, t)
+	}
+	return res
+}
+
 func (c *Container) primaryNetworkEndpoint() map[string]*dnetwork.EndpointSettings {
 	res := make(map[string]*dnetwork.EndpointSettings)
 	if len(c.endpoints) > 0 && c.endpoints[0].network.mode == networkModeBridge {
@@ -738,9 +725,70 @@ func containerMapToList(cm containerMap) ContainerList {
 	return res
 }
 
-func mountConfigToString(v *config.Mount) string {
-	if v.ReadOnly {
-		return fmt.Sprintf("%s:%s:ro", v.Src, v.Dst)
+type mountSpec struct {
+	spec      string
+	tmpfsSize int64
+}
+
+func (c *Container) mountsOfType(mountType string) []*mountSpec {
+	// TODO: Do this once for the entire deployment and reuse it.
+	globalMountDefs := make(map[string]*mountSpec, 0)
+	for _, md := range c.globalConfig.MountDefs {
+		if md.Type == mountType {
+			globalMountDefs[md.Name] = buildMountSpec(&md)
+		}
 	}
-	return fmt.Sprintf("%s:%s", v.Src, v.Dst)
+
+	containerMounts := make(map[string]*mountSpec, 0)
+	containerMountNames := make([]string, 0)
+	// TODO: Do this once for the entire deployment and reuse it.
+	// Get all the global container config mounts.
+	for _, mount := range c.globalConfig.Container.Mounts {
+		if val, found := globalMountDefs[mount.Name]; found {
+			containerMounts[mount.Name] = val
+			containerMountNames = append(containerMountNames, mount.Name)
+		} else if mount.Type == mountType {
+			containerMounts[mount.Name] = buildMountSpec(&mount)
+			containerMountNames = append(containerMountNames, mount.Name)
+		}
+	}
+	// Get all the container specific mount configs and apply
+	// them as overrides for the global.
+	for _, mount := range c.config.Filesystem.Mounts {
+		if val, found := globalMountDefs[mount.Name]; found {
+			containerMounts[mount.Name] = val
+			containerMountNames = append(containerMountNames, mount.Name)
+		} else if mount.Type == mountType {
+			containerMounts[mount.Name] = buildMountSpec(&mount)
+			containerMountNames = append(containerMountNames, mount.Name)
+		}
+	}
+
+	// Convert the result to include only the mount specs.
+	var res []*mountSpec
+	for _, mount := range containerMountNames {
+		res = append(res, containerMounts[mount])
+	}
+	return res
+}
+
+func buildMountSpec(mount *config.Mount) *mountSpec {
+	if mount.Type == "bind" {
+		if mount.ReadOnly {
+			return &mountSpec{spec: fmt.Sprintf("%s:%s:ro", mount.Src, mount.Dst)}
+		}
+		return &mountSpec{spec: fmt.Sprintf("%s:%s", mount.Src, mount.Dst)}
+	} else if mount.Type == "tmpfs" {
+		return &mountSpec{spec: mount.Dst, tmpfsSize: mount.TmpfsSize}
+	}
+	panic(fmt.Sprintf("invalid mount type %s", mount.Type))
+}
+
+func tmpfsOptions(mount *mountSpec) *dmount.TmpfsOptions {
+	if mount.tmpfsSize == 0 {
+		return nil
+	}
+	return &dmount.TmpfsOptions{
+		SizeBytes: mount.tmpfsSize,
+	}
 }
