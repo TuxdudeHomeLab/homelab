@@ -2296,6 +2296,24 @@ func TestContainerDockerConfigs(t *testing.T) {
 	}
 }
 
+func TestBuildMountSpecInvalidMountType(t *testing.T) {
+	t.Parallel()
+
+	tc := "buildMountSpec With Invalid Mount Type Panics"
+	want := `invalid mount type garbage`
+
+	t.Run(tc, func(t *testing.T) {
+		t.Parallel()
+
+		defer testhelpers.ExpectPanic(t, "buildMountSpec()", tc, want)
+		_ = buildMountSpec(&config.Mount{
+			Type: "garbage",
+			Src:  "/foo",
+			Dst:  "/bar",
+		})
+	})
+}
+
 func buildCustomSingleContainerConfig(ct config.ContainerReference, image string, fn func(*config.Container)) config.Homelab {
 	h := buildSingleContainerConfig(ct, image)
 	fn(&h.Containers[0])
