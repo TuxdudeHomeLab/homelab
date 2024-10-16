@@ -17,9 +17,9 @@ builds:
       - -s -w
       # Include version and commit information (uses commit date for
       # reproducible builds).
-      - -X main.pkgVersion={{.Version}}
-      - -X main.pkgCommit={{.ShortCommit}}
-      - -X main.pkgTimestamp={{.CommitDate}}
+      - -X main.pkgVersion={{.Env.GO_PKG_VERSION}}
+      - -X main.pkgCommit={{.Env.GO_PKG_COMMIT}}
+      - -X main.pkgTimestamp={{.Env.GO_PKG_DATE}}
     # Use the commit timestamp as the binary's modified timestamp.
     mod_timestamp: '{{ .CommitTimestamp }}'
     # Set to true only for library projects.
@@ -36,7 +36,7 @@ archives:
   - format: tar.xz
     name_template: >-
       {{- .ProjectName }}_
-      {{- .Version }}_
+      {{- .Env.GO_PKG_VERSION }}_
       {{- if eq .Os "darwin" }}macOS{{ else }}{{ title .Os }}{{ end }}_
       {{- if eq .Arch "amd64" }}x86_64{{ else if eq .Arch "386" }}i386{{ else }}{{ .Arch }}{{ end }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}
     format_overrides:
@@ -50,7 +50,7 @@ universal_binaries:
   - replace: true
 source:
   enabled: true
-  name_template: "{{ .ProjectName }}-v{{ .Version }}-src"
+  name_template: "{{ .ProjectName }}-{{ .Env.GO_PKG_VERSION }}-src"
   format: tar.gz
 checksum:
   # Checksum configuration.
@@ -76,7 +76,7 @@ gomod:
   gobinary: go
 snapshot:
   # Custom naming for snapshot builds.
-  version_template: "{{ incpatch .Version }}-dev-{{ .ShortCommit }}"
+  version_template: "{{ .Env.GO_PKG_VERSION }}-dev-{{ .ShortCommit }}"
 changelog:
   use: github
   sort: asc
@@ -96,4 +96,4 @@ release:
   footer: |
     ## Thanks!
     Those include all the new changes in the {{ .Tag }} release!
-  name_template: "{{.ProjectName}} v{{.Version}}"
+  name_template: "{{.ProjectName}} {{.Env.GO_PKG_VERSION}}"
