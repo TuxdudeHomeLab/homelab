@@ -1,4 +1,4 @@
-package container
+package containers
 
 import (
 	"context"
@@ -11,14 +11,14 @@ import (
 )
 
 const (
-	stopCmdStr = "stop"
+	purgeCmdStr = "purge"
 )
 
-func StopCmd(ctx context.Context, opts *clicommon.GlobalCmdOptions) *cobra.Command {
+func PurgeCmd(ctx context.Context, opts *clicommon.GlobalCmdOptions) *cobra.Command {
 	return &cobra.Command{
-		Use:   stopCmdStr,
-		Short: "Stops the container",
-		Long:  `Stops the requested container as specified in the homelab configuration. The name is specified in the group/container format.`,
+		Use:   purgeCmdStr,
+		Short: "Purges the container",
+		Long:  `Purges the requested container as specified in the homelab configuration. The name is specified in the group/container format.`,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
 				return fmt.Errorf("Expected exactly one container name argument to be specified, but found %d instead", len(args))
@@ -32,32 +32,32 @@ func StopCmd(ctx context.Context, opts *clicommon.GlobalCmdOptions) *cobra.Comma
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
 			cmd.SilenceErrors = true
-			err := execContainerStopCmd(clicontext.HomelabContext(ctx), args[0], opts)
+			err := execContainerPurgeCmd(clicontext.HomelabContext(ctx), args[0], opts)
 			if err != nil {
 				return errors.NewHomelabRuntimeError(err)
 			}
 			return nil
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			return clicommon.AutoCompleteContainers(ctx, args, "container stop autocomplete", opts)
+			return clicommon.AutoCompleteContainers(ctx, args, "container purge autocomplete", opts)
 		},
 	}
 }
 
-func execContainerStopCmd(ctx context.Context, containerArg string, opts *clicommon.GlobalCmdOptions) error {
+func execContainerPurgeCmd(ctx context.Context, containerArg string, opts *clicommon.GlobalCmdOptions) error {
 	group, container := mustContainerName(containerArg)
-	dep, err := clicommon.BuildDeployment(ctx, "container stop", opts)
+	dep, err := clicommon.BuildDeployment(ctx, "container purge", opts)
 	if err != nil {
 		return err
 	}
 
 	return clicommon.ExecContainerGroupCmd(
 		ctx,
-		"container stop",
-		fmt.Sprintf("Stopping container %s in group %s", container, group),
+		"container purge",
+		fmt.Sprintf("Purging container %s in group %s", container, group),
 		group,
 		container,
 		dep,
-		clicommon.ExecStopContainer,
+		clicommon.ExecPurgeContainer,
 	)
 }

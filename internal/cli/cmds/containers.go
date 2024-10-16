@@ -6,24 +6,24 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/tuxdudehomelab/homelab/internal/cli/clicommon"
-	"github.com/tuxdudehomelab/homelab/internal/cli/cmds/container"
+	"github.com/tuxdudehomelab/homelab/internal/cli/cmds/containers"
 )
 
 const (
-	containerCmdStr = "container"
+	containersCmdStr = "containers"
 )
 
 func ContainerCmd(ctx context.Context, opts *clicommon.GlobalCmdOptions) *cobra.Command {
 	cmd := buildContainerCmd(ctx)
-	cmd.AddCommand(container.StartCmd(ctx, opts))
-	cmd.AddCommand(container.StopCmd(ctx, opts))
-	cmd.AddCommand(container.PurgeCmd(ctx, opts))
+	cmd.AddCommand(containers.StartCmd(ctx, opts))
+	cmd.AddCommand(containers.StopCmd(ctx, opts))
+	cmd.AddCommand(containers.PurgeCmd(ctx, opts))
 	return cmd
 }
 
 func buildContainerCmd(ctx context.Context) *cobra.Command {
 	return &cobra.Command{
-		Use:     containerCmdStr,
+		Use:     containersCmdStr,
 		GroupID: clicommon.ContainersCmdGroupID,
 		Short:   "Homelab deployment container related commands",
 		Long:    `Manipulate deployment of containers within one or more containers.`,

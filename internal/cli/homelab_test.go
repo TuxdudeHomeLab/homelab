@@ -242,7 +242,7 @@ Use "homelab \[command\] --help" for more information about a command\.`,
 	{
 		name: "Homelab Command - Start - All Groups With Real Host Info",
 		args: []string{
-			"group",
+			"groups",
 			"start",
 			"all",
 			"--configs-dir",
@@ -261,7 +261,7 @@ Container g2-c3 not allowed to run on host [^\s]+`,
 	{
 		name: "Homelab Command - Start - All Groups With Real User Info",
 		args: []string{
-			"group",
+			"groups",
 			"start",
 			"all",
 			"--configs-dir",
@@ -289,7 +289,7 @@ Starting container g2-c3`,
 	{
 		name: "Homelab Command - Start - All Groups",
 		args: []string{
-			"group",
+			"groups",
 			"start",
 			"all",
 			"--configs-dir",
@@ -316,7 +316,7 @@ Starting container g2-c3`,
 	{
 		name: "Homelab Command - Start - All Groups - Container Create Warning",
 		args: []string{
-			"group",
+			"groups",
 			"start",
 			"all",
 			"--configs-dir",
@@ -350,7 +350,7 @@ Starting container g2-c3`,
 	{
 		name: "Homelab Command - Start - All Groups - Network Create Warning",
 		args: []string{
-			"group",
+			"groups",
 			"start",
 			"all",
 			"--configs-dir",
@@ -382,7 +382,7 @@ Starting container g2-c3`,
 	{
 		name: "Homelab Command - Start - All Groups - One Existing Image",
 		args: []string{
-			"group",
+			"groups",
 			"start",
 			"all",
 			"--configs-dir",
@@ -412,7 +412,7 @@ Starting container g2-c3`,
 	{
 		name: "Homelab Command - Start - All Groups With Multiple Same Order Containers",
 		args: []string{
-			"group",
+			"groups",
 			"start",
 			"all",
 			"--configs-dir",
@@ -443,7 +443,7 @@ Starting container g2-c4`,
 	{
 		name: "Homelab Command - Start - All Groups With No Network Endpoints Containers",
 		args: []string{
-			"group",
+			"groups",
 			"start",
 			"all",
 			"--configs-dir",
@@ -475,7 +475,7 @@ Starting container g2-c4`,
 	{
 		name: "Homelab Command - Start - All Groups - One Container With Start Pre-Hook",
 		args: []string{
-			"group",
+			"groups",
 			"start",
 			"all",
 			"--configs-dir",
@@ -516,7 +516,7 @@ Starting container g2-c3`,
 	{
 		name: "Homelab Command - Start - All Groups - One Container With Ignore Image Pull Failures",
 		args: []string{
-			"group",
+			"groups",
 			"start",
 			"all",
 			"--configs-dir",
@@ -547,7 +547,7 @@ Starting container g2-c3`,
 	{
 		name: "Homelab Command - Start - One Group",
 		args: []string{
-			"group",
+			"groups",
 			"start",
 			"g1",
 			"--configs-dir",
@@ -569,7 +569,7 @@ Container g1-c2 not allowed to run on host FakeHost`,
 	{
 		name: "Homelab Command - Start - One Container",
 		args: []string{
-			"container",
+			"containers",
 			"start",
 			"g1/c1",
 			"--configs-dir",
@@ -590,7 +590,7 @@ Starting container g1-c1`,
 	{
 		name: "Homelab Command - Stop - All Groups",
 		args: []string{
-			"group",
+			"groups",
 			"stop",
 			"all",
 			"--configs-dir",
@@ -619,7 +619,7 @@ Container g2-c3 cannot be stopped since it is in state Removing`,
 	{
 		name: "Homelab Command - Stop - All Groups - One Container With Ignore Image Pull Failures",
 		args: []string{
-			"group",
+			"groups",
 			"stop",
 			"all",
 			"--configs-dir",
@@ -657,7 +657,7 @@ Stopping container g2-c3`,
 	{
 		name: "Homelab Command - Stop - One Group",
 		args: []string{
-			"group",
+			"groups",
 			"stop",
 			"g1",
 			"--configs-dir",
@@ -680,7 +680,7 @@ Container g1-c2 cannot be stopped since it was not found`,
 	{
 		name: "Homelab Command - Stop - One Container - Not Found",
 		args: []string{
-			"container",
+			"containers",
 			"stop",
 			"g1/c1",
 			"--configs-dir",
@@ -698,7 +698,7 @@ Container g1-c2 cannot be stopped since it was not found`,
 	{
 		name: "Homelab Command - Purge - All Groups",
 		args: []string{
-			"group",
+			"groups",
 			"purge",
 			"all",
 			"--configs-dir",
@@ -728,7 +728,7 @@ Container g2-c3 cannot be purged since it was not found`,
 	{
 		name: "Homelab Command - Purge - One Group",
 		args: []string{
-			"group",
+			"groups",
 			"purge",
 			"g1",
 			"--configs-dir",
@@ -752,7 +752,7 @@ Container g1-c2 cannot be purged since it was not found`,
 	{
 		name: "Homelab Command - Purge - One Container - Not Found",
 		args: []string{
-			"container",
+			"containers",
 			"purge",
 			"g1/c1",
 			"--configs-dir",
@@ -918,7 +918,7 @@ var executeHomelabCmdRealEverythingTests = []struct {
 	{
 		name: "Homelab Command - Start - All Groups - Real Everything",
 		args: []string{
-			"group",
+			"groups",
 			"start",
 			"all",
 			"--configs-dir",
@@ -931,7 +931,7 @@ Container g2-c3 not allowed to run on host [^\s]+`,
 	{
 		name: "Homelab Command - Stop - All Groups - Real Everything",
 		args: []string{
-			"group",
+			"groups",
 			"stop",
 			"all",
 			"--configs-dir",
@@ -944,7 +944,7 @@ Container g2-c3 cannot be stopped since it was not found`,
 	{
 		name: "Homelab Command - Purge - All Groups - Real Everything",
 		args: []string{
-			"group",
+			"groups",
 			"purge",
 			"all",
 			"--configs-dir",
@@ -1002,7 +1002,7 @@ var executeHomelabCmdLogLevelTests = []struct {
 	{
 		name: "Homelab Command - Start - All Groups",
 		args: []string{
-			"group",
+			"groups",
 			"start",
 			"all",
 			"--configs-dir",
@@ -1022,7 +1022,7 @@ var executeHomelabCmdLogLevelTests = []struct {
 	{
 		name: "Homelab Command - Stop - All Groups",
 		args: []string{
-			"group",
+			"groups",
 			"stop",
 			"all",
 			"--configs-dir",
@@ -1055,7 +1055,7 @@ var executeHomelabCmdLogLevelTests = []struct {
 	{
 		name: "Homelab Command - Purge - All Groups",
 		args: []string{
-			"group",
+			"groups",
 			"purge",
 			"all",
 			"--configs-dir",
@@ -1135,7 +1135,7 @@ var executeHomelabCmdErrorTests = []struct {
 	{
 		name: "Homelab Group Command - Missing Subcommand",
 		args: []string{
-			"group",
+			"groups",
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
@@ -1145,7 +1145,7 @@ var executeHomelabCmdErrorTests = []struct {
 	{
 		name: "Homelab Container Command - Missing Subcommand",
 		args: []string{
-			"container",
+			"containers",
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
@@ -1155,7 +1155,7 @@ var executeHomelabCmdErrorTests = []struct {
 	{
 		name: "Homelab Command - Group Start - Zero Group Name Args",
 		args: []string{
-			"group",
+			"groups",
 			"start",
 		},
 		ctxInfo: &testutils.TestContextInfo{
@@ -1166,7 +1166,7 @@ var executeHomelabCmdErrorTests = []struct {
 	{
 		name: "Homelab Command - Group Stop - Zero Group Name Args",
 		args: []string{
-			"group",
+			"groups",
 			"stop",
 		},
 		ctxInfo: &testutils.TestContextInfo{
@@ -1177,7 +1177,7 @@ var executeHomelabCmdErrorTests = []struct {
 	{
 		name: "Homelab Command - Group Purge - Zero Group Name Args",
 		args: []string{
-			"group",
+			"groups",
 			"purge",
 		},
 		ctxInfo: &testutils.TestContextInfo{
@@ -1188,7 +1188,7 @@ var executeHomelabCmdErrorTests = []struct {
 	{
 		name: "Homelab Command - Group Start - Multiple Group Name Args",
 		args: []string{
-			"group",
+			"groups",
 			"start",
 			"g1",
 			"g2",
@@ -1201,7 +1201,7 @@ var executeHomelabCmdErrorTests = []struct {
 	{
 		name: "Homelab Command - Group Stop - Multiple Group Name Args",
 		args: []string{
-			"group",
+			"groups",
 			"stop",
 			"g1",
 			"g2",
@@ -1214,7 +1214,7 @@ var executeHomelabCmdErrorTests = []struct {
 	{
 		name: "Homelab Command - Group Purge - Multiple Group Name Args",
 		args: []string{
-			"group",
+			"groups",
 			"purge",
 			"g1",
 			"g2",
@@ -1227,7 +1227,7 @@ var executeHomelabCmdErrorTests = []struct {
 	{
 		name: "Homelab Command - Container Start - Zero Container Name Args",
 		args: []string{
-			"container",
+			"containers",
 			"start",
 		},
 		ctxInfo: &testutils.TestContextInfo{
@@ -1238,7 +1238,7 @@ var executeHomelabCmdErrorTests = []struct {
 	{
 		name: "Homelab Command - Container Stop - Zero Container Name Args",
 		args: []string{
-			"container",
+			"containers",
 			"stop",
 		},
 		ctxInfo: &testutils.TestContextInfo{
@@ -1249,7 +1249,7 @@ var executeHomelabCmdErrorTests = []struct {
 	{
 		name: "Homelab Command - Container Purge - Zero Container Name Args",
 		args: []string{
-			"container",
+			"containers",
 			"purge",
 		},
 		ctxInfo: &testutils.TestContextInfo{
@@ -1260,7 +1260,7 @@ var executeHomelabCmdErrorTests = []struct {
 	{
 		name: "Homelab Command - Container Start - Multiple Container Name Args",
 		args: []string{
-			"container",
+			"containers",
 			"start",
 			"g1/c1",
 			"g2/c2",
@@ -1273,7 +1273,7 @@ var executeHomelabCmdErrorTests = []struct {
 	{
 		name: "Homelab Command - Container Stop - Multiple Container Name Args",
 		args: []string{
-			"container",
+			"containers",
 			"stop",
 			"g1/c1",
 			"g2/c2",
@@ -1286,7 +1286,7 @@ var executeHomelabCmdErrorTests = []struct {
 	{
 		name: "Homelab Command - Container Purge - Multiple Container Name Args",
 		args: []string{
-			"container",
+			"containers",
 			"purge",
 			"g1/c1",
 			"g2/c2",
@@ -1299,7 +1299,7 @@ var executeHomelabCmdErrorTests = []struct {
 	{
 		name: "Homelab Command - Container Start - Invalid Container Name",
 		args: []string{
-			"container",
+			"containers",
 			"start",
 			"foobar",
 		},
@@ -1311,7 +1311,7 @@ var executeHomelabCmdErrorTests = []struct {
 	{
 		name: "Homelab Command - Container Stop - Invalid Container Name",
 		args: []string{
-			"container",
+			"containers",
 			"stop",
 			"foobar",
 		},
@@ -1323,7 +1323,7 @@ var executeHomelabCmdErrorTests = []struct {
 	{
 		name: "Homelab Command - Container Purge - Invalid Container Name",
 		args: []string{
-			"container",
+			"containers",
 			"purge",
 			"foobar",
 		},
@@ -1335,7 +1335,7 @@ var executeHomelabCmdErrorTests = []struct {
 	{
 		name: "Homelab Command - Start - Failure",
 		args: []string{
-			"group",
+			"groups",
 			"start",
 			"all",
 			"--configs-dir",
@@ -1351,7 +1351,7 @@ var executeHomelabCmdErrorTests = []struct {
 	{
 		name: "Homelab Command - Stop - Failure",
 		args: []string{
-			"group",
+			"groups",
 			"stop",
 			"all",
 			"--configs-dir",
@@ -1384,7 +1384,7 @@ var executeHomelabCmdErrorTests = []struct {
 	{
 		name: "Homelab Command - Purge - Failure",
 		args: []string{
-			"group",
+			"groups",
 			"purge",
 			"all",
 			"--configs-dir",
@@ -1498,7 +1498,7 @@ var executeHomelabCmdEnvPanicTests = []struct {
 	{
 		name: "Homelab Command - Start - Docker Client Creation Failed",
 		args: []string{
-			"group",
+			"groups",
 			"start",
 			"all",
 			"--configs-dir",
@@ -1540,7 +1540,7 @@ var executeHomelabConfigCmds = []struct {
 	},
 	{
 		cmdArgs: []string{
-			"group",
+			"groups",
 			"start",
 			"all",
 		},
@@ -1549,7 +1549,7 @@ var executeHomelabConfigCmds = []struct {
 	},
 	{
 		cmdArgs: []string{
-			"group",
+			"groups",
 			"stop",
 			"all",
 		},
@@ -1558,7 +1558,7 @@ var executeHomelabConfigCmds = []struct {
 	},
 	{
 		cmdArgs: []string{
-			"group",
+			"groups",
 			"purge",
 			"all",
 		},
@@ -1567,7 +1567,7 @@ var executeHomelabConfigCmds = []struct {
 	},
 	{
 		cmdArgs: []string{
-			"container",
+			"containers",
 			"start",
 			"g1/c1",
 		},
@@ -1576,7 +1576,7 @@ var executeHomelabConfigCmds = []struct {
 	},
 	{
 		cmdArgs: []string{
-			"container",
+			"containers",
 			"stop",
 			"g1/c1",
 		},
@@ -1585,7 +1585,7 @@ var executeHomelabConfigCmds = []struct {
 	},
 	{
 		cmdArgs: []string{
-			"container",
+			"containers",
 			"purge",
 			"g1/c1",
 		},
@@ -1716,7 +1716,7 @@ var executeHomelabGroupCmds = []struct {
 }{
 	{
 		cmdArgs: []string{
-			"group",
+			"groups",
 			"start",
 		},
 		cmdNameInError: "group start",
@@ -1724,7 +1724,7 @@ var executeHomelabGroupCmds = []struct {
 	},
 	{
 		cmdArgs: []string{
-			"group",
+			"groups",
 			"stop",
 		},
 		cmdNameInError: "group stop",
@@ -1732,7 +1732,7 @@ var executeHomelabGroupCmds = []struct {
 	},
 	{
 		cmdArgs: []string{
-			"group",
+			"groups",
 			"purge",
 		},
 		cmdNameInError: "group purge",
@@ -1847,7 +1847,7 @@ var executeHomelabContainerCmds = []struct {
 }{
 	{
 		cmdArgs: []string{
-			"container",
+			"containers",
 			"start",
 		},
 		cmdNameInError: "container start",
@@ -1855,7 +1855,7 @@ var executeHomelabContainerCmds = []struct {
 	},
 	{
 		cmdArgs: []string{
-			"container",
+			"containers",
 			"stop",
 		},
 		cmdNameInError: "container stop",
@@ -1863,7 +1863,7 @@ var executeHomelabContainerCmds = []struct {
 	},
 	{
 		cmdArgs: []string{
-			"container",
+			"containers",
 			"purge",
 		},
 		cmdNameInError: "container purge",

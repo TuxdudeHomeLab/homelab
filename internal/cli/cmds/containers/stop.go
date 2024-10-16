@@ -1,4 +1,4 @@
-package group
+package containers
 
 import (
 	"context"
@@ -17,47 +17,46 @@ const (
 func StopCmd(ctx context.Context, opts *clicommon.GlobalCmdOptions) *cobra.Command {
 	return &cobra.Command{
 		Use:   stopCmdStr,
-		Short: "Stops one or more containers in the group",
-		Long:  `Stops one or more containers in the requested group as specified in the homelab configuration. Containers can be stopped individually, as a group or all groups (by using 'all' as the group name).`,
+		Short: "Stops the container",
+		Long:  `Stops the requested container as specified in the homelab configuration. The name is specified in the group/container format.`,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
-				return fmt.Errorf("Expected exactly one group name argument to be specified, but found %d instead", len(args))
+				return fmt.Errorf("Expected exactly one container name argument to be specified, but found %d instead", len(args))
+			}
+			_, _, err := validateContainerName(args[0])
+			if err != nil {
+				return err
 			}
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
 			cmd.SilenceErrors = true
-			err := execGroupStopCmd(clicontext.HomelabContext(ctx), args[0], opts)
+			err := execContainerStopCmd(clicontext.HomelabContext(ctx), args[0], opts)
 			if err != nil {
 				return errors.NewHomelabRuntimeError(err)
 			}
 			return nil
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			return clicommon.AutoCompleteGroups(ctx, args, "group stop autocomplete", opts)
+			return clicommon.AutoCompleteContainers(ctx, args, "container stop autocomplete", opts)
 		},
 	}
 }
 
-func execGroupStopCmd(ctx context.Context, group string, opts *clicommon.GlobalCmdOptions) error {
-	dep, err := clicommon.BuildDeployment(ctx, "group stop", opts)
+func execContainerStopCmd(ctx context.Context, containerArg string, opts *clicommon.GlobalCmdOptions) error {
+	group, container := mustContainerName(containerArg)
+	dep, err := clicommon.BuildDeployment(ctx, "container stop", opts)
 	if err != nil {
 		return err
 	}
 
-	var action string
-	if group == clicommon.AllGroups {
-		action = "Stopping containers in all groups"
-	} else {
-		action = fmt.Sprintf("Stopping containers in group %s", group)
-	}
 	return clicommon.ExecContainerGroupCmd(
 		ctx,
-		"group stop",
-		action,
+		"container stop",
+		fmt.Sprintf("Stopping container %s in group %s", container, group),
 		group,
-		"",
+		container,
 		dep,
 		clicommon.ExecStopContainer,
 	)

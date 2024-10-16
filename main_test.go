@@ -61,7 +61,7 @@ Use "homelab \[command\] --help" for more information about a command\.`,
 	{
 		name: "Main - runWithContext() - Start - All Groups",
 		args: []string{
-			"group",
+			"groups",
 			"start",
 			"all",
 			"--configs-dir",
@@ -89,7 +89,7 @@ Use "homelab \[command\] --help" for more information about a command\.`,
 	{
 		name: "Main - Start - Non Existing Configs Path",
 		args: []string{
-			"group",
+			"groups",
 			"start",
 			"all",
 			"--configs-dir",
