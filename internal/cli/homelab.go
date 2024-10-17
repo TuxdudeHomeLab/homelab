@@ -65,6 +65,7 @@ func initHomelabCmd(ctx context.Context) *cobra.Command {
 	homelabCmd.AddCommand(cmds.ConfigCmd(ctx, &globalOpts))
 	homelabCmd.AddCommand(cmds.GroupCmd(ctx, &globalOpts))
 	homelabCmd.AddCommand(cmds.ContainerCmd(ctx, &globalOpts))
+	homelabCmd.AddCommand(cmds.NetworksCmd(ctx, &globalOpts))
 	return homelabCmd
 }
 

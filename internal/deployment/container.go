@@ -160,13 +160,16 @@ func (c *Container) startInternal(ctx context.Context, dc *docker.Client) error 
 	// the network for the container prior to creating the container
 	// attached to this network.
 	if len(c.endpoints) > 0 {
-		// network.create(...) gracefully handles the case for when the
-		// network exists already.
-		err := c.endpoints[0].network.create(ctx, dc)
-		if err != nil {
-			return err
+		n := c.endpoints[0].network
+		if n.Mode() == NetworkModeBridge {
+			// network.create(...) gracefully handles the case for when the
+			// network exists already.
+			_, err := n.Create(ctx, dc)
+			if err != nil {
+				return err
+			}
+			log(ctx).Debugf("Connecting container %s to network %s with IP %s at the time of container creation ...", c.Name(), c.endpoints[0].network.Name(), c.endpoints[0].ip)
 		}
-		log(ctx).Debugf("Connecting container %s to network %s with IP %s at the time of container creation ...", c.Name(), c.endpoints[0].network.name(), c.endpoints[0].ip)
 	} else {
 		log(ctx).Warnf("Container %s has no network endpoints configured, this is uncommon!", c.Name())
 	}
@@ -184,7 +187,7 @@ func (c *Container) startInternal(ctx context.Context, dc *docker.Client) error 
 	// connecting the container to the network.
 	for i := 1; i < len(c.endpoints); i++ {
 		ip := c.endpoints[i]
-		err := ip.network.create(ctx, dc)
+		_, err := ip.network.Create(ctx, dc)
 		if err != nil {
 			return err
 		}
@@ -525,10 +528,10 @@ func (c *Container) networkMode() dcontainer.NetworkMode {
 		return "none"
 	}
 	n := c.endpoints[0].network
-	if n.mode == networkModeContainer {
+	if n.mode == NetworkModeContainer {
 		return dcontainer.NetworkMode(fmt.Sprintf("container:%s-%s", n.containerModeInfo.container.Group, n.containerModeInfo.container.Container))
 	}
-	return dcontainer.NetworkMode(n.name())
+	return dcontainer.NetworkMode(n.Name())
 }
 
 func (c *Container) publishedPorts() (nat.PortMap, nat.PortSet) {
@@ -679,8 +682,8 @@ func (c *Container) nonBindMounts() []dmount.Mount {
 
 func (c *Container) primaryNetworkEndpoint() map[string]*dnetwork.EndpointSettings {
 	res := make(map[string]*dnetwork.EndpointSettings)
-	if len(c.endpoints) > 0 && c.endpoints[0].network.mode == networkModeBridge {
-		res[c.endpoints[0].network.name()] = &dnetwork.EndpointSettings{
+	if len(c.endpoints) > 0 && c.endpoints[0].network.mode == NetworkModeBridge {
+		res[c.endpoints[0].network.Name()] = &dnetwork.EndpointSettings{
 			IPAMConfig: &dnetwork.EndpointIPAMConfig{
 				IPv4Address: c.endpoints[0].ip,
 			},

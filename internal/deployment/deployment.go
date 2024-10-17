@@ -120,6 +120,13 @@ func (d *Deployment) queryContainer(cRef config.ContainerReference) (*Container,
 	return ct, nil
 }
 
+func (d *Deployment) queryNetwork(networkName string) (*Network, error) {
+	if n, found := d.Networks[networkName]; found {
+		return n, nil
+	}
+	return nil, fmt.Errorf("network %s not found", networkName)
+}
+
 func (d *Deployment) QueryAllContainersInAllGroups(ctx context.Context) (ContainerList, error) {
 	return containerMapToList(d.queryAllContainers()), nil
 }
@@ -138,6 +145,14 @@ func (d *Deployment) QueryContainer(ctx context.Context, group, container string
 		return nil, err
 	}
 	return ContainerList{ct}, nil
+}
+
+func (d *Deployment) QueryNetwork(ctx context.Context, network string) (NetworkList, error) {
+	net, err := d.queryNetwork(network)
+	if err != nil {
+		return nil, err
+	}
+	return NetworkList{net}, nil
 }
 
 func (d *Deployment) updateGroupsOrder() {

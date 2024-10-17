@@ -35,6 +35,37 @@ type HomelabContainersOnly struct {
 	Containers []ContainerNameOnly `yaml:"containers,omitempty" json:"containers,omitempty"`
 }
 
+// HomelabNetworksOnly represents a minimal network name information only version
+// of the homelab deployment configuration.
+type HomelabNetworksOnly struct {
+	IPAM IPAMWithNetworkNameOnly `yaml:"ipam,omitempty" json:"ipam,omitempty"`
+}
+
+// IPAMWithNetworkNameOnly representas a minimal IPAM configuration containing
+// just the name of the networks.
+type IPAMWithNetworkNameOnly struct {
+	Networks NetworksNameOnly `yaml:"networks,omitempty" json:"networks,omitempty"`
+}
+
+// NetworksNameOnly represents a minimal configuration containing just the
+// list of networks.
+type NetworksNameOnly struct {
+	BridgeModeNetworks    []BridgeModeNetworkNameOnly    `yaml:"bridgeModeNetworks,omitempty" json:"bridgeModeNetworks,omitempty"`
+	ContainerModeNetworks []ContainerModeNetworkNameOnly `yaml:"containerModeNetworks,omitempty" json:"containerModeNetworks,omitempty"`
+}
+
+// BridgeModeNetworkNameOnly represents a minimal docker bridge mode network
+// configuration that contains just the name of the network.
+type BridgeModeNetworkNameOnly struct {
+	Name string `yaml:"name,omitempty" json:"name,omitempty"`
+}
+
+// ContainerModeNetwork represents a minimal container network configuration
+// that contains just the name of the network.
+type ContainerModeNetworkNameOnly struct {
+	Name string `yaml:"name,omitempty" json:"name,omitempty"`
+}
+
 // Global represents the configuration that will be applied
 // across the entire homelab deployment.
 type Global struct {
@@ -351,6 +382,27 @@ func (h *HomelabContainersOnly) ListContainers() []string {
 	}
 	slices.Sort(containers)
 	return containers
+}
+
+func (h *HomelabNetworksOnly) Parse(ctx context.Context, r io.Reader) error {
+	dec := yaml.NewDecoder(r)
+	dec.KnownFields(false)
+	err := dec.Decode(h)
+	if err != nil {
+		return fmt.Errorf("failed to parse homelab networks only config, reason: %w", err)
+	}
+	return nil
+}
+
+func (h *HomelabNetworksOnly) ListNetworks() []string {
+	var networks []string
+	for _, n := range h.IPAM.Networks.BridgeModeNetworks {
+		networks = append(networks, n.Name)
+	}
+	for _, n := range h.IPAM.Networks.ContainerModeNetworks {
+		networks = append(networks, n.Name)
+	}
+	return networks
 }
 
 func (g *Global) ApplyConfigEnv(env *env.ConfigEnvManager) {

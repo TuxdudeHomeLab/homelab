@@ -1,0 +1,11 @@
+groups:
+  - name: g1
+    order: 1
+  - name: g2
+    order: 2
+  - name: g3
+    order: 3
+  - name: g4
+    order: 4
+  - name: g5
+    order: 5

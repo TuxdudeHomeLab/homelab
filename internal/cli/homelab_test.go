@@ -767,6 +767,60 @@ Container g1-c2 cannot be purged since it was not found`,
 		},
 		want: `Container g1-c1 cannot be purged since it was not found`,
 	},
+	{
+		name: "Homelab Command - Networks - Create Success",
+		args: []string{
+			"networks",
+			"create",
+			"net1",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/networks-cmd", testhelpers.Pwd()),
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
+		},
+		want: `Created network net1`,
+	},
+	{
+		name: "Homelab Command - Networks - Create Warning",
+		args: []string{
+			"networks",
+			"create",
+			"net1",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/networks-cmd", testhelpers.Pwd()),
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				WarnNetworkCreate: utils.StringSet{
+					"net1": {},
+				},
+			}),
+		},
+		want: `Warning encountered while creating the network net1
+warning generated during network create for network net1 on the fake docker host
+Created network net1`,
+	},
+	{
+		name: "Homelab Command - Networks - Create - Exists Already",
+		args: []string{
+			"networks",
+			"create",
+			"net1",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/networks-cmd", testhelpers.Pwd()),
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				Networks: []*fakedocker.FakeNetworkInitInfo{
+					{
+						Name: "net1",
+					},
+				},
+			}),
+		},
+		want: `Network net1 not created since it already exists`,
+	},
 }
 
 func TestExecHomelabCmd(t *testing.T) {
@@ -1085,6 +1139,26 @@ var executeHomelabCmdLogLevelTests = []struct {
 			}
 		},
 	},
+	{
+		name: "Homelab Command - Networks Create",
+		args: []string{
+			"networks",
+			"create",
+			"net1",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/networks-cmd", testhelpers.Pwd()),
+		},
+		ctxInfo: func() *testutils.TestContextInfo {
+			return &testutils.TestContextInfo{
+				DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+					ValidImagesForPull: utils.StringSet{
+						"abc/xyz":  {},
+						"abc/xyz3": {},
+					},
+				}),
+			}
+		},
+	},
 }
 
 func TestExecHomelabCmdLogLevel(t *testing.T) {
@@ -1151,6 +1225,16 @@ var executeHomelabCmdErrorTests = []struct {
 			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
 		},
 		want: `homelab container sub-command is required`,
+	},
+	{
+		name: "Homelab Networks Command - Missing Subcommand",
+		args: []string{
+			"networks",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
+		},
+		want: `homelab networks sub-command is required`,
 	},
 	{
 		name: "Homelab Command - Group Start - Zero Group Name Args",
@@ -1413,6 +1497,78 @@ var executeHomelabCmdErrorTests = []struct {
 1 - Failed to purge container g1-c1, reason:failed to stop the container, reason: failed to stop container g1-c1 on the fake docker host
 2 - Failed to purge container g2-c3, reason:failed to purge container g2-c3 after 6 attempts`,
 	},
+	{
+		name: "Homelab Command - Networks Create - Zero Group Name Args",
+		args: []string{
+			"networks",
+			"create",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
+		},
+		want: `Expected exactly one network name argument to be specified, but found 0 instead`,
+	},
+	{
+		name: "Homelab Command - Networks Create - Multiple Group Name Args",
+		args: []string{
+			"networks",
+			"create",
+			"net1",
+			"net2",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
+		},
+		want: `Expected exactly one network name argument to be specified, but found 2 instead`,
+	},
+	{
+		name: "Homelab Command - Networks Create - Invalid Network Name",
+		args: []string{
+			"networks",
+			"create",
+			"net11",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/networks-cmd", testhelpers.Pwd()),
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
+		},
+		want: `networks create failed while querying networks, reason: network net11 not found`,
+	},
+	{
+		name: "Homelab Command - Networks Create - Container Mode Network",
+		args: []string{
+			"networks",
+			"create",
+			"net3",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/networks-cmd", testhelpers.Pwd()),
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
+		},
+		want: `networks create failed for 1 networks, reason\(s\):
+1 - container mode network net3 cannot be created`,
+	},
+	{
+		name: "Homelab Command - Networks Create - Failure",
+		args: []string{
+			"networks",
+			"create",
+			"net1",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/networks-cmd", testhelpers.Pwd()),
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				FailNetworkCreate: utils.StringSet{
+					"net1": {},
+				},
+			}),
+		},
+		want: `networks create failed for 1 networks, reason\(s\):
+1 - failed to create the network, reason: failed to create network net1 on the fake docker host`,
+	},
 }
 
 func TestExecHomelabCmdErrors(t *testing.T) {
@@ -1591,6 +1747,15 @@ var executeHomelabConfigCmds = []struct {
 		},
 		cmdNameInError: "container purge",
 		cmdDesc:        "Container Purge",
+	},
+	{
+		cmdArgs: []string{
+			"networks",
+			"create",
+			"net1",
+		},
+		cmdNameInError: "networks create",
+		cmdDesc:        "Networks Create",
 	},
 }
 
@@ -1907,12 +2072,62 @@ var executeHomelabContainerCmdErrorTests = []struct {
 	},
 }
 
-func TestExecHomelabContainerGroupCmdErrors(t *testing.T) {
+func TestExecHomelabContainerCmdErrors(t *testing.T) {
 	t.Parallel()
 
 	for _, test := range executeHomelabContainerCmdErrorTests {
 		tc := test
 		for _, c := range executeHomelabContainerCmds {
+			cmd := c
+			tcName := fmt.Sprintf(tc.name, cmd.cmdDesc)
+			t.Run(tcName, func(t *testing.T) {
+				t.Parallel()
+
+				args := append(cmd.cmdArgs, tc.args...)
+				want := fmt.Sprintf(tc.want, cmd.cmdNameInError)
+
+				_, gotErr := execHomelabCmdTest(tc.ctxInfo(), nil, args...)
+				if gotErr == nil {
+					testhelpers.LogErrorNil(t, "Exec()", tcName, want)
+					return
+				}
+
+				if !testhelpers.RegexMatch(t, "Exec()", tcName, "gotErr error string", want, gotErr.Error()) {
+					return
+				}
+			})
+		}
+	}
+}
+
+var executeHomelabNetworksCmdErrorTests = []struct {
+	name    string
+	args    []string
+	ctxInfo func() *testutils.TestContextInfo
+	want    string
+}{
+	{
+		name: "Homelab Command - %s - One Non Existing Network",
+		args: []string{
+			"net6",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/networks-cmd", testhelpers.Pwd()),
+		},
+		ctxInfo: func() *testutils.TestContextInfo {
+			return &testutils.TestContextInfo{
+				DockerHost: fakedocker.NewEmptyFakeDockerHost(),
+			}
+		},
+		want: `%s failed while querying networks, reason: network net6 not found`,
+	},
+}
+
+func TestExecHomelabNetworksCmdErrors(t *testing.T) {
+	t.Parallel()
+
+	for _, test := range executeHomelabNetworksCmdErrorTests {
+		tc := test
+		for _, c := range executeHomelabNetworksCmds {
 			cmd := c
 			tcName := fmt.Sprintf(tc.name, cmd.cmdDesc)
 			t.Run(tcName, func(t *testing.T) {
@@ -2176,6 +2391,155 @@ func TestExecHomelabContainerCmdCompletions(t *testing.T) {
 	for _, test := range executeHomelabContainerCmdCompletionTests {
 		tc := test
 		for _, c := range executeHomelabContainerCmds {
+			cmd := c
+			tcName := fmt.Sprintf(tc.name, cmd.cmdDesc)
+			t.Run(tcName, func(t *testing.T) {
+				t.Parallel()
+
+				args := append(tc.preCmdArgs, cmd.cmdArgs...)
+				args = append(args, tc.postCmdArgs...)
+
+				out, gotErr := execHomelabCmdTest(tc.ctxInfo(), nil, args...)
+				if gotErr != nil {
+					testhelpers.LogErrorNotNilWithOutput(t, "Exec()", tcName, out, gotErr)
+					return
+				}
+
+				if !testhelpers.RegexMatchJoinNewLines(t, "Exec()", tcName, "command output", tc.want, out.String()) {
+					return
+				}
+			})
+		}
+	}
+}
+
+var executeHomelabNetworksCmds = []struct {
+	cmdArgs        []string
+	cmdNameInError string
+	cmdDesc        string
+}{
+	{
+		cmdArgs: []string{
+			"networks",
+			"create",
+		},
+		cmdNameInError: "networks create",
+		cmdDesc:        "Networks Create",
+	},
+}
+
+var executeHomelabNetworksCmdCompletionTests = []struct {
+	name        string
+	preCmdArgs  []string
+	postCmdArgs []string
+	ctxInfo     func() *testutils.TestContextInfo
+	want        string
+}{
+	{
+		name: "Homelab Command - %s - Completion - All Network Names",
+		preCmdArgs: []string{
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/networks-cmd", testhelpers.Pwd()),
+			"__complete",
+		},
+		postCmdArgs: []string{
+			"",
+		},
+		ctxInfo: func() *testutils.TestContextInfo {
+			return &testutils.TestContextInfo{
+				DockerHost: fakedocker.NewEmptyFakeDockerHost(),
+			}
+		},
+		want: `all
+net1
+net2
+net3
+net4
+net5
+:36
+Completion ended with directive: ShellCompDirectiveNoFileComp, ShellCompDirectiveKeepOrder`,
+	},
+	{
+		name: "Homelab Command - %s - Completion - No Network Names",
+		preCmdArgs: []string{
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+			"__complete",
+		},
+		postCmdArgs: []string{
+			"net1",
+			"",
+		},
+		ctxInfo: func() *testutils.TestContextInfo {
+			return &testutils.TestContextInfo{
+				DockerHost: fakedocker.NewEmptyFakeDockerHost(),
+			}
+		},
+		want: `:36
+Completion ended with directive: ShellCompDirectiveNoFileComp, ShellCompDirectiveKeepOrder`,
+	},
+	{
+		name: "Homelab Command - %s - Completion - Invalid CLI Config",
+		preCmdArgs: []string{
+			"--cli-config",
+			fmt.Sprintf("%s/testdata/cli-configs/invalid-empty-config/config.yaml", testhelpers.Pwd()),
+			"__complete",
+		},
+		postCmdArgs: []string{
+			"",
+		},
+		ctxInfo: func() *testutils.TestContextInfo {
+			return &testutils.TestContextInfo{
+				DockerHost: fakedocker.NewEmptyFakeDockerHost(),
+			}
+		},
+		want: `:1
+Completion ended with directive: ShellCompDirectiveError`,
+	},
+	{
+		name: "Homelab Command - %s - Completion - Invalid Homelab Config - Merge Fail",
+		preCmdArgs: []string{
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/parse-configs-invalid-deepmerge-fail", testhelpers.Pwd()),
+			"__complete",
+		},
+		postCmdArgs: []string{
+			"",
+		},
+		ctxInfo: func() *testutils.TestContextInfo {
+			return &testutils.TestContextInfo{
+				DockerHost: fakedocker.NewEmptyFakeDockerHost(),
+			}
+		},
+		want: `:1
+Completion ended with directive: ShellCompDirectiveError`,
+	},
+	{
+		name: "Homelab Command - %s - Completion - Invalid Homelab Config - Parse Fail",
+		preCmdArgs: []string{
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/parse-networks-only-configs-invalid-config", testhelpers.Pwd()),
+			"__complete",
+		},
+		postCmdArgs: []string{
+			"",
+		},
+		ctxInfo: func() *testutils.TestContextInfo {
+			return &testutils.TestContextInfo{
+				DockerHost: fakedocker.NewEmptyFakeDockerHost(),
+			}
+		},
+		want: `:1
+Completion ended with directive: ShellCompDirectiveError`,
+	},
+}
+
+func TestExecHomelabNetworksCmdCompletions(t *testing.T) {
+	t.Parallel()
+
+	for _, test := range executeHomelabNetworksCmdCompletionTests {
+		tc := test
+		for _, c := range executeHomelabNetworksCmds {
 			cmd := c
 			tcName := fmt.Sprintf(tc.name, cmd.cmdDesc)
 			t.Run(tcName, func(t *testing.T) {

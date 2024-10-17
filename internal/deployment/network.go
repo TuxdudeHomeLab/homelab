@@ -13,7 +13,7 @@ import (
 
 type Network struct {
 	networkName       string
-	mode              networkMode
+	mode              NetworkMode
 	bridgeModeInfo    *bridgeModeNetworkInfo
 	containerModeInfo *containerModeNetworkInfo
 }
@@ -30,19 +30,20 @@ type containerModeNetworkInfo struct {
 }
 
 type NetworkMap map[string]*Network
+type NetworkList []*Network
 
 const (
-	networkModeUnknown networkMode = iota
-	networkModeBridge
-	networkModeContainer
+	NetworkModeUnknown NetworkMode = iota
+	NetworkModeBridge
+	NetworkModeContainer
 )
 
-type networkMode uint8
+type NetworkMode uint8
 
 func newBridgeModeNetwork(name string, priority int, info *bridgeModeNetworkInfo) *Network {
 	n := Network{
 		networkName:    name,
-		mode:           networkModeBridge,
+		mode:           NetworkModeBridge,
 		bridgeModeInfo: info,
 	}
 	return &n
@@ -51,38 +52,37 @@ func newBridgeModeNetwork(name string, priority int, info *bridgeModeNetworkInfo
 func newContainerModeNetwork(name string, info *containerModeNetworkInfo) *Network {
 	n := Network{
 		networkName:       name,
-		mode:              networkModeContainer,
+		mode:              NetworkModeContainer,
 		containerModeInfo: info,
 	}
 	return &n
 }
 
-func (n *Network) create(ctx context.Context, dc *docker.Client) error {
-	if n.mode == networkModeContainer {
-		log(ctx).Debugf("Nothing to do for creating container mode network %s", n.name())
-		return nil
+func (n *Network) Create(ctx context.Context, dc *docker.Client) (bool, error) {
+	if n.mode == NetworkModeContainer {
+		return false, fmt.Errorf("container mode network %s cannot be created", n.Name())
 	}
 
 	// TODO: Validate that the existing network and the new network have
 	// exactly the same properties if we choose to reuse the existing
 	// network, and display a warning when they differ.
-	if !dc.NetworkExists(ctx, n.name()) {
-		err := dc.CreateNetwork(ctx, n.name(), n.createOptions())
+	if !dc.NetworkExists(ctx, n.Name()) {
+		err := dc.CreateNetwork(ctx, n.Name(), n.createOptions())
 		if err != nil {
-			return err
+			return false, err
 		}
-		log(ctx).Infof("Created network %s", n.name())
+		log(ctx).Infof("Created network %s", n.Name())
 		log(ctx).InfoEmpty()
-	} else {
-		log(ctx).Debugf("Not re-creating existing network %s", n.name())
+		return true, nil
 	}
-	return nil
+	log(ctx).Debugf("Not re-creating existing network %s", n.Name())
+	return false, nil
 }
 
 //nolint:nolintlint,unused // TODO: Remove this after this function is used.
 func (n *Network) remove(ctx context.Context, dc *docker.Client) error {
-	if dc.NetworkExists(ctx, n.name()) {
-		err := dc.RemoveNetwork(ctx, n.name())
+	if dc.NetworkExists(ctx, n.Name()) {
+		err := dc.RemoveNetwork(ctx, n.Name())
 		if err != nil {
 			return err
 		}
@@ -91,16 +91,16 @@ func (n *Network) remove(ctx context.Context, dc *docker.Client) error {
 }
 
 func (n *Network) connectContainer(ctx context.Context, dc *docker.Client, containerName, ip string) error {
-	return dc.ConnectContainerToBridgeModeNetwork(ctx, containerName, n.name(), ip)
+	return dc.ConnectContainerToBridgeModeNetwork(ctx, containerName, n.Name(), ip)
 }
 
 //nolint:nolintlint,unused // TODO: Remove this after this function is used.
 func (n *Network) disconnectContainer(ctx context.Context, dc *docker.Client, containerName string) error {
-	return dc.DisconnectContainerFromNetwork(ctx, containerName, n.name())
+	return dc.DisconnectContainerFromNetwork(ctx, containerName, n.Name())
 }
 
 func (n *Network) createOptions() dnetwork.CreateOptions {
-	if n.mode != networkModeBridge {
+	if n.mode != NetworkModeBridge {
 		panic("Only bridge mode network creation is possible")
 	}
 
@@ -131,15 +131,19 @@ func (n *Network) createOptions() dnetwork.CreateOptions {
 	}
 }
 
-func (n *Network) name() string {
+func (n *Network) Name() string {
 	return n.networkName
 }
 
+func (n *Network) Mode() NetworkMode {
+	return n.mode
+}
+
 func (n *Network) String() string {
-	if n.mode == networkModeBridge {
-		return fmt.Sprintf("{Network (Bridge) Name: %s}", n.name())
-	} else if n.mode == networkModeContainer {
-		return fmt.Sprintf("{Network (Container) Name: %s}", n.name())
+	if n.mode == NetworkModeBridge {
+		return fmt.Sprintf("{Network (Bridge) Name: %s}", n.Name())
+	} else if n.mode == NetworkModeContainer {
+		return fmt.Sprintf("{Network (Container) Name: %s}", n.Name())
 	} else {
 		panic("unknown network mode, possibly indicating a bug in the code!")
 	}

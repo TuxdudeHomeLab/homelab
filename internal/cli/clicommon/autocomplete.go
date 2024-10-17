@@ -30,6 +30,17 @@ func AutoCompleteContainers(ctx context.Context, args []string, cmd string, opts
 	return containers, cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveKeepOrder
 }
 
+func AutoCompleteNetworks(ctx context.Context, args []string, cmd string, opts *GlobalCmdOptions) ([]string, cobra.ShellCompDirective) {
+	if len(args) != 0 {
+		return nil, cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveKeepOrder
+	}
+	networks, err := networksOnly(ctx, cmd, opts)
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+	return networks, cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveKeepOrder
+}
+
 func groupsOnly(ctx context.Context, cmd string, opts *GlobalCmdOptions) ([]string, error) {
 	h, err := buildHomelabGroupsOnly(ctx, cmd, opts)
 	if err != nil {
@@ -49,6 +60,19 @@ func containersOnly(ctx context.Context, cmd string, opts *GlobalCmdOptions) ([]
 		return nil, err
 	}
 	return h.ListContainers(), nil
+}
+
+func networksOnly(ctx context.Context, cmd string, opts *GlobalCmdOptions) ([]string, error) {
+	h, err := buildHomelabNetworksOnly(ctx, cmd, opts)
+	if err != nil {
+		return nil, err
+	}
+	networks := h.ListNetworks()
+	if slices.Index(networks, AllNetworks) == -1 {
+		networks = append(networks, AllNetworks)
+	}
+	slices.Sort(networks)
+	return networks, nil
 }
 
 func buildHomelabGroupsOnly(ctx context.Context, cmd string, opts *GlobalCmdOptions) (*config.HomelabGroupsOnly, error) {
@@ -83,6 +107,26 @@ func buildHomelabContainersOnly(ctx context.Context, cmd string, opts *GlobalCmd
 	}
 
 	conf := config.HomelabContainersOnly{}
+	err = conf.Parse(ctx, r)
+	if err != nil {
+		return nil, err
+	}
+
+	return &conf, nil
+}
+
+func buildHomelabNetworksOnly(ctx context.Context, cmd string, opts *GlobalCmdOptions) (*config.HomelabNetworksOnly, error) {
+	path, err := configsPath(ctx, cmd, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	r, err := config.MergedConfigsReader(ctx, path)
+	if err != nil {
+		return nil, err
+	}
+
+	conf := config.HomelabNetworksOnly{}
 	err = conf.Parse(ctx, r)
 	if err != nil {
 		return nil, err

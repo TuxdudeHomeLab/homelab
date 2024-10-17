@@ -38,7 +38,7 @@ func TestNetworkStringerPanics(t *testing.T) {
 		t.Parallel()
 
 		net := &Network{
-			mode: networkModeUnknown,
+			mode: NetworkModeUnknown,
 		}
 
 		defer testhelpers.ExpectPanic(t, "network.String()", tc, want)
