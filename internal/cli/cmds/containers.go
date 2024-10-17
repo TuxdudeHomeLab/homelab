@@ -13,15 +13,15 @@ const (
 	containersCmdStr = "containers"
 )
 
-func ContainerCmd(ctx context.Context, opts *clicommon.GlobalCmdOptions) *cobra.Command {
-	cmd := buildContainerCmd(ctx)
+func ContainersCmd(ctx context.Context, opts *clicommon.GlobalCmdOptions) *cobra.Command {
+	cmd := buildContainersCmd(ctx)
 	cmd.AddCommand(containers.StartCmd(ctx, opts))
 	cmd.AddCommand(containers.StopCmd(ctx, opts))
 	cmd.AddCommand(containers.PurgeCmd(ctx, opts))
 	return cmd
 }
 
-func buildContainerCmd(ctx context.Context) *cobra.Command {
+func buildContainersCmd(ctx context.Context) *cobra.Command {
 	return &cobra.Command{
 		Use:     containersCmdStr,
 		GroupID: clicommon.ContainersCmdGroupID,

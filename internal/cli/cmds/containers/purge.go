@@ -39,24 +39,24 @@ func PurgeCmd(ctx context.Context, opts *clicommon.GlobalCmdOptions) *cobra.Comm
 			return nil
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			return clicommon.AutoCompleteContainers(ctx, args, "container purge autocomplete", opts)
+			return clicommon.AutoCompleteContainers(ctx, args, "containers purge autocomplete", opts)
 		},
 	}
 }
 
 func execContainerPurgeCmd(ctx context.Context, containerArg string, opts *clicommon.GlobalCmdOptions) error {
-	group, container := mustContainerName(containerArg)
-	dep, err := clicommon.BuildDeployment(ctx, "container purge", opts)
+	g, ct := mustContainerName(containerArg)
+	dep, err := clicommon.BuildDeployment(ctx, "containers purge", opts)
 	if err != nil {
 		return err
 	}
 
 	return clicommon.ExecContainerGroupCmd(
 		ctx,
-		"container purge",
-		fmt.Sprintf("Purging container %s in group %s", container, group),
-		group,
-		container,
+		"containers purge",
+		fmt.Sprintf("Purging container %s in group %s", ct, g),
+		g,
+		ct,
 		dep,
 		clicommon.ExecPurgeContainer,
 	)

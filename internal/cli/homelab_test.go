@@ -240,13 +240,13 @@ Use "homelab \[command\] --help" for more information about a command\.`,
 }`,
 	},
 	{
-		name: "Homelab Command - Start - All Groups With Real Host Info",
+		name: "Homelab Command - Groups Start - All Groups With Real Host Info",
 		args: []string{
 			"groups",
 			"start",
 			"all",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/containers-and-groups-cmds", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -259,13 +259,13 @@ Container g1-c2 not allowed to run on host [^\s]+
 Container g2-c3 not allowed to run on host [^\s]+`,
 	},
 	{
-		name: "Homelab Command - Start - All Groups With Real User Info",
+		name: "Homelab Command - Groups Start - All Groups With Real User Info",
 		args: []string{
 			"groups",
 			"start",
 			"all",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/containers-and-groups-cmds", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -287,13 +287,13 @@ Creating container g2-c3
 Starting container g2-c3`,
 	},
 	{
-		name: "Homelab Command - Start - All Groups",
+		name: "Homelab Command - Groups Start - All Groups",
 		args: []string{
 			"groups",
 			"start",
 			"all",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/containers-and-groups-cmds", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -314,13 +314,13 @@ Creating container g2-c3
 Starting container g2-c3`,
 	},
 	{
-		name: "Homelab Command - Start - All Groups - Container Create Warning",
+		name: "Homelab Command - Groups Start - All Groups - Container Create Warning",
 		args: []string{
 			"groups",
 			"start",
 			"all",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/containers-and-groups-cmds", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -348,13 +348,13 @@ Creating container g2-c3
 Starting container g2-c3`,
 	},
 	{
-		name: "Homelab Command - Start - All Groups - Network Create Warning",
+		name: "Homelab Command - Groups Start - All Groups - Network Create Warning",
 		args: []string{
 			"groups",
 			"start",
 			"all",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/containers-and-groups-cmds", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -380,13 +380,13 @@ Creating container g2-c3
 Starting container g2-c3`,
 	},
 	{
-		name: "Homelab Command - Start - All Groups - One Existing Image",
+		name: "Homelab Command - Groups Start - All Groups - One Existing Image",
 		args: []string{
 			"groups",
 			"start",
 			"all",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/containers-and-groups-cmds", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -410,7 +410,7 @@ Creating container g2-c3
 Starting container g2-c3`,
 	},
 	{
-		name: "Homelab Command - Start - All Groups With Multiple Same Order Containers",
+		name: "Homelab Command - Groups Start - All Groups With Multiple Same Order Containers",
 		args: []string{
 			"groups",
 			"start",
@@ -441,7 +441,7 @@ Creating container g2-c4
 Starting container g2-c4`,
 	},
 	{
-		name: "Homelab Command - Start - All Groups With No Network Endpoints Containers",
+		name: "Homelab Command - Groups Start - All Groups With No Network Endpoints Containers",
 		args: []string{
 			"groups",
 			"start",
@@ -473,7 +473,7 @@ Creating container g2-c4
 Starting container g2-c4`,
 	},
 	{
-		name: "Homelab Command - Start - All Groups - One Container With Start Pre-Hook",
+		name: "Homelab Command - Groups Start - All Groups - One Container With Start Pre-Hook",
 		args: []string{
 			"groups",
 			"start",
@@ -514,7 +514,7 @@ Creating container g2-c3
 Starting container g2-c3`,
 	},
 	{
-		name: "Homelab Command - Start - All Groups - One Container With Ignore Image Pull Failures",
+		name: "Homelab Command - Groups Start - All Groups - One Container With Ignore Image Pull Failures",
 		args: []string{
 			"groups",
 			"start",
@@ -545,13 +545,13 @@ Creating container g2-c3
 Starting container g2-c3`,
 	},
 	{
-		name: "Homelab Command - Start - One Group",
+		name: "Homelab Command - Groups Start - One Group",
 		args: []string{
 			"groups",
 			"start",
 			"g1",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/containers-and-groups-cmds", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -567,13 +567,13 @@ Starting container g1-c1
 Container g1-c2 not allowed to run on host FakeHost`,
 	},
 	{
-		name: "Homelab Command - Start - One Container",
+		name: "Homelab Command - Containers Start - One Container",
 		args: []string{
 			"containers",
 			"start",
 			"g1/c1",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/containers-and-groups-cmds", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -588,13 +588,13 @@ Creating container g1-c1
 Starting container g1-c1`,
 	},
 	{
-		name: "Homelab Command - Stop - All Groups",
+		name: "Homelab Command - Groups Stop - All Groups",
 		args: []string{
 			"groups",
 			"stop",
 			"all",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/containers-and-groups-cmds", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -617,7 +617,7 @@ Container g1-c2 cannot be stopped since it was not found
 Container g2-c3 cannot be stopped since it is in state Removing`,
 	},
 	{
-		name: "Homelab Command - Stop - All Groups - One Container With Ignore Image Pull Failures",
+		name: "Homelab Command - Groups Stop - All Groups - One Container With Ignore Image Pull Failures",
 		args: []string{
 			"groups",
 			"stop",
@@ -655,13 +655,13 @@ Container g1-c2 cannot be stopped since it was not found
 Stopping container g2-c3`,
 	},
 	{
-		name: "Homelab Command - Stop - One Group",
+		name: "Homelab Command - Groups Stop - One Group",
 		args: []string{
 			"groups",
 			"stop",
 			"g1",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/containers-and-groups-cmds", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -678,13 +678,13 @@ Stopping container g2-c3`,
 Container g1-c2 cannot be stopped since it was not found`,
 	},
 	{
-		name: "Homelab Command - Stop - One Container - Not Found",
+		name: "Homelab Command - Containers Stop - One Container - Not Found",
 		args: []string{
 			"containers",
 			"stop",
 			"g1/c1",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/containers-and-groups-cmds", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -696,13 +696,13 @@ Container g1-c2 cannot be stopped since it was not found`,
 		want: `Container g1-c1 cannot be stopped since it was not found`,
 	},
 	{
-		name: "Homelab Command - Purge - All Groups",
+		name: "Homelab Command - Groups Purge - All Groups",
 		args: []string{
 			"groups",
 			"purge",
 			"all",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/containers-and-groups-cmds", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -726,13 +726,13 @@ Removing container g1-c2
 Container g2-c3 cannot be purged since it was not found`,
 	},
 	{
-		name: "Homelab Command - Purge - One Group",
+		name: "Homelab Command - Groups Purge - One Group",
 		args: []string{
 			"groups",
 			"purge",
 			"g1",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/containers-and-groups-cmds", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -750,13 +750,13 @@ Removing container g1-c1
 Container g1-c2 cannot be purged since it was not found`,
 	},
 	{
-		name: "Homelab Command - Purge - One Container - Not Found",
+		name: "Homelab Command - Containers Purge - One Container - Not Found",
 		args: []string{
 			"containers",
 			"purge",
 			"g1/c1",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/containers-and-groups-cmds", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -768,7 +768,7 @@ Container g1-c2 cannot be purged since it was not found`,
 		want: `Container g1-c1 cannot be purged since it was not found`,
 	},
 	{
-		name: "Homelab Command - Networks - Create Success",
+		name: "Homelab Command - Networks Create - One Network",
 		args: []string{
 			"networks",
 			"create",
@@ -782,7 +782,7 @@ Container g1-c2 cannot be purged since it was not found`,
 		want: `Created network net1`,
 	},
 	{
-		name: "Homelab Command - Networks - Create Warning",
+		name: "Homelab Command - Networks Create - One Network - Warning",
 		args: []string{
 			"networks",
 			"create",
@@ -802,7 +802,7 @@ warning generated during network create for network net1 on the fake docker host
 Created network net1`,
 	},
 	{
-		name: "Homelab Command - Networks - Create - Exists Already",
+		name: "Homelab Command - Networks Create - One Network - Exists Already",
 		args: []string{
 			"networks",
 			"create",
@@ -970,39 +970,39 @@ var executeHomelabCmdRealEverythingTests = []struct {
 }`,
 	},
 	{
-		name: "Homelab Command - Start - All Groups - Real Everything",
+		name: "Homelab Command - Groups Start - All Groups - Real Everything",
 		args: []string{
 			"groups",
 			"start",
 			"all",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/containers-and-groups-cmds", testhelpers.Pwd()),
 		},
 		want: `Container g1-c1 not allowed to run on host [^\s]+
 Container g1-c2 not allowed to run on host [^\s]+
 Container g2-c3 not allowed to run on host [^\s]+`,
 	},
 	{
-		name: "Homelab Command - Stop - All Groups - Real Everything",
+		name: "Homelab Command - Groups Stop - All Groups - Real Everything",
 		args: []string{
 			"groups",
 			"stop",
 			"all",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/containers-and-groups-cmds", testhelpers.Pwd()),
 		},
 		want: `Container g1-c1 cannot be stopped since it was not found
 Container g1-c2 cannot be stopped since it was not found
 Container g2-c3 cannot be stopped since it was not found`,
 	},
 	{
-		name: "Homelab Command - Purge - All Groups - Real Everything",
+		name: "Homelab Command - Groups Purge - All Groups - Real Everything",
 		args: []string{
 			"groups",
 			"purge",
 			"all",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/containers-and-groups-cmds", testhelpers.Pwd()),
 		},
 		want: `Container g1-c1 cannot be purged since it was not found
 Container g1-c2 cannot be purged since it was not found
@@ -1054,13 +1054,13 @@ var executeHomelabCmdLogLevelTests = []struct {
 	ctxInfo func() *testutils.TestContextInfo
 }{
 	{
-		name: "Homelab Command - Start - All Groups",
+		name: "Homelab Command - Groups Start - All Groups",
 		args: []string{
 			"groups",
 			"start",
 			"all",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/containers-and-groups-cmds", testhelpers.Pwd()),
 		},
 		ctxInfo: func() *testutils.TestContextInfo {
 			return &testutils.TestContextInfo{
@@ -1074,13 +1074,13 @@ var executeHomelabCmdLogLevelTests = []struct {
 		},
 	},
 	{
-		name: "Homelab Command - Stop - All Groups",
+		name: "Homelab Command - Groups Stop - All Groups",
 		args: []string{
 			"groups",
 			"stop",
 			"all",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/containers-and-groups-cmds", testhelpers.Pwd()),
 		},
 		ctxInfo: func() *testutils.TestContextInfo {
 			return &testutils.TestContextInfo{
@@ -1107,13 +1107,13 @@ var executeHomelabCmdLogLevelTests = []struct {
 		},
 	},
 	{
-		name: "Homelab Command - Purge - All Groups",
+		name: "Homelab Command - Groups Purge - All Groups",
 		args: []string{
 			"groups",
 			"purge",
 			"all",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/containers-and-groups-cmds", testhelpers.Pwd()),
 		},
 		ctxInfo: func() *testutils.TestContextInfo {
 			return &testutils.TestContextInfo{
@@ -1207,7 +1207,7 @@ var executeHomelabCmdErrorTests = []struct {
 		want: `homelab config sub-command is required`,
 	},
 	{
-		name: "Homelab Group Command - Missing Subcommand",
+		name: "Homelab Groups Command - Missing Subcommand",
 		args: []string{
 			"groups",
 		},
@@ -1217,7 +1217,7 @@ var executeHomelabCmdErrorTests = []struct {
 		want: `homelab group sub-command is required`,
 	},
 	{
-		name: "Homelab Container Command - Missing Subcommand",
+		name: "Homelab Containers Command - Missing Subcommand",
 		args: []string{
 			"containers",
 		},
@@ -1237,7 +1237,7 @@ var executeHomelabCmdErrorTests = []struct {
 		want: `homelab networks sub-command is required`,
 	},
 	{
-		name: "Homelab Command - Group Start - Zero Group Name Args",
+		name: "Homelab Command - Groups Start - Zero Group Name Args",
 		args: []string{
 			"groups",
 			"start",
@@ -1248,7 +1248,7 @@ var executeHomelabCmdErrorTests = []struct {
 		want: `Expected exactly one group name argument to be specified, but found 0 instead`,
 	},
 	{
-		name: "Homelab Command - Group Stop - Zero Group Name Args",
+		name: "Homelab Command - Groups Stop - Zero Group Name Args",
 		args: []string{
 			"groups",
 			"stop",
@@ -1259,7 +1259,7 @@ var executeHomelabCmdErrorTests = []struct {
 		want: `Expected exactly one group name argument to be specified, but found 0 instead`,
 	},
 	{
-		name: "Homelab Command - Group Purge - Zero Group Name Args",
+		name: "Homelab Command - Groups Purge - Zero Group Name Args",
 		args: []string{
 			"groups",
 			"purge",
@@ -1270,7 +1270,7 @@ var executeHomelabCmdErrorTests = []struct {
 		want: `Expected exactly one group name argument to be specified, but found 0 instead`,
 	},
 	{
-		name: "Homelab Command - Group Start - Multiple Group Name Args",
+		name: "Homelab Command - Groups Start - Multiple Group Name Args",
 		args: []string{
 			"groups",
 			"start",
@@ -1283,7 +1283,7 @@ var executeHomelabCmdErrorTests = []struct {
 		want: `Expected exactly one group name argument to be specified, but found 2 instead`,
 	},
 	{
-		name: "Homelab Command - Group Stop - Multiple Group Name Args",
+		name: "Homelab Command - Groups Stop - Multiple Group Name Args",
 		args: []string{
 			"groups",
 			"stop",
@@ -1296,7 +1296,7 @@ var executeHomelabCmdErrorTests = []struct {
 		want: `Expected exactly one group name argument to be specified, but found 2 instead`,
 	},
 	{
-		name: "Homelab Command - Group Purge - Multiple Group Name Args",
+		name: "Homelab Command - Groups Purge - Multiple Group Name Args",
 		args: []string{
 			"groups",
 			"purge",
@@ -1309,7 +1309,7 @@ var executeHomelabCmdErrorTests = []struct {
 		want: `Expected exactly one group name argument to be specified, but found 2 instead`,
 	},
 	{
-		name: "Homelab Command - Container Start - Zero Container Name Args",
+		name: "Homelab Command - Containers Start - Zero Container Name Args",
 		args: []string{
 			"containers",
 			"start",
@@ -1320,7 +1320,7 @@ var executeHomelabCmdErrorTests = []struct {
 		want: `Expected exactly one container name argument to be specified, but found 0 instead`,
 	},
 	{
-		name: "Homelab Command - Container Stop - Zero Container Name Args",
+		name: "Homelab Command - Containers Stop - Zero Container Name Args",
 		args: []string{
 			"containers",
 			"stop",
@@ -1331,7 +1331,7 @@ var executeHomelabCmdErrorTests = []struct {
 		want: `Expected exactly one container name argument to be specified, but found 0 instead`,
 	},
 	{
-		name: "Homelab Command - Container Purge - Zero Container Name Args",
+		name: "Homelab Command - Containers Purge - Zero Container Name Args",
 		args: []string{
 			"containers",
 			"purge",
@@ -1342,7 +1342,7 @@ var executeHomelabCmdErrorTests = []struct {
 		want: `Expected exactly one container name argument to be specified, but found 0 instead`,
 	},
 	{
-		name: "Homelab Command - Container Start - Multiple Container Name Args",
+		name: "Homelab Command - Containers Start - Multiple Container Name Args",
 		args: []string{
 			"containers",
 			"start",
@@ -1355,7 +1355,7 @@ var executeHomelabCmdErrorTests = []struct {
 		want: `Expected exactly one container name argument to be specified, but found 2 instead`,
 	},
 	{
-		name: "Homelab Command - Container Stop - Multiple Container Name Args",
+		name: "Homelab Command - Containers Stop - Multiple Container Name Args",
 		args: []string{
 			"containers",
 			"stop",
@@ -1368,7 +1368,7 @@ var executeHomelabCmdErrorTests = []struct {
 		want: `Expected exactly one container name argument to be specified, but found 2 instead`,
 	},
 	{
-		name: "Homelab Command - Container Purge - Multiple Container Name Args",
+		name: "Homelab Command - Containers Purge - Multiple Container Name Args",
 		args: []string{
 			"containers",
 			"purge",
@@ -1381,7 +1381,7 @@ var executeHomelabCmdErrorTests = []struct {
 		want: `Expected exactly one container name argument to be specified, but found 2 instead`,
 	},
 	{
-		name: "Homelab Command - Container Start - Invalid Container Name",
+		name: "Homelab Command - Containers Start - Invalid Container Name",
 		args: []string{
 			"containers",
 			"start",
@@ -1393,7 +1393,7 @@ var executeHomelabCmdErrorTests = []struct {
 		want: `Container name must be specified in the form 'group/container'`,
 	},
 	{
-		name: "Homelab Command - Container Stop - Invalid Container Name",
+		name: "Homelab Command - Containers Stop - Invalid Container Name",
 		args: []string{
 			"containers",
 			"stop",
@@ -1405,7 +1405,7 @@ var executeHomelabCmdErrorTests = []struct {
 		want: `Container name must be specified in the form 'group/container'`,
 	},
 	{
-		name: "Homelab Command - Container Purge - Invalid Container Name",
+		name: "Homelab Command - Containers Purge - Invalid Container Name",
 		args: []string{
 			"containers",
 			"purge",
@@ -1417,29 +1417,29 @@ var executeHomelabCmdErrorTests = []struct {
 		want: `Container name must be specified in the form 'group/container'`,
 	},
 	{
-		name: "Homelab Command - Start - Failure",
+		name: "Homelab Command - Groups Start - Failure",
 		args: []string{
 			"groups",
 			"start",
 			"all",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/containers-and-groups-cmds", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
 		},
-		want: `group start failed for 2 containers, reason\(s\):
+		want: `groups start failed for 2 containers, reason\(s\):
 1 - Failed to start container g1-c1, reason:failed to pull the image abc/xyz, reason: image abc/xyz not found or invalid and cannot be pulled by the fake docker host
 2 - Failed to start container g2-c3, reason:failed to pull the image abc/xyz3, reason: image abc/xyz3 not found or invalid and cannot be pulled by the fake docker host`,
 	},
 	{
-		name: "Homelab Command - Stop - Failure",
+		name: "Homelab Command - Groups Stop - Failure",
 		args: []string{
 			"groups",
 			"stop",
 			"all",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/containers-and-groups-cmds", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -1461,18 +1461,18 @@ var executeHomelabCmdErrorTests = []struct {
 				},
 			}),
 		},
-		want: `group stop failed for 2 containers, reason\(s\):
+		want: `groups stop failed for 2 containers, reason\(s\):
 1 - Failed to stop container g1-c1, reason:failed to stop the container, reason: failed to stop container g1-c1 on the fake docker host
 2 - Failed to stop container g2-c3, reason:failed to stop the container, reason: failed to stop container g2-c3 on the fake docker host`,
 	},
 	{
-		name: "Homelab Command - Purge - Failure",
+		name: "Homelab Command - Groups Purge - Failure",
 		args: []string{
 			"groups",
 			"purge",
 			"all",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/containers-and-groups-cmds", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{
 			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
@@ -1493,12 +1493,12 @@ var executeHomelabCmdErrorTests = []struct {
 				},
 			}),
 		},
-		want: `group purge failed for 2 containers, reason\(s\):
+		want: `groups purge failed for 2 containers, reason\(s\):
 1 - Failed to purge container g1-c1, reason:failed to stop the container, reason: failed to stop container g1-c1 on the fake docker host
 2 - Failed to purge container g2-c3, reason:failed to purge container g2-c3 after 6 attempts`,
 	},
 	{
-		name: "Homelab Command - Networks Create - Zero Group Name Args",
+		name: "Homelab Command - Networks Create - Zero Network Name Args",
 		args: []string{
 			"networks",
 			"create",
@@ -1509,7 +1509,7 @@ var executeHomelabCmdErrorTests = []struct {
 		want: `Expected exactly one network name argument to be specified, but found 0 instead`,
 	},
 	{
-		name: "Homelab Command - Networks Create - Multiple Group Name Args",
+		name: "Homelab Command - Networks Create - Multiple Network Name Args",
 		args: []string{
 			"networks",
 			"create",
@@ -1652,13 +1652,13 @@ var executeHomelabCmdEnvPanicTests = []struct {
 	want    string
 }{
 	{
-		name: "Homelab Command - Start - Docker Client Creation Failed",
+		name: "Homelab Command - Groups Start - Docker Client Creation Failed",
 		args: []string{
 			"groups",
 			"start",
 			"all",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/containers-and-groups-cmds", testhelpers.Pwd()),
 		},
 		ctxInfo: &testutils.TestContextInfo{},
 		envs: testhelpers.TestEnvMap{
@@ -1700,8 +1700,8 @@ var executeHomelabConfigCmds = []struct {
 			"start",
 			"all",
 		},
-		cmdNameInError: "group start",
-		cmdDesc:        "Group Start",
+		cmdNameInError: "groups start",
+		cmdDesc:        "Groups Start",
 	},
 	{
 		cmdArgs: []string{
@@ -1709,8 +1709,8 @@ var executeHomelabConfigCmds = []struct {
 			"stop",
 			"all",
 		},
-		cmdNameInError: "group stop",
-		cmdDesc:        "Group Stop",
+		cmdNameInError: "groups stop",
+		cmdDesc:        "Groups Stop",
 	},
 	{
 		cmdArgs: []string{
@@ -1718,8 +1718,8 @@ var executeHomelabConfigCmds = []struct {
 			"purge",
 			"all",
 		},
-		cmdNameInError: "group purge",
-		cmdDesc:        "Group Purge",
+		cmdNameInError: "groups purge",
+		cmdDesc:        "Groups Purge",
 	},
 	{
 		cmdArgs: []string{
@@ -1727,8 +1727,8 @@ var executeHomelabConfigCmds = []struct {
 			"start",
 			"g1/c1",
 		},
-		cmdNameInError: "container start",
-		cmdDesc:        "Container Start",
+		cmdNameInError: "containers start",
+		cmdDesc:        "Containers Start",
 	},
 	{
 		cmdArgs: []string{
@@ -1736,8 +1736,8 @@ var executeHomelabConfigCmds = []struct {
 			"stop",
 			"g1/c1",
 		},
-		cmdNameInError: "container stop",
-		cmdDesc:        "Container Stop",
+		cmdNameInError: "containers stop",
+		cmdDesc:        "Containers Stop",
 	},
 	{
 		cmdArgs: []string{
@@ -1745,8 +1745,8 @@ var executeHomelabConfigCmds = []struct {
 			"purge",
 			"g1/c1",
 		},
-		cmdNameInError: "container purge",
-		cmdDesc:        "Container Purge",
+		cmdNameInError: "containers purge",
+		cmdDesc:        "Containers Purge",
 	},
 	{
 		cmdArgs: []string{
@@ -1874,7 +1874,7 @@ func TestExecHomelabConfigCmdErrors(t *testing.T) {
 	}
 }
 
-var executeHomelabGroupCmds = []struct {
+var executeHomelabGroupsCmds = []struct {
 	cmdArgs        []string
 	cmdNameInError string
 	cmdDesc        string
@@ -1884,28 +1884,28 @@ var executeHomelabGroupCmds = []struct {
 			"groups",
 			"start",
 		},
-		cmdNameInError: "group start",
-		cmdDesc:        "Group Start",
+		cmdNameInError: "groups start",
+		cmdDesc:        "Groups Start",
 	},
 	{
 		cmdArgs: []string{
 			"groups",
 			"stop",
 		},
-		cmdNameInError: "group stop",
-		cmdDesc:        "Group Stop",
+		cmdNameInError: "groups stop",
+		cmdDesc:        "Groups Stop",
 	},
 	{
 		cmdArgs: []string{
 			"groups",
 			"purge",
 		},
-		cmdNameInError: "group purge",
-		cmdDesc:        "Group Purge",
+		cmdNameInError: "groups purge",
+		cmdDesc:        "Groups Purge",
 	},
 }
 
-var executeHomelabGroupCmdTests = []struct {
+var executeHomelabGroupsCmdTests = []struct {
 	name    string
 	args    []string
 	ctxInfo func() *testutils.TestContextInfo
@@ -1916,7 +1916,7 @@ var executeHomelabGroupCmdTests = []struct {
 		args: []string{
 			"g3",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/containers-and-groups-cmds", testhelpers.Pwd()),
 		},
 		ctxInfo: func() *testutils.TestContextInfo {
 			return &testutils.TestContextInfo{
@@ -1927,12 +1927,12 @@ var executeHomelabGroupCmdTests = []struct {
 	},
 }
 
-func TestExecHomelabGroupCmd(t *testing.T) {
+func TestExecHomelabGroupsCmd(t *testing.T) {
 	t.Parallel()
 
-	for _, test := range executeHomelabGroupCmdTests {
+	for _, test := range executeHomelabGroupsCmdTests {
 		tc := test
-		for _, c := range executeHomelabGroupCmds {
+		for _, c := range executeHomelabGroupsCmds {
 			cmd := c
 			tcName := fmt.Sprintf(tc.name, cmd.cmdDesc)
 			t.Run(tcName, func(t *testing.T) {
@@ -1955,7 +1955,7 @@ func TestExecHomelabGroupCmd(t *testing.T) {
 	}
 }
 
-var executeHomelabGroupCmdErrorTests = []struct {
+var executeHomelabGroupsCmdErrorTests = []struct {
 	name    string
 	args    []string
 	ctxInfo func() *testutils.TestContextInfo
@@ -1966,7 +1966,7 @@ var executeHomelabGroupCmdErrorTests = []struct {
 		args: []string{
 			"g4",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/containers-and-groups-cmds", testhelpers.Pwd()),
 		},
 		ctxInfo: func() *testutils.TestContextInfo {
 			return &testutils.TestContextInfo{
@@ -1977,12 +1977,12 @@ var executeHomelabGroupCmdErrorTests = []struct {
 	},
 }
 
-func TestExecHomelabGroupCmdErrors(t *testing.T) {
+func TestExecHomelabGroupsCmdErrors(t *testing.T) {
 	t.Parallel()
 
-	for _, test := range executeHomelabGroupCmdErrorTests {
+	for _, test := range executeHomelabGroupsCmdErrorTests {
 		tc := test
-		for _, c := range executeHomelabGroupCmds {
+		for _, c := range executeHomelabGroupsCmds {
 			cmd := c
 			tcName := fmt.Sprintf(tc.name, cmd.cmdDesc)
 			t.Run(tcName, func(t *testing.T) {
@@ -2015,24 +2015,24 @@ var executeHomelabContainerCmds = []struct {
 			"containers",
 			"start",
 		},
-		cmdNameInError: "container start",
-		cmdDesc:        "Container Start",
+		cmdNameInError: "containers start",
+		cmdDesc:        "Containers Start",
 	},
 	{
 		cmdArgs: []string{
 			"containers",
 			"stop",
 		},
-		cmdNameInError: "container stop",
-		cmdDesc:        "Container Stop",
+		cmdNameInError: "containers stop",
+		cmdDesc:        "Containers Stop",
 	},
 	{
 		cmdArgs: []string{
 			"containers",
 			"purge",
 		},
-		cmdNameInError: "container purge",
-		cmdDesc:        "Container Purge",
+		cmdNameInError: "containers purge",
+		cmdDesc:        "Containers Purge",
 	},
 }
 
@@ -2047,7 +2047,7 @@ var executeHomelabContainerCmdErrorTests = []struct {
 		args: []string{
 			"g4/c3",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/containers-and-groups-cmds", testhelpers.Pwd()),
 		},
 		ctxInfo: func() *testutils.TestContextInfo {
 			return &testutils.TestContextInfo{
@@ -2061,7 +2061,7 @@ var executeHomelabContainerCmdErrorTests = []struct {
 		args: []string{
 			"g1/c3",
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/containers-and-groups-cmds", testhelpers.Pwd()),
 		},
 		ctxInfo: func() *testutils.TestContextInfo {
 			return &testutils.TestContextInfo{
@@ -2150,7 +2150,7 @@ func TestExecHomelabNetworksCmdErrors(t *testing.T) {
 	}
 }
 
-var executeHomelabGroupCmdCompletionTests = []struct {
+var executeHomelabGroupsCmdCompletionTests = []struct {
 	name        string
 	preCmdArgs  []string
 	postCmdArgs []string
@@ -2161,7 +2161,7 @@ var executeHomelabGroupCmdCompletionTests = []struct {
 		name: "Homelab Command - %s - Completion - All Group Names",
 		preCmdArgs: []string{
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/containers-and-groups-cmds", testhelpers.Pwd()),
 			"__complete",
 		},
 		postCmdArgs: []string{
@@ -2183,7 +2183,7 @@ Completion ended with directive: ShellCompDirectiveNoFileComp, ShellCompDirectiv
 		name: "Homelab Command - %s - Completion - No Group Names",
 		preCmdArgs: []string{
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/containers-and-groups-cmds", testhelpers.Pwd()),
 			"__complete",
 		},
 		postCmdArgs: []string{
@@ -2254,12 +2254,12 @@ Completion ended with directive: ShellCompDirectiveError`,
 	},
 }
 
-func TestExecHomelabGroupCmdCompletions(t *testing.T) {
+func TestExecHomelabGroupsCmdCompletions(t *testing.T) {
 	t.Parallel()
 
-	for _, test := range executeHomelabGroupCmdCompletionTests {
+	for _, test := range executeHomelabGroupsCmdCompletionTests {
 		tc := test
-		for _, c := range executeHomelabGroupCmds {
+		for _, c := range executeHomelabGroupsCmds {
 			cmd := c
 			tcName := fmt.Sprintf(tc.name, cmd.cmdDesc)
 			t.Run(tcName, func(t *testing.T) {
@@ -2293,7 +2293,7 @@ var executeHomelabContainerCmdCompletionTests = []struct {
 		name: "Homelab Command - %s - Completion - All Container Names",
 		preCmdArgs: []string{
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/containers-and-groups-cmds", testhelpers.Pwd()),
 			"__complete",
 		},
 		postCmdArgs: []string{
@@ -2314,7 +2314,7 @@ Completion ended with directive: ShellCompDirectiveNoFileComp, ShellCompDirectiv
 		name: "Homelab Command - %s - Completion - No Container Names",
 		preCmdArgs: []string{
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/containers-and-groups-cmds", testhelpers.Pwd()),
 			"__complete",
 		},
 		postCmdArgs: []string{
@@ -2463,7 +2463,7 @@ Completion ended with directive: ShellCompDirectiveNoFileComp, ShellCompDirectiv
 		name: "Homelab Command - %s - Completion - No Network Names",
 		preCmdArgs: []string{
 			"--configs-dir",
-			fmt.Sprintf("%s/testdata/container-group-cmd", testhelpers.Pwd()),
+			fmt.Sprintf("%s/testdata/containers-and-groups-cmds", testhelpers.Pwd()),
 			"__complete",
 		},
 		postCmdArgs: []string{

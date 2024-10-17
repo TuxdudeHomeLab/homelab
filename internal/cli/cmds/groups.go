@@ -13,15 +13,15 @@ const (
 	groupsCmdStr = "groups"
 )
 
-func GroupCmd(ctx context.Context, opts *clicommon.GlobalCmdOptions) *cobra.Command {
-	cmd := buildGroupCmd(ctx)
+func GroupsCmd(ctx context.Context, opts *clicommon.GlobalCmdOptions) *cobra.Command {
+	cmd := buildGroupsCmd(ctx)
 	cmd.AddCommand(groups.StartCmd(ctx, opts))
 	cmd.AddCommand(groups.StopCmd(ctx, opts))
 	cmd.AddCommand(groups.PurgeCmd(ctx, opts))
 	return cmd
 }
 
-func buildGroupCmd(ctx context.Context) *cobra.Command {
+func buildGroupsCmd(ctx context.Context) *cobra.Command {
 	return &cobra.Command{
 		Use:     groupsCmdStr,
 		GroupID: clicommon.ContainersCmdGroupID,

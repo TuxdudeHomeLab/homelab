@@ -63,8 +63,8 @@ func initHomelabCmd(ctx context.Context) *cobra.Command {
 	globalOpts := clicommon.GlobalCmdOptions{}
 	homelabCmd := buildHomelabCmd(ctx, &globalOpts)
 	homelabCmd.AddCommand(cmds.ConfigCmd(ctx, &globalOpts))
-	homelabCmd.AddCommand(cmds.GroupCmd(ctx, &globalOpts))
-	homelabCmd.AddCommand(cmds.ContainerCmd(ctx, &globalOpts))
+	homelabCmd.AddCommand(cmds.GroupsCmd(ctx, &globalOpts))
+	homelabCmd.AddCommand(cmds.ContainersCmd(ctx, &globalOpts))
 	homelabCmd.AddCommand(cmds.NetworksCmd(ctx, &globalOpts))
 	return homelabCmd
 }

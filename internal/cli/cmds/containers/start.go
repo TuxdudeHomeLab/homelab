@@ -39,14 +39,14 @@ func StartCmd(ctx context.Context, opts *clicommon.GlobalCmdOptions) *cobra.Comm
 			return nil
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			return clicommon.AutoCompleteContainers(ctx, args, "container start autocomplete", opts)
+			return clicommon.AutoCompleteContainers(ctx, args, "containers start autocomplete", opts)
 		},
 	}
 }
 
 func execContainerStartCmd(ctx context.Context, containerArg string, opts *clicommon.GlobalCmdOptions) error {
-	group, container := mustContainerName(containerArg)
-	dep, err := clicommon.BuildDeployment(ctx, "container start", opts)
+	g, ct := mustContainerName(containerArg)
+	dep, err := clicommon.BuildDeployment(ctx, "containers start", opts)
 	if err != nil {
 		return err
 	}
@@ -59,10 +59,10 @@ func execContainerStartCmd(ctx context.Context, containerArg string, opts *clico
 
 	return clicommon.ExecContainerGroupCmd(
 		ctx,
-		"container start",
-		fmt.Sprintf("Starting container %s in group %s", container, group),
-		group,
-		container,
+		"containers start",
+		fmt.Sprintf("Starting container %s in group %s", ct, g),
+		g,
+		ct,
 		dep,
 		clicommon.ExecStartContainer,
 	)

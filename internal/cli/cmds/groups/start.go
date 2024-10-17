@@ -35,13 +35,13 @@ func StartCmd(ctx context.Context, opts *clicommon.GlobalCmdOptions) *cobra.Comm
 			return nil
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			return clicommon.AutoCompleteGroups(ctx, args, "group start autocomplete", opts)
+			return clicommon.AutoCompleteGroups(ctx, args, "groups start autocomplete", opts)
 		},
 	}
 }
 
 func execGroupStartCmd(ctx context.Context, group string, opts *clicommon.GlobalCmdOptions) error {
-	dep, err := clicommon.BuildDeployment(ctx, "group start", opts)
+	dep, err := clicommon.BuildDeployment(ctx, "groups start", opts)
 	if err != nil {
 		return err
 	}
@@ -55,7 +55,7 @@ func execGroupStartCmd(ctx context.Context, group string, opts *clicommon.Global
 
 	return clicommon.ExecContainerGroupCmd(
 		ctx,
-		"group start",
+		"groups start",
 		action,
 		group,
 		"",

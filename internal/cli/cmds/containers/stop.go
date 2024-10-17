@@ -39,24 +39,24 @@ func StopCmd(ctx context.Context, opts *clicommon.GlobalCmdOptions) *cobra.Comma
 			return nil
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			return clicommon.AutoCompleteContainers(ctx, args, "container stop autocomplete", opts)
+			return clicommon.AutoCompleteContainers(ctx, args, "containers stop autocomplete", opts)
 		},
 	}
 }
 
 func execContainerStopCmd(ctx context.Context, containerArg string, opts *clicommon.GlobalCmdOptions) error {
-	group, container := mustContainerName(containerArg)
-	dep, err := clicommon.BuildDeployment(ctx, "container stop", opts)
+	g, ct := mustContainerName(containerArg)
+	dep, err := clicommon.BuildDeployment(ctx, "containers stop", opts)
 	if err != nil {
 		return err
 	}
 
 	return clicommon.ExecContainerGroupCmd(
 		ctx,
-		"container stop",
-		fmt.Sprintf("Stopping container %s in group %s", container, group),
-		group,
-		container,
+		"containers stop",
+		fmt.Sprintf("Stopping container %s in group %s", ct, g),
+		g,
+		ct,
 		dep,
 		clicommon.ExecStopContainer,
 	)

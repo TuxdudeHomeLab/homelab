@@ -35,13 +35,13 @@ func StopCmd(ctx context.Context, opts *clicommon.GlobalCmdOptions) *cobra.Comma
 			return nil
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			return clicommon.AutoCompleteGroups(ctx, args, "group stop autocomplete", opts)
+			return clicommon.AutoCompleteGroups(ctx, args, "groups stop autocomplete", opts)
 		},
 	}
 }
 
 func execGroupStopCmd(ctx context.Context, group string, opts *clicommon.GlobalCmdOptions) error {
-	dep, err := clicommon.BuildDeployment(ctx, "group stop", opts)
+	dep, err := clicommon.BuildDeployment(ctx, "groups stop", opts)
 	if err != nil {
 		return err
 	}
@@ -54,7 +54,7 @@ func execGroupStopCmd(ctx context.Context, group string, opts *clicommon.GlobalC
 	}
 	return clicommon.ExecContainerGroupCmd(
 		ctx,
-		"group stop",
+		"groups stop",
 		action,
 		group,
 		"",
