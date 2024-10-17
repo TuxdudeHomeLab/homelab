@@ -10,13 +10,9 @@ import (
 	"github.com/tuxdudehomelab/homelab/internal/cli/errors"
 )
 
-const (
-	stopCmdStr = "stop"
-)
-
 func StopCmd(ctx context.Context, opts *clicommon.GlobalCmdOptions) *cobra.Command {
 	return &cobra.Command{
-		Use:   stopCmdStr,
+		Use:   "stop [container]",
 		Short: "Stops the container",
 		Long:  `Stops the requested container as specified in the homelab configuration. The name is specified in the group/container format.`,
 		PreRunE: func(cmd *cobra.Command, args []string) error {

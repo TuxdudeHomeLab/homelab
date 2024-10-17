@@ -12,8 +12,6 @@ import (
 )
 
 const (
-	homelabCmdStr = "homelab"
-
 	defaultPkgVersion   = "unset"
 	defaultPkgCommit    = "unset"
 	defaultPkgTimestamp = "unset"
@@ -30,7 +28,7 @@ func versionInfo(ctx context.Context) *version.VersionInfo {
 func buildHomelabCmd(ctx context.Context, opts *clicommon.GlobalCmdOptions) *cobra.Command {
 	ver := versionInfo(ctx)
 	cmd := &cobra.Command{
-		Use:           homelabCmdStr,
+		Use:           "homelab",
 		Version:       fmt.Sprintf("%s [Revision: %s @ %s]", ver.PackageVersion, ver.PackageCommit, ver.PackageTimestamp),
 		SilenceUsage:  false,
 		SilenceErrors: false,

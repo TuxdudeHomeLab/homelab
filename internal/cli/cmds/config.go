@@ -9,10 +9,6 @@ import (
 	"github.com/tuxdudehomelab/homelab/internal/cli/cmds/config"
 )
 
-const (
-	configCmdStr = "config"
-)
-
 func ConfigCmd(ctx context.Context, opts *clicommon.GlobalCmdOptions) *cobra.Command {
 	cmd := buildConfigCmd(ctx)
 	cmd.AddCommand(config.ShowConfigCmd(ctx, opts))
@@ -21,7 +17,7 @@ func ConfigCmd(ctx context.Context, opts *clicommon.GlobalCmdOptions) *cobra.Com
 
 func buildConfigCmd(ctx context.Context) *cobra.Command {
 	return &cobra.Command{
-		Use:     configCmdStr,
+		Use:     "config",
 		GroupID: clicommon.ConfigCmdGroupID,
 		Short:   "Homelab config related commands",
 		Long:    `Homelab configuration related commands.`,

@@ -10,13 +10,9 @@ import (
 	"github.com/tuxdudehomelab/homelab/internal/cli/errors"
 )
 
-const (
-	deleteCmdStr = "delete"
-)
-
 func DeleteCmd(ctx context.Context, opts *clicommon.GlobalCmdOptions) *cobra.Command {
 	return &cobra.Command{
-		Use:   deleteCmdStr,
+		Use:   "delete [network]",
 		Short: "Deletes one or more networks in the deployment",
 		Long:  `Deletes one or more networks that are specified in the homelab configuration.`,
 		PreRunE: func(cmd *cobra.Command, args []string) error {

@@ -10,13 +10,9 @@ import (
 	"github.com/tuxdudehomelab/homelab/internal/cli/errors"
 )
 
-const (
-	startCmdStr = "start"
-)
-
 func StartCmd(ctx context.Context, opts *clicommon.GlobalCmdOptions) *cobra.Command {
 	return &cobra.Command{
-		Use:   startCmdStr,
+		Use:   "start [container]",
 		Short: "Starts the container",
 		Long:  `Starts the requested container as specified in the homelab configuration. The name is specified in the group/container format.`,
 		PreRunE: func(cmd *cobra.Command, args []string) error {

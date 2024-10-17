@@ -10,13 +10,9 @@ import (
 	"github.com/tuxdudehomelab/homelab/internal/utils"
 )
 
-const (
-	showCmdStr = "show"
-)
-
 func ShowConfigCmd(ctx context.Context, opts *clicommon.GlobalCmdOptions) *cobra.Command {
 	return &cobra.Command{
-		Use:   showCmdStr,
+		Use:   "show",
 		Short: "Shows the homelab config",
 		Long:  `Displays the homelab configuration.`,
 		RunE: func(cmd *cobra.Command, args []string) error {

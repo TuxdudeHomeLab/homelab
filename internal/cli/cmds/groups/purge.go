@@ -10,13 +10,9 @@ import (
 	"github.com/tuxdudehomelab/homelab/internal/cli/errors"
 )
 
-const (
-	purgeCmdStr = "purge"
-)
-
 func PurgeCmd(ctx context.Context, opts *clicommon.GlobalCmdOptions) *cobra.Command {
 	return &cobra.Command{
-		Use:   purgeCmdStr,
+		Use:   "purge [group]",
 		Short: "Purges one or more containers in the group",
 		Long:  `Purges one or more containers in the requested group as specified in the homelab configuration. Containers can be purged individually, as a group or all groups (by using 'all' as the group name).`,
 		PreRunE: func(cmd *cobra.Command, args []string) error {

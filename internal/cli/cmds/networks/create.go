@@ -10,13 +10,9 @@ import (
 	"github.com/tuxdudehomelab/homelab/internal/cli/errors"
 )
 
-const (
-	createCmdStr = "create"
-)
-
 func CreateCmd(ctx context.Context, opts *clicommon.GlobalCmdOptions) *cobra.Command {
 	return &cobra.Command{
-		Use:   createCmdStr,
+		Use:   "create [network]",
 		Short: "Creates one or more networks in the deployment",
 		Long:  `Creates one or more networks that are specified in the homelab configuration.`,
 		PreRunE: func(cmd *cobra.Command, args []string) error {

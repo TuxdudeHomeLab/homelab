@@ -9,10 +9,6 @@ import (
 	"github.com/tuxdudehomelab/homelab/internal/cli/cmds/networks"
 )
 
-const (
-	networksCmdStr = "networks"
-)
-
 func NetworksCmd(ctx context.Context, opts *clicommon.GlobalCmdOptions) *cobra.Command {
 	cmd := buildNetworksCmd(ctx)
 	cmd.AddCommand(networks.CreateCmd(ctx, opts))
@@ -22,7 +18,7 @@ func NetworksCmd(ctx context.Context, opts *clicommon.GlobalCmdOptions) *cobra.C
 
 func buildNetworksCmd(ctx context.Context) *cobra.Command {
 	return &cobra.Command{
-		Use:     networksCmdStr,
+		Use:     "networks",
 		GroupID: clicommon.ContainersCmdGroupID,
 		Short:   "Homelab network related commands",
 		Long:    `Manipulate networks within the deployment.`,
