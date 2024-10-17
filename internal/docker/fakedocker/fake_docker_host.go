@@ -36,6 +36,7 @@ type FakeDockerHost struct {
 	noImageAfterPull     utils.StringSet
 	warnNetworkCreate    utils.StringSet
 	failNetworkCreate    utils.StringSet
+	failNetworkRemove    utils.StringSet
 	failNetworkConnect   utils.StringSet
 }
 
@@ -94,6 +95,7 @@ type FakeDockerHostInitInfo struct {
 	NoImageAfterPull     utils.StringSet
 	WarnNetworkCreate    utils.StringSet
 	FailNetworkCreate    utils.StringSet
+	FailNetworkRemove    utils.StringSet
 	FailNetworkConnect   utils.StringSet
 }
 
@@ -131,6 +133,7 @@ func NewFakeDockerHost(initInfo *FakeDockerHostInitInfo) *FakeDockerHost {
 		noImageAfterPull:     utils.StringSet{},
 		warnNetworkCreate:    utils.StringSet{},
 		failNetworkCreate:    utils.StringSet{},
+		failNetworkRemove:    utils.StringSet{},
 		failNetworkConnect:   utils.StringSet{},
 	}
 	if initInfo == nil {
@@ -189,6 +192,9 @@ func NewFakeDockerHost(initInfo *FakeDockerHostInitInfo) *FakeDockerHost {
 	}
 	for n := range initInfo.FailNetworkCreate {
 		f.failNetworkCreate[n] = struct{}{}
+	}
+	for n := range initInfo.FailNetworkRemove {
+		f.failNetworkRemove[n] = struct{}{}
 	}
 	for n := range initInfo.FailNetworkConnect {
 		f.failNetworkConnect[n] = struct{}{}
@@ -534,7 +540,18 @@ func (f *FakeDockerHost) NetworkList(ctx context.Context, options dnetwork.ListO
 }
 
 func (f *FakeDockerHost) NetworkRemove(ctx context.Context, networkName string) error {
-	panic("NetworkRemove unimplemented")
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	if _, found := f.networks[networkName]; !found {
+		return derrdefs.NotFound(fmt.Errorf("network %s not found on the fake docker host", networkName))
+	}
+	if _, found := f.failNetworkRemove[networkName]; found {
+		return fmt.Errorf("failed to remove network %s on the fake docker host", networkName)
+	}
+
+	delete(f.networks, networkName)
+	return nil
 }
 
 func (f *FakeDockerHost) ForceRemoveContainer(containerName string) error {

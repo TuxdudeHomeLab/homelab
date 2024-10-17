@@ -55,3 +55,12 @@ func ExecCreateNetwork(ctx context.Context, n *deployment.Network, dc *docker.Cl
 	}
 	return err
 }
+
+func ExecDeleteNetwork(ctx context.Context, n *deployment.Network, dc *docker.Client) error {
+	deleted, err := n.Delete(ctx, dc)
+	if err == nil && !deleted {
+		log(ctx).Warnf("Network %s not deleted since it doesn't exist already", n.Name())
+		log(ctx).WarnEmpty()
+	}
+	return err
+}

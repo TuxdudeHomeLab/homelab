@@ -16,6 +16,7 @@ const (
 func NetworksCmd(ctx context.Context, opts *clicommon.GlobalCmdOptions) *cobra.Command {
 	cmd := buildNetworksCmd(ctx)
 	cmd.AddCommand(networks.CreateCmd(ctx, opts))
+	cmd.AddCommand(networks.DeleteCmd(ctx, opts))
 	return cmd
 }
 

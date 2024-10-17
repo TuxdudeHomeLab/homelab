@@ -821,6 +821,40 @@ Created network net1`,
 		},
 		want: `Network net1 not created since it already exists`,
 	},
+	{
+		name: "Homelab Command - Networks Delete - One Network - Network Doesn't Exist",
+		args: []string{
+			"networks",
+			"delete",
+			"net1",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/networks-cmd", testhelpers.Pwd()),
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
+		},
+		want: `Network net1 not deleted since it doesn't exist already`,
+	},
+	{
+		name: "Homelab Command - Networks Delete - One Network - Network Exists",
+		args: []string{
+			"networks",
+			"delete",
+			"net1",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/networks-cmd", testhelpers.Pwd()),
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				Networks: []*fakedocker.FakeNetworkInitInfo{
+					{
+						Name: "net1",
+					},
+				},
+			}),
+		},
+		want: `Deleted network net1`,
+	},
 }
 
 func TestExecHomelabCmd(t *testing.T) {
@@ -1150,10 +1184,26 @@ var executeHomelabCmdLogLevelTests = []struct {
 		},
 		ctxInfo: func() *testutils.TestContextInfo {
 			return &testutils.TestContextInfo{
+				DockerHost: fakedocker.NewEmptyFakeDockerHost(),
+			}
+		},
+	},
+	{
+		name: "Homelab Command - Networks Delete",
+		args: []string{
+			"networks",
+			"delete",
+			"net1",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/networks-cmd", testhelpers.Pwd()),
+		},
+		ctxInfo: func() *testutils.TestContextInfo {
+			return &testutils.TestContextInfo{
 				DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
-					ValidImagesForPull: utils.StringSet{
-						"abc/xyz":  {},
-						"abc/xyz3": {},
+					Networks: []*fakedocker.FakeNetworkInitInfo{
+						{
+							Name: "net1",
+						},
 					},
 				}),
 			}
@@ -1569,6 +1619,83 @@ var executeHomelabCmdErrorTests = []struct {
 		want: `networks create failed for 1 networks, reason\(s\):
 1 - failed to create the network, reason: failed to create network net1 on the fake docker host`,
 	},
+	{
+		name: "Homelab Command - Networks Delete - Zero Network Name Args",
+		args: []string{
+			"networks",
+			"delete",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
+		},
+		want: `Expected exactly one network name argument to be specified, but found 0 instead`,
+	},
+	{
+		name: "Homelab Command - Networks Delete - Multiple Network Name Args",
+		args: []string{
+			"networks",
+			"delete",
+			"net1",
+			"net2",
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
+		},
+		want: `Expected exactly one network name argument to be specified, but found 2 instead`,
+	},
+	{
+		name: "Homelab Command - Networks Delete - Invalid Network Name",
+		args: []string{
+			"networks",
+			"delete",
+			"net11",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/networks-cmd", testhelpers.Pwd()),
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
+		},
+		want: `networks delete failed while querying networks, reason: network net11 not found`,
+	},
+	{
+		name: "Homelab Command - Networks Delete - Container Mode Network",
+		args: []string{
+			"networks",
+			"delete",
+			"net3",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/networks-cmd", testhelpers.Pwd()),
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
+		},
+		want: `networks delete failed for 1 networks, reason\(s\):
+1 - container mode network net3 cannot be deleted`,
+	},
+	{
+		name: "Homelab Command - Networks Delete - Failure",
+		args: []string{
+			"networks",
+			"delete",
+			"net1",
+			"--configs-dir",
+			fmt.Sprintf("%s/testdata/networks-cmd", testhelpers.Pwd()),
+		},
+		ctxInfo: &testutils.TestContextInfo{
+			DockerHost: fakedocker.NewFakeDockerHost(&fakedocker.FakeDockerHostInitInfo{
+				Networks: []*fakedocker.FakeNetworkInitInfo{
+					{
+						Name: "net1",
+					},
+				},
+				FailNetworkRemove: utils.StringSet{
+					"net1": {},
+				},
+			}),
+		},
+		want: `networks delete failed for 1 networks, reason\(s\):
+1 - failed to remove the network, reason: failed to remove network net1 on the fake docker host`,
+	},
 }
 
 func TestExecHomelabCmdErrors(t *testing.T) {
@@ -1756,6 +1883,15 @@ var executeHomelabConfigCmds = []struct {
 		},
 		cmdNameInError: "networks create",
 		cmdDesc:        "Networks Create",
+	},
+	{
+		cmdArgs: []string{
+			"networks",
+			"delete",
+			"net1",
+		},
+		cmdNameInError: "networks delete",
+		cmdDesc:        "Networks Delete",
 	},
 }
 
@@ -2425,6 +2561,14 @@ var executeHomelabNetworksCmds = []struct {
 		},
 		cmdNameInError: "networks create",
 		cmdDesc:        "Networks Create",
+	},
+	{
+		cmdArgs: []string{
+			"networks",
+			"delete",
+		},
+		cmdNameInError: "networks delete",
+		cmdDesc:        "Networks Delete",
 	},
 }
 

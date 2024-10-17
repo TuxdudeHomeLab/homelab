@@ -122,7 +122,7 @@ func (d *Client) CreateContainer(ctx context.Context, containerName string, cCon
 	log(ctx).Debugf("Creating container %s ...", containerName)
 	resp, err := d.client.ContainerCreate(ctx, cConfig, hConfig, nConfig, &d.ociPlatform, containerName)
 	if err != nil {
-		log(ctx).Errorf("err: %s", reflect.TypeOf(err))
+		log(ctx).Debugf("err: %s", reflect.TypeOf(err))
 		return fmt.Errorf("failed to create the container, reason: %w", err)
 	}
 
@@ -141,7 +141,7 @@ func (d *Client) StartContainer(ctx context.Context, containerName string) error
 	log(ctx).Debugf("Starting container %s ...", containerName)
 	err := d.client.ContainerStart(ctx, containerName, dcontainer.StartOptions{})
 	if err != nil {
-		log(ctx).Errorf("err: %s", reflect.TypeOf(err))
+		log(ctx).Debugf("err: %s", reflect.TypeOf(err))
 		return fmt.Errorf("failed to start the container, reason: %w", err)
 	}
 
@@ -153,7 +153,7 @@ func (d *Client) StopContainer(ctx context.Context, containerName string) error 
 	log(ctx).Debugf("Stopping container %s ...", containerName)
 	err := d.client.ContainerStop(ctx, containerName, dcontainer.StopOptions{})
 	if err != nil {
-		log(ctx).Errorf("err: %s", reflect.TypeOf(err))
+		log(ctx).Debugf("err: %s", reflect.TypeOf(err))
 		return fmt.Errorf("failed to stop the container, reason: %w", err)
 	}
 
@@ -165,7 +165,7 @@ func (d *Client) KillContainer(ctx context.Context, containerName string) error 
 	log(ctx).Debugf("Killing container %s ...", containerName)
 	err := d.client.ContainerKill(ctx, containerName, unix.SignalName(unix.SIGKILL))
 	if err != nil {
-		log(ctx).Errorf("err: %s", reflect.TypeOf(err))
+		log(ctx).Debugf("err: %s", reflect.TypeOf(err))
 		return fmt.Errorf("failed to kill the container, reason: %w", err)
 	}
 
@@ -177,7 +177,7 @@ func (d *Client) RemoveContainer(ctx context.Context, containerName string) erro
 	log(ctx).Debugf("Removing container %s ...", containerName)
 	err := d.client.ContainerRemove(ctx, containerName, dcontainer.RemoveOptions{Force: false})
 	if err != nil {
-		log(ctx).Errorf("err: %s", reflect.TypeOf(err))
+		log(ctx).Debugf("err: %s", reflect.TypeOf(err))
 		return fmt.Errorf("failed to remove the container, reason: %w", err)
 	}
 
@@ -201,7 +201,7 @@ func (d *Client) CreateNetwork(ctx context.Context, networkName string, options 
 	resp, err := d.client.NetworkCreate(ctx, networkName, options)
 
 	if err != nil {
-		log(ctx).Errorf("err: %s", reflect.TypeOf(err))
+		log(ctx).Debugf("err: %s", reflect.TypeOf(err))
 		return fmt.Errorf("failed to create the network, reason: %w", err)
 	}
 
@@ -212,12 +212,11 @@ func (d *Client) CreateNetwork(ctx context.Context, networkName string, options 
 	return nil
 }
 
-//nolint:nolintlint,unused // TODO: Remove this after this function is used.
 func (d *Client) RemoveNetwork(ctx context.Context, networkName string) error {
 	log(ctx).Debugf("Removing network %s ...", networkName)
 	err := d.client.NetworkRemove(ctx, networkName)
 	if err != nil {
-		log(ctx).Errorf("err: %s", reflect.TypeOf(err))
+		log(ctx).Debugf("err: %s", reflect.TypeOf(err))
 		return fmt.Errorf("failed to remove the network, reason: %w", err)
 	}
 
@@ -245,7 +244,7 @@ func (d *Client) ConnectContainerToBridgeModeNetwork(ctx context.Context, contai
 		},
 	})
 	if err != nil {
-		log(ctx).Errorf("err: %s", reflect.TypeOf(err))
+		log(ctx).Debugf("err: %s", reflect.TypeOf(err))
 		return fmt.Errorf("failed to connect container %s to network %s, reason: %w", containerName, networkName, err)
 	}
 
@@ -258,7 +257,7 @@ func (d *Client) DisconnectContainerFromNetwork(ctx context.Context, containerNa
 	log(ctx).Debugf("Disconnecting container %s from network %s ...", containerName, networkName)
 	err := d.client.NetworkDisconnect(ctx, networkName, containerName, false)
 	if err != nil {
-		log(ctx).Errorf("err: %s", reflect.TypeOf(err))
+		log(ctx).Debugf("err: %s", reflect.TypeOf(err))
 		return fmt.Errorf("failed to disconnect container %s from network %s, reason: %w", containerName, networkName, err)
 	}
 

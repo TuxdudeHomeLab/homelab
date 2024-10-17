@@ -79,15 +79,23 @@ func (n *Network) Create(ctx context.Context, dc *docker.Client) (bool, error) {
 	return false, nil
 }
 
-//nolint:nolintlint,unused // TODO: Remove this after this function is used.
-func (n *Network) remove(ctx context.Context, dc *docker.Client) error {
-	if dc.NetworkExists(ctx, n.Name()) {
-		err := dc.RemoveNetwork(ctx, n.Name())
-		if err != nil {
-			return err
-		}
+func (n *Network) Delete(ctx context.Context, dc *docker.Client) (bool, error) {
+	if n.mode == NetworkModeContainer {
+		return false, fmt.Errorf("container mode network %s cannot be deleted", n.Name())
 	}
-	return nil
+
+	if !dc.NetworkExists(ctx, n.Name()) {
+		return false, nil
+	}
+
+	err := dc.RemoveNetwork(ctx, n.Name())
+	if err != nil {
+		return false, err
+	}
+
+	log(ctx).Infof("Deleted network %s", n.Name())
+	log(ctx).InfoEmpty()
+	return true, nil
 }
 
 func (n *Network) connectContainer(ctx context.Context, dc *docker.Client, containerName, ip string) error {
