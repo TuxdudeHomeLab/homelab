@@ -51,6 +51,10 @@ The configuration is managed using a yaml file. The configuration specifies the 
 			ID:    clicommon.ContainersCmdGroupID,
 			Title: "Containers:",
 		},
+		&cobra.Group{
+			ID:    clicommon.NetworksCmdGroupID,
+			Title: "Networks:",
+		},
 	)
 	cmd.CompletionOptions.DisableDescriptions = true
 

@@ -19,7 +19,7 @@ func NetworksCmd(ctx context.Context, opts *clicommon.GlobalCmdOptions) *cobra.C
 func buildNetworksCmd(ctx context.Context) *cobra.Command {
 	return &cobra.Command{
 		Use:     "networks",
-		GroupID: clicommon.ContainersCmdGroupID,
+		GroupID: clicommon.NetworksCmdGroupID,
 		Short:   "Homelab network related commands",
 		Long:    `Manipulate networks within the deployment.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
