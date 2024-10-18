@@ -58,116 +58,66 @@ Use "homelab \[command\] --help" for more information about a command\.`,
 			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
 		},
 		want: `Homelab config:
-{
-  "global": {
-    "baseDir": "testdata/dummy-base-dir"
-  },
-  "ipam": {
-    "networks": {
-      "bridgeModeNetworks": \[
-        {
-          "name": "net1",
-          "hostInterfaceName": "docker-net1",
-          "cidr": "172\.18\.100\.0/24",
-          "priority": 1,
-          "containers": \[
-            {
-              "ip": "172\.18\.100\.11",
-              "container": {
-                "group": "g1",
-                "container": "c1"
-              }
-            },
-            {
-              "ip": "172\.18\.100\.12",
-              "container": {
-                "group": "g1",
-                "container": "c2"
-              }
-            }
-          \]
-        },
-        {
-          "name": "net2",
-          "hostInterfaceName": "docker-net2",
-          "cidr": "172\.18\.101\.0/24",
-          "priority": 1,
-          "containers": \[
-            {
-              "ip": "172\.18\.101\.21",
-              "container": {
-                "group": "g2",
-                "container": "c3"
-              }
-            }
-          \]
-        }
-      \]
-    }
-  },
-  "hosts": \[
-    {
-      "name": "fakehost",
-      "allowedContainers": \[
-        {
-          "group": "g1",
-          "container": "c1"
-        }
-      \]
-    },
-    {
-      "name": "host2"
-    }
-  \],
-  "groups": \[
-    {
-      "name": "g1",
-      "order": 1
-    },
-    {
-      "name": "g2",
-      "order": 2
-    }
-  \],
-  "containers": \[
-    {
-      "info": {
-        "group": "g1",
-        "container": "c1"
-      },
-      "image": {
-        "image": "abc/xyz"
-      },
-      "lifecycle": {
-        "order": 1
-      }
-    },
-    {
-      "info": {
-        "group": "g1",
-        "container": "c2"
-      },
-      "image": {
-        "image": "abc/xyz2"
-      },
-      "lifecycle": {
-        "order": 2
-      }
-    },
-    {
-      "info": {
-        "group": "g2",
-        "container": "c3"
-      },
-      "image": {
-        "image": "abc/xyz3"
-      },
-      "lifecycle": {
-        "order": 1
-      }
-    }
-  \]
-}`,
+global:
+  baseDir: testdata/dummy-base-dir
+ipam:
+  networks:
+    bridgeModeNetworks:
+      - name: net1
+        hostInterfaceName: docker-net1
+        cidr: 172\.18\.100\.0/24
+        priority: 1
+        containers:
+          - ip: 172\.18\.100\.11
+            container:
+              group: g1
+              container: c1
+          - ip: 172\.18\.100\.12
+            container:
+              group: g1
+              container: c2
+      - name: net2
+        hostInterfaceName: docker-net2
+        cidr: 172\.18\.101\.0/24
+        priority: 1
+        containers:
+          - ip: 172\.18\.101\.21
+            container:
+              group: g2
+              container: c3
+hosts:
+  - name: fakehost
+    allowedContainers:
+      - group: g1
+        container: c1
+  - name: host2
+groups:
+  - name: g1
+    order: 1
+  - name: g2
+    order: 2
+containers:
+  - info:
+      group: g1
+      container: c1
+    image:
+      image: abc/xyz
+    lifecycle:
+      order: 1
+  - info:
+      group: g1
+      container: c2
+    image:
+      image: abc/xyz2
+    lifecycle:
+      order: 2
+  - info:
+      group: g2
+      container: c3
+    image:
+      image: abc/xyz3
+    lifecycle:
+      order: 1`,
 	},
 	{
 		name: "Homelab Command - Show Config - Custom CLI Config Path",
@@ -181,63 +131,36 @@ Use "homelab \[command\] --help" for more information about a command\.`,
 			DockerHost: fakedocker.NewEmptyFakeDockerHost(),
 		},
 		want: `Homelab config:
-{
-  "global": {
-    "baseDir": "testdata/dummy-base-dir"
-  },
-  "ipam": {
-    "networks": {
-      "bridgeModeNetworks": \[
-        {
-          "name": "net1",
-          "hostInterfaceName": "docker-net1",
-          "cidr": "172\.18\.100\.0/24",
-          "priority": 1,
-          "containers": \[
-            {
-              "ip": "172\.18\.100\.11",
-              "container": {
-                "group": "g1",
-                "container": "c1"
-              }
-            }
-          \]
-        }
-      \]
-    }
-  },
-  "hosts": \[
-    {
-      "name": "fakehost",
-      "allowedContainers": \[
-        {
-          "group": "g1",
-          "container": "c1"
-        }
-      \]
-    }
-  \],
-  "groups": \[
-    {
-      "name": "g1",
-      "order": 1
-    }
-  \],
-  "containers": \[
-    {
-      "info": {
-        "group": "g1",
-        "container": "c1"
-      },
-      "image": {
-        "image": "abc/xyz"
-      },
-      "lifecycle": {
-        "order": 10
-      }
-    }
-  \]
-}`,
+global:
+  baseDir: testdata/dummy-base-dir
+ipam:
+  networks:
+    bridgeModeNetworks:
+      - name: net1
+        hostInterfaceName: docker-net1
+        cidr: 172\.18\.100\.0/24
+        priority: 1
+        containers:
+          - ip: 172\.18\.100\.11
+            container:
+              group: g1
+              container: c1
+hosts:
+  - name: fakehost
+    allowedContainers:
+      - group: g1
+        container: c1
+groups:
+  - name: g1
+    order: 1
+containers:
+  - info:
+      group: g1
+      container: c1
+    image:
+      image: abc/xyz
+    lifecycle:
+      order: 10`,
 	},
 	{
 		name: "Homelab Command - Groups Start - All Groups With Real Host Info",
@@ -892,116 +815,66 @@ var executeHomelabCmdRealEverythingTests = []struct {
 			fmt.Sprintf("%s/testdata/show-config-cmd", testhelpers.Pwd()),
 		},
 		want: `Homelab config:
-{
-  "global": {
-    "baseDir": "testdata/dummy-base-dir"
-  },
-  "ipam": {
-    "networks": {
-      "bridgeModeNetworks": \[
-        {
-          "name": "net1",
-          "hostInterfaceName": "docker-net1",
-          "cidr": "172\.18\.100\.0/24",
-          "priority": 1,
-          "containers": \[
-            {
-              "ip": "172\.18\.100\.11",
-              "container": {
-                "group": "g1",
-                "container": "c1"
-              }
-            },
-            {
-              "ip": "172\.18\.100\.12",
-              "container": {
-                "group": "g1",
-                "container": "c2"
-              }
-            }
-          \]
-        },
-        {
-          "name": "net2",
-          "hostInterfaceName": "docker-net2",
-          "cidr": "172\.18\.101\.0/24",
-          "priority": 1,
-          "containers": \[
-            {
-              "ip": "172\.18\.101\.21",
-              "container": {
-                "group": "g2",
-                "container": "c3"
-              }
-            }
-          \]
-        }
-      \]
-    }
-  },
-  "hosts": \[
-    {
-      "name": "fakehost",
-      "allowedContainers": \[
-        {
-          "group": "g1",
-          "container": "c1"
-        }
-      \]
-    },
-    {
-      "name": "host2"
-    }
-  \],
-  "groups": \[
-    {
-      "name": "g1",
-      "order": 1
-    },
-    {
-      "name": "g2",
-      "order": 2
-    }
-  \],
-  "containers": \[
-    {
-      "info": {
-        "group": "g1",
-        "container": "c1"
-      },
-      "image": {
-        "image": "abc/xyz"
-      },
-      "lifecycle": {
-        "order": 1
-      }
-    },
-    {
-      "info": {
-        "group": "g1",
-        "container": "c2"
-      },
-      "image": {
-        "image": "abc/xyz2"
-      },
-      "lifecycle": {
-        "order": 2
-      }
-    },
-    {
-      "info": {
-        "group": "g2",
-        "container": "c3"
-      },
-      "image": {
-        "image": "abc/xyz3"
-      },
-      "lifecycle": {
-        "order": 1
-      }
-    }
-  \]
-}`,
+global:
+  baseDir: testdata/dummy-base-dir
+ipam:
+  networks:
+    bridgeModeNetworks:
+      - name: net1
+        hostInterfaceName: docker-net1
+        cidr: 172\.18\.100\.0/24
+        priority: 1
+        containers:
+          - ip: 172\.18\.100\.11
+            container:
+              group: g1
+              container: c1
+          - ip: 172\.18\.100\.12
+            container:
+              group: g1
+              container: c2
+      - name: net2
+        hostInterfaceName: docker-net2
+        cidr: 172\.18\.101\.0/24
+        priority: 1
+        containers:
+          - ip: 172\.18\.101\.21
+            container:
+              group: g2
+              container: c3
+hosts:
+  - name: fakehost
+    allowedContainers:
+      - group: g1
+        container: c1
+  - name: host2
+groups:
+  - name: g1
+    order: 1
+  - name: g2
+    order: 2
+containers:
+  - info:
+      group: g1
+      container: c1
+    image:
+      image: abc/xyz
+    lifecycle:
+      order: 1
+  - info:
+      group: g1
+      container: c2
+    image:
+      image: abc/xyz2
+    lifecycle:
+      order: 2
+  - info:
+      group: g2
+      container: c3
+    image:
+      image: abc/xyz3
+    lifecycle:
+      order: 1`,
 	},
 	{
 		name: "Homelab Command - Groups Start - All Groups - Real Everything",

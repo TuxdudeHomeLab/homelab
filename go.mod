@@ -4,7 +4,6 @@ go 1.22.4
 
 require (
 	github.com/TwiN/deepmerge v0.2.1
-	github.com/clarketm/json v1.17.1
 	github.com/docker/docker v27.3.1+incompatible
 	github.com/docker/go-connections v0.5.0
 	github.com/docker/go-units v0.5.0

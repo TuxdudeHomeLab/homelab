@@ -343,7 +343,7 @@ func (h *Homelab) Parse(ctx context.Context, r io.Reader) error {
 	// Clear out any parsed data under Ignore.
 	h.Ignore = nil
 
-	log(ctx).Tracef("Homelab Config:\n%v\n", utils.PrettyPrintJSON(h))
+	log(ctx).Tracef("Homelab Config:\n%s\n", utils.PrettyPrintYAML(h))
 	return nil
 }
 

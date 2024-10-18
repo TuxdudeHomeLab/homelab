@@ -30,6 +30,6 @@ func (c *CLIConfig) parse(ctx context.Context, path string) error {
 		return fmt.Errorf("failed to parse homelab CLI config, reason: %w", err)
 	}
 
-	log(ctx).Tracef("Homelab CLI Config:\n%v\n", utils.PrettyPrintJSON(c))
+	log(ctx).Tracef("Homelab CLI Config:\n%s\n", utils.PrettyPrintYAML(c))
 	return nil
 }

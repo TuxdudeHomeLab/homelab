@@ -33,6 +33,6 @@ func execShowConfigCmd(ctx context.Context, opts *clicommon.GlobalCmdOptions) er
 		return err
 	}
 
-	log(ctx).Infof("Homelab config:\n%s", utils.PrettyPrintJSON(dep.Config))
+	log(ctx).Infof("Homelab config:\n%s", utils.PrettyPrintYAML(dep.Config))
 	return nil
 }
